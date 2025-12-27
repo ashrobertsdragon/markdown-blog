@@ -57,20 +57,31 @@ teardown() {
   local function_source
   function_source=$(sed -n '/^run_schema()/,/^}/p' "${BATS_TEST_DIRNAME}/../deploy.sh")
 
-  local required_vars=(
+  local required_exported_vars=(
     "DB_HOST"
     "DB_NAME"
     "DB_USER"
-    "DB_PASSWORD"
     "FLASK_ENV"
   )
 
-  for var in "${required_vars[@]}"; do
+  for var in "${required_exported_vars[@]}"; do
     if ! echo "$function_source" | grep -q "export ${var}="; then
       echo "ERROR: run_schema missing export for ${var}" >&2
       return 1
     fi
   done
+
+  # DB_PASSWORD should be set inline with the command, not exported
+  if ! echo "$function_source" | grep -q 'DB_PASSWORD="${DB_PASSWORD}" uv run create-schema'; then
+    echo "ERROR: run_schema missing inline DB_PASSWORD assignment" >&2
+    return 1
+  fi
+
+  # Verify DB_PASSWORD is NOT exported globally
+  if echo "$function_source" | grep -q "export DB_PASSWORD="; then
+    echo "ERROR: run_schema should NOT export DB_PASSWORD globally (security issue)" >&2
+    return 1
+  fi
 
   return 0
 }

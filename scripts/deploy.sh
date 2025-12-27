@@ -127,40 +127,31 @@ uapi_call() {
   local function="$2"
   shift 2
 
+  local uapi_output
+  local exit_status
+
   if command -v uapi &>/dev/null; then
-    local uapi_output
-    local exit_status
     uapi_output=$(uapi --output=jsonpretty "$module" "$function" "$@" 2>/dev/null)
     exit_status=$?
-
-    if [[ $exit_status -ne 0 ]]; then
-      logger -t "deploy.sh[uapi_call]" -p user.warning "uapi ${module}::${function} failed with exit status ${exit_status}"
-      printf '%s\n' '{"data":[]}'
-      return "${exit_status}"
-    fi
-
-    printf '%s\n' "${uapi_output}"
   else
     local ssh_cmd="uapi --output=jsonpretty \"$module\" \"$function\""
     for arg in "$@"; do
       ssh_cmd+=" \"$arg\""
     done
 
-    local uapi_output
-    local exit_status
     uapi_output=$(ssh -i "$SSH_PRIVATE_KEY_PATH" -p "$SSH_PORT" \
       -o StrictHostKeyChecking=accept-new \
       "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}" "$ssh_cmd" 2>/dev/null)
     exit_status=$?
-
-    if [[ $exit_status -ne 0 ]]; then
-      logger -t "deploy.sh[uapi_call]" -p user.warning "uapi ${module}::${function} failed with exit status ${exit_status}"
-      printf '%s\n' '{"data":[]}'
-      return "${exit_status}"
-    fi
-
-    printf '%s\n' "${uapi_output}"
   fi
+
+  if [[ $exit_status -ne 0 ]]; then
+    logger -t "deploy.sh[uapi_call]" -p user.warning "uapi ${module}::${function} failed with exit status ${exit_status}"
+    printf '%s\n' '{"data":[]}'
+    return "${exit_status}"
+  fi
+
+  printf '%s\n' "${uapi_output}"
 }
 
 uapi_list_contains() {
@@ -383,11 +374,10 @@ cd ~/blog
 export DB_HOST="localhost"
 export DB_NAME="$(get_database_name)"
 export DB_USER="${DB_USER}"
-export DB_PASSWORD="${DB_PASSWORD}"
 export FLASK_ENV="PRODUCTION"
 
 echo "Creating database schema..."
-uv run create-schema
+DB_PASSWORD="${DB_PASSWORD}" uv run create-schema
 REMOTE_SCRIPT
 
   return 0
