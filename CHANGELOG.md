@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Deployment**: Fixed frontend build path check in deployment script
+  - Changed from `monorepo/frontend/build` to `monorepo/build` to match Vite output location
+  - Deployment script now correctly detects frontend build directory
+  - Prevents "frontend build directory missing" errors during deployment
+- **Backend**: Fixed ProductionDBSettings to use standard database environment variable names
+  - Removed `CPANEL_` prefix from ProductionDBSettings configuration
+  - Now reads `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` directly (no prefix)
+  - Aligns with Passenger WSGI standard environment variable naming conventions
+  - Resolves deployment failure where Flask could not connect to database
+- **Deployment**: Fixed schema creation during deployment to set required environment variables
+  - Added exports for `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `FLASK_ENV` in run_schema() function
+  - Schema creation script now receives all required database configuration
+  - Prevents "missing required fields" validation errors during remote schema execution
+
 ### Added
 
 - **Documentation**: Comprehensive developer onboarding documentation in `README.md`

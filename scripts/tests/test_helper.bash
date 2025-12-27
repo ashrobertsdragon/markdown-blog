@@ -243,8 +243,8 @@ setup_test_environment() {
   export SERVER_IP_ADDRESS="192.0.2.1"
   export SSH_PRIVATE_KEY_PATH="${BATS_TEST_TMPDIR}/test_ssh_key"
   export SSH_PORT="22"
-  export CPANEL_POSTGRES_USER="testuser_pguser"
-  export CPANEL_POSTGRES_PASSWORD="test_pg_password"
+  export DB_USER="testuser_pguser"
+  export DB_PASSWORD="test_pg_password"
   export LOCAL_POSTGRES_PASSWORD="local_pg_password"
   export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_test123456789"
   export RESEND_API_KEY="re_test123456789"
@@ -282,8 +282,8 @@ unset_test_environment() {
   unset SERVER_IP_ADDRESS
   unset SSH_PRIVATE_KEY_PATH
   unset SSH_PORT
-  unset CPANEL_POSTGRES_USER
-  unset CPANEL_POSTGRES_PASSWORD
+  unset DB_USER
+  unset DB_PASSWORD
   unset LOCAL_POSTGRES_PASSWORD
   unset GITHUB_PERSONAL_ACCESS_TOKEN
   unset RESEND_API_KEY

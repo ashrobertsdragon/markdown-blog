@@ -24,9 +24,9 @@ def base_settings(valid_env) -> DBSettings:
 def production_env(clean_env):
     """Fixture to initialize ProductionDBSettings environment variables."""
     clean_env.setenv("FLASK_ENV", "PRODUCTION")
-    clean_env.setenv("CPANEL_DB_NAME", "PRODUCTION_DB")
-    clean_env.setenv("CPANEL_DB_USER", "PRODUCTION_USER")
-    clean_env.setenv("CPANEL_DB_PASSWORD", "PRODUCTION_PASSWORD")
+    clean_env.setenv("DB_NAME", "PRODUCTION_DB")
+    clean_env.setenv("DB_USER", "PRODUCTION_USER")
+    clean_env.setenv("DB_PASSWORD", "PRODUCTION_PASSWORD")
     return clean_env
 
 

@@ -102,7 +102,7 @@ class DevDBSettings(DBSettings):
 class ProductionDBSettings(DBSettings):
     """Settings for production."""
 
-    model_config = SettingsConfigDict(env_prefix="CPANEL_")
+    model_config = SettingsConfigDict(env_prefix="")
     FLASK_ENV: FlaskEnv = FlaskEnv.PRODUCTION
 
 

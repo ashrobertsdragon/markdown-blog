@@ -42,8 +42,8 @@ REQUIRED ENVIRONMENT VARIABLES:
   SERVER_IP_ADDRESS            - Server IP for SSH connection
   SSH_PRIVATE_KEY_PATH         - Path to SSH private key
   SSH_PORT                     - SSH port number
-  CPANEL_POSTGRES_USER         - PostgreSQL username
-  CPANEL_POSTGRES_PASSWORD     - PostgreSQL password
+  DB_USER                      - PostgreSQL username
+  DB_PASSWORD                  - PostgreSQL password
   GITHUB_PERSONAL_ACCESS_TOKEN - GitHub API token
   RESEND_API_KEY               - Resend email service API key
   CLERK_PUBLISHABLE_KEY        - Clerk authentication public key
@@ -65,7 +65,7 @@ readonly APP_NAME="MarkdownBlog"
 readonly BASE_URI="/"
 
 cleanup_secrets() {
-  unset CPANEL_POSTGRES_PASSWORD
+  unset DB_PASSWORD
   unset GITHUB_PERSONAL_ACCESS_TOKEN
   unset RESEND_API_KEY
   unset CLERK_PUBLISHABLE_KEY
@@ -128,18 +128,40 @@ uapi_call() {
   local function="$2"
   shift 2
 
-  local uapi_output
-  local exit_status
-  uapi_output=$(uapi --output=jsonpretty "$module" "$function" "$@" 2>/dev/null)
-  exit_status=$?
+  if command -v uapi &>/dev/null; then
+    local uapi_output
+    local exit_status
+    uapi_output=$(uapi --output=jsonpretty "$module" "$function" "$@" 2>/dev/null)
+    exit_status=$?
 
-  if [[ $exit_status -ne 0 ]]; then
-    logger -t "deploy.sh[uapi_call]" -p user.warning "uapi ${module}::${function} failed with exit status ${exit_status}"
-    printf '%s\n' '{"data":[]}'
-    return "${exit_status}"
+    if [[ $exit_status -ne 0 ]]; then
+      logger -t "deploy.sh[uapi_call]" -p user.warning "uapi ${module}::${function} failed with exit status ${exit_status}"
+      printf '%s\n' '{"data":[]}'
+      return "${exit_status}"
+    fi
+
+    printf '%s\n' "${uapi_output}"
+  else
+    local ssh_cmd="uapi --output=jsonpretty \"$module\" \"$function\""
+    for arg in "$@"; do
+      ssh_cmd+=" \"$arg\""
+    done
+
+    local uapi_output
+    local exit_status
+    uapi_output=$(ssh -i "$SSH_PRIVATE_KEY_PATH" -p "$SSH_PORT" \
+      -o StrictHostKeyChecking=accept-new \
+      "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}" "$ssh_cmd" 2>/dev/null)
+    exit_status=$?
+
+    if [[ $exit_status -ne 0 ]]; then
+      logger -t "deploy.sh[uapi_call]" -p user.warning "uapi ${module}::${function} failed with exit status ${exit_status}"
+      printf '%s\n' '{"data":[]}'
+      return "${exit_status}"
+    fi
+
+    printf '%s\n' "${uapi_output}"
   fi
-
-  printf '%s\n' "${uapi_output}"
 }
 
 uapi_list_contains() {
@@ -174,8 +196,8 @@ validate_environment() {
     SERVER_IP_ADDRESS
     SSH_PRIVATE_KEY_PATH
     SSH_PORT
-    CPANEL_POSTGRES_USER
-    CPANEL_POSTGRES_PASSWORD
+    DB_USER
+    DB_PASSWORD
     GITHUB_PERSONAL_ACCESS_TOKEN
     RESEND_API_KEY
     CLERK_PUBLISHABLE_KEY
@@ -184,7 +206,7 @@ validate_environment() {
 
   for var in "${required_vars[@]}"; do
     if [[ -z "${!var:-}" ]]; then
-      printf "ERROR: Required environment variable is not set\n" >&2
+      printf "ERROR: Required environment variable %s is not set\n" "$var" >&2
       return 1
     fi
   done
@@ -271,8 +293,8 @@ provision_database() {
   logger -t deploy.sh -p user.info "Provisioning database: ${database_name}"
 
   ensure_database_exists "$database_name" || return 1
-  ensure_user_exists "$CPANEL_POSTGRES_USER" "$CPANEL_POSTGRES_PASSWORD" || return 1
-  ensure_privileges_granted "$CPANEL_POSTGRES_USER" "$database_name" || return 1
+  ensure_user_exists "$DB_USER" "$DB_PASSWORD" || return 1
+  ensure_privileges_granted "$DB_USER" "$database_name" || return 1
 
   return 0
 }
@@ -293,8 +315,8 @@ upload_code() {
     -o StrictHostKeyChecking=accept-new" "$backend_src" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
 
-  if [[ -d "${PROJECT_ROOT}/monorepo/frontend/build" ]]; then
-    local frontend_src="${PROJECT_ROOT}/monorepo/frontend/build/"
+  if [[ -d "${PROJECT_ROOT}/monorepo/build" ]]; then
+    local frontend_src="${PROJECT_ROOT}/monorepo/build/"
     if [[ -z "$(ls -A "$frontend_src" 2>/dev/null || true)" ]]; then
       printf "WARNING: Frontend build directory is empty\n" >&2
     else
@@ -354,11 +376,17 @@ REMOTE_SCRIPT
 
 run_schema() {
   logger -t deploy.sh -p user.info "Creating database schema on ${SERVER_IP_ADDRESS}"
-  run_remote_command "${SERVER_IP_ADDRESS}" bash <<'REMOTE_SCRIPT' || return 1
+  run_remote_command "${SERVER_IP_ADDRESS}" bash <<REMOTE_SCRIPT || return 1
 set -Eeuo pipefail
 
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="\$HOME/.cargo/bin:\$PATH"
 cd ~/blog
+
+export DB_HOST="localhost"
+export DB_NAME="$(get_database_name)"
+export DB_USER="${DB_USER}"
+export DB_PASSWORD="${DB_PASSWORD}"
+export FLASK_ENV="PRODUCTION"
 
 echo "Creating database schema..."
 uv run create-schema
@@ -393,8 +421,8 @@ register_passenger() {
       deployment_mode="production" \
       envvar_name_1="DB_HOST" envvar_value_1="localhost" \
       envvar_name_2="DB_NAME" envvar_value_2="$database_name" \
-      envvar_name_3="DB_USER" envvar_value_3="$CPANEL_POSTGRES_USER" \
-      envvar_name_4="DB_PASSWORD" envvar_value_4="$CPANEL_POSTGRES_PASSWORD" \
+      envvar_name_3="DB_USER" envvar_value_3="$DB_USER" \
+      envvar_name_4="DB_PASSWORD" envvar_value_4="$DB_PASSWORD" \
       envvar_name_5="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value_5="$GITHUB_PERSONAL_ACCESS_TOKEN" \
       envvar_name_6="RESEND_API_KEY" envvar_value_6="$RESEND_API_KEY" \
       envvar_name_7="CLERK_PUBLISHABLE_KEY" envvar_value_7="$CLERK_PUBLISHABLE_KEY" \
@@ -405,8 +433,8 @@ register_passenger() {
       name="$APP_NAME" \
       envvar_name_1="DB_HOST" envvar_value_1="localhost" \
       envvar_name_2="DB_NAME" envvar_value_2="$database_name" \
-      envvar_name_3="DB_USER" envvar_value_3="$CPANEL_POSTGRES_USER" \
-      envvar_name_4="DB_PASSWORD" envvar_value_4="$CPANEL_POSTGRES_PASSWORD" \
+      envvar_name_3="DB_USER" envvar_value_3="$DB_USER" \
+      envvar_name_4="DB_PASSWORD" envvar_value_4="$DB_PASSWORD" \
       envvar_name_5="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value_5="$GITHUB_PERSONAL_ACCESS_TOKEN" \
       envvar_name_6="RESEND_API_KEY" envvar_value_6="$RESEND_API_KEY" \
       envvar_name_7="CLERK_PUBLISHABLE_KEY" envvar_value_7="$CLERK_PUBLISHABLE_KEY" \

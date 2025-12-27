@@ -19,8 +19,8 @@ drwxr-xr-x 2 cpaneluser cpaneluser 4096 Dec 14 12:00 backend
 drwxr-xr-x 2 cpaneluser cpaneluser 4096 Dec 14 12:00 drafts
 
 ## Environment Variable Verification
-CPANEL_POSTGRES_USER=cpaneluser_pguser
-CPANEL_POSTGRES_PASSWORD=***REDACTED***
+DB_USER=cpaneluser_pguser
+DB_PASSWORD=***REDACTED***
 GITHUB_PERSONAL_ACCESS_TOKEN=***REDACTED***
 RESEND_API_KEY=***REDACTED***
 CLERK_PUBLISHABLE_KEY=pk_test_123456789

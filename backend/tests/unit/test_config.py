@@ -148,10 +148,12 @@ def test_db_settings_returns_production_subclass_default(production_env):
 
 def test_production_settings(production_settings):
     """ProductionDBSettings should return correct values."""
+    import os
+
     assert production_settings.DB_HOST == "localhost"
-    assert production_settings.DB_NAME == "PRODUCTION_DB"
-    assert production_settings.DB_USER == "PRODUCTION_USER"
-    assert production_settings.DB_PASSWORD == "PRODUCTION_PASSWORD"
+    assert production_settings.DB_NAME == os.getenv("DB_NAME")
+    assert production_settings.DB_USER == os.getenv("DB_USER")
+    assert production_settings.DB_PASSWORD == os.getenv("DB_PASSWORD")
 
 
 def test_dev_settings(dev_settings):

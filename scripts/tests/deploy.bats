@@ -108,8 +108,8 @@ teardown() {
 }
 
 @test "deployment fails when database credentials are not set" {
-  unset CPANEL_POSTGRES_USER
-  unset CPANEL_POSTGRES_PASSWORD
+  unset DB_USER
+  unset DB_PASSWORD
 
   source "${BATS_TEST_DIRNAME}/../deploy.sh"
   run main
