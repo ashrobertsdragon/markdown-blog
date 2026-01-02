@@ -171,7 +171,7 @@ uapi_list_contains() {
 }
 
 get_remote_app_path() {
-  echo "/home/${CPANEL_USERNAME}/blog"
+  echo "/home/${CPANEL_USERNAME}/seeash"
 }
 
 get_database_name() {
@@ -301,26 +301,46 @@ upload_code() {
   local remote_path
   remote_path="$(get_remote_app_path)"
 
-  local backend_src="${PROJECT_ROOT}/monorepo/backend/"
+  local backend_src="${PROJECT_ROOT}/monorepo/backend/src/backend/"
   if [[ ! -d "$backend_src" ]] || [[ -z "$(ls -A "$backend_src" 2>/dev/null || true)" ]]; then
     printf "ERROR: Backend source directory is empty or missing\n" >&2
     return 1
   fi
 
-  logger -t deploy.sh -p user.info "Uploading backend code to ${SERVER_IP_ADDRESS}"
+  logger -t deploy.sh -p user.info "Uploading backend source code to ${SERVER_IP_ADDRESS}"
   rsync -avz --perms --checksum --delete \
     --exclude '.git' \
-    --exclude '.venv' \
     --exclude '__pycache__' \
     --exclude '*.pyc' \
     --exclude '.pytest_cache' \
     --exclude '.mypy_cache' \
     --exclude '.ruff_cache' \
-    --exclude 'tests' \
-    --exclude 'htmlcov' \
-    --exclude '.coverage' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" "$backend_src" \
+    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/backend/" || return 1
+
+  logger -t deploy.sh -p user.info "Uploading passenger_wsgi.py to ${SERVER_IP_ADDRESS}"
+  rsync -avz --perms --checksum \
+    -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
+    -o StrictHostKeyChecking=accept-new" \
+    "${PROJECT_ROOT}/monorepo/backend/src/passenger_wsgi.py" \
+    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
+
+  logger -t deploy.sh -p user.info "Uploading scripts directory to ${SERVER_IP_ADDRESS}"
+  rsync -avz --perms --checksum --delete \
+    --exclude '__pycache__' \
+    --exclude '*.pyc' \
+    -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
+    -o StrictHostKeyChecking=accept-new" \
+    "${PROJECT_ROOT}/monorepo/backend/scripts/" \
+    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/scripts/" || return 1
+
+  logger -t deploy.sh -p user.info "Uploading pyproject.toml and uv.lock to ${SERVER_IP_ADDRESS}"
+  rsync -avz --perms --checksum \
+    -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
+    -o StrictHostKeyChecking=accept-new" \
+    "${PROJECT_ROOT}/monorepo/backend/pyproject.toml" \
+    "${PROJECT_ROOT}/monorepo/backend/uv.lock" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
 
   if [[ -d "${PROJECT_ROOT}/monorepo/build" ]]; then
@@ -339,22 +359,6 @@ upload_code() {
         "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/build/" || return 1
     fi
   fi
-
-  logger -t deploy.sh -p user.info "Copying WSGI entry point to domain root"
-  run_remote_command "${SERVER_IP_ADDRESS}" bash <<'REMOTE_SCRIPT' || return 1
-set -Eeuo pipefail
-domain_root="/home/ashrdvfi/seeash"
-app_wsgi="/home/${CPANEL_USERNAME}/blog/src/passenger_wsgi.py"
-
-if [[ -f "$app_wsgi" ]]; then
-  mkdir -p "$domain_root"
-  cp "$app_wsgi" "$domain_root/passenger_wsgi.py"
-  echo "✓ passenger_wsgi.py copied to domain root"
-else
-  echo "ERROR: passenger_wsgi.py not found at $app_wsgi" >&2
-  exit 1
-fi
-REMOTE_SCRIPT
 
   return 0
 }
@@ -391,7 +395,7 @@ install_application() {
 set -Eeuo pipefail
 
 export PATH="$HOME/.cargo/bin:$PATH"
-cd ~/blog
+cd ~/seeash
 
 echo "Installing application dependencies with uv..."
 uv sync --frozen
@@ -411,7 +415,7 @@ run_schema() {
 set -Eeuo pipefail
 
 export PATH="$HOME/.cargo/bin:$PATH"
-cd ~/blog
+cd ~/seeash
 
 export DB_NAME="$1"
 export DB_USER="$2"
@@ -430,7 +434,7 @@ register_passenger() {
   remote_path="$(get_remote_app_path)"
   local database_name
   database_name="$(get_database_name)"
-  local venv_path="/home/${CPANEL_USERNAME}/blog/.venv"
+  local venv_path="/home/${CPANEL_USERNAME}/seeash/.venv"
 
   logger -t deploy.sh -p user.info "Registering Passenger application: ${APP_NAME}"
 

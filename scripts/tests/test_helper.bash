@@ -257,14 +257,12 @@ setup_test_environment() {
   chmod 600 "${SSH_PRIVATE_KEY_PATH}"
 
   # Create backend directory structure for upload_code validation
-  local test_backend="${BATS_TEST_TMPDIR}/backend"
-  mkdir -p "${test_backend}/src"
-  touch "${test_backend}/pyproject.toml"
-
-  # Override PROJECT_ROOT to point to test directory
   export PROJECT_ROOT="${BATS_TEST_TMPDIR}"
-  mkdir -p "${BATS_TEST_TMPDIR}/monorepo/backend/src"
+  mkdir -p "${BATS_TEST_TMPDIR}/monorepo/backend/src/backend"
+  mkdir -p "${BATS_TEST_TMPDIR}/monorepo/backend/scripts"
+  touch "${BATS_TEST_TMPDIR}/monorepo/backend/src/passenger_wsgi.py"
   touch "${BATS_TEST_TMPDIR}/monorepo/backend/pyproject.toml"
+  touch "${BATS_TEST_TMPDIR}/monorepo/backend/uv.lock"
 
   # Initialize mocks to succeed silently by default
   set_mock_exit_code "logger" 0

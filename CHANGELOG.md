@@ -9,7 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Deployment**: Fixed deployment script to match production directory structure specifications
+
+  - Changed remote application path from `/home/${CPANEL_USERNAME}/blog` to `/home/${CPANEL_USERNAME}/seeash`
+  - Corrected backend source upload from `monorepo/backend/` to `monorepo/backend/src/backend/`
+  - Added upload of `passenger_wsgi.py` from `monorepo/backend/src/` to `seeash/` (root level)
+  - Added upload of `scripts/` directory from `monorepo/backend/scripts/` to `seeash/scripts/`
+  - Added upload of `pyproject.toml` and `uv.lock` to root level for uv package management
+  - Updated all remote script paths from `~/blog` to `~/seeash`
+  - Updated virtual environment path from `~/blog/.venv` to `~/seeash/.venv`
+  - Removed hardcoded username "ashrdvfi" from WSGI copy section
+  - Removed unnecessary WSGI copy remote script (handled by rsync now)
+  - Updated deployment tests to expect new paths and directory structure
+  - Updated test helper to create correct backend source structure for tests
+  - Updated DEPLOYMENT.md documentation to reflect correct remote directory structure
+  - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `docs/DEPLOYMENT.md`
+
 - **Deployment**: Fixed critical Passenger WSGI bootstrap issues (Task #27)
+
   - Added VENV_PATH environment variable to Passenger registration
     - Required by passenger_wsgi.py to bootstrap uv virtualenv before Flask import
     - Added to both register_application and update_application UAPI calls
@@ -21,16 +38,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Remove explicit DB_HOST from schema creation
     - Rely on ProductionDBSettings default 'localhost' resolution
     - Handles both IPv4 and IPv6 gracefully via driver-level resolution
+
 - **Deployment**: Fixed frontend build path check in deployment script
+
   - Changed from `monorepo/frontend/build` to `monorepo/build` to match Vite output location
   - Deployment script now correctly detects frontend build directory
   - Prevents "frontend build directory missing" errors during deployment
+
 - **Backend**: Fixed ProductionDBSettings to use standard database environment variable names
+
   - Removed `CPANEL_` prefix from ProductionDBSettings configuration
   - Now reads `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` directly (no prefix)
   - Aligns with Passenger WSGI standard environment variable naming conventions
   - Resolves deployment failure where Flask could not connect to database
+
 - **Deployment**: Fixed schema creation during deployment to set required environment variables
+
   - Added exports for `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `FLASK_ENV` in run_schema() function
   - Schema creation script now receives all required database configuration
   - Prevents "missing required fields" validation errors during remote schema execution

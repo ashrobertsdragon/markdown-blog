@@ -241,16 +241,24 @@ View logs with: `journalctl -t deploy.sh` (Linux) or `/var/log/messages` (cPanel
 ### Remote Directory Structure
 
 ```plaintext
-/home/$CPANEL_USERNAME/blog/
+/home/$CPANEL_USERNAME/seeash/
 ├── passenger_wsgi.py   # WSGI entry point
+├── pyproject.toml      # uv project definition
+├── uv.lock             # Dependency lockfile
 ├── scripts/
 │   └── create_schema.py    # Database schema creation script
-├── backend/                    # Application code
-├── build/                      # Frontend static files (optional)
+├── backend/                # Application code
+│   ├── main.py
+│   ├── config.py
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── api/
+├── build/                  # Frontend static files (optional)
 │   ├── index.html
 │   ├── static/
 │   └── assets/
-└── .venv/                      # uv-managed virtual environment
+└── .venv/                  # uv-managed virtual environment
     ├── bin/
     ├── lib/
     └── pyvenv.cfg
@@ -295,13 +303,13 @@ To roll back a deployment:
 1. **Verify remote directory structure**:
 
    ```bash
-   ssh ... "ls -la ~/blog"
+   ssh ... "ls -la ~/seeash"
    ```
 
 1. **Check Passenger logs** (via cPanel or SSH):
 
    ```bash
-   tail -f ~/blog/passenger.log
+   tail -f ~/seeash/passenger.log
    ```
 
 1. **Test health endpoints manually**:
