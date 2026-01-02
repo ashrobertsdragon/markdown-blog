@@ -468,9 +468,10 @@ register_passenger() {
       envvar_name_7="CLERK_SECRET_KEY" envvar_value_7="$CLERK_SECRET_KEY" \
       envvar_name_8="VENV_PATH" envvar_value_8="$venv_path" >/dev/null 2>&1 || return 1
   else
-    logger -t deploy.sh -p user.notice "Updating existing Passenger application environment variables"
-    uapi_call PassengerApps update_application \
+    logger -t deploy.sh -p user.notice "Updating existing Passenger application path and environment variables"
+    uapi_call PassengerApps edit_application \
       name="$APP_NAME" \
+      path="$remote_path" \
       envvar_name_1="DB_NAME" envvar_value_1="$database_name" \
       envvar_name_2="DB_USER" envvar_value_2="$DB_USER" \
       envvar_name_3="DB_PASSWORD" envvar_value_3="$DB_PASSWORD" \
