@@ -309,6 +309,16 @@ upload_code() {
 
   logger -t deploy.sh -p user.info "Uploading backend code to ${SERVER_IP_ADDRESS}"
   rsync -avz --perms --checksum --delete \
+    --exclude '.git' \
+    --exclude '.venv' \
+    --exclude '__pycache__' \
+    --exclude '*.pyc' \
+    --exclude '.pytest_cache' \
+    --exclude '.mypy_cache' \
+    --exclude '.ruff_cache' \
+    --exclude 'tests' \
+    --exclude 'htmlcov' \
+    --exclude '.coverage' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" "$backend_src" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
@@ -320,6 +330,10 @@ upload_code() {
     else
       logger -t deploy.sh -p user.info "Uploading frontend build to ${SERVER_IP_ADDRESS}"
       rsync -avz --perms --checksum --delete \
+        --exclude '.git' \
+        --exclude 'node_modules' \
+        --exclude '.next' \
+        --exclude 'dist' \
         -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" -o StrictHostKeyChecking=accept-new" \
         "$frontend_src" \
         "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/build/" || return 1
@@ -393,15 +407,15 @@ run_schema() {
   database_name="$(get_database_name)"
 
   logger -t deploy.sh -p user.info "Creating database schema on ${SERVER_IP_ADDRESS}"
-  run_remote_command "${SERVER_IP_ADDRESS}" bash <<REMOTE_SCRIPT || return 1
+  run_remote_command "${SERVER_IP_ADDRESS}" bash -s "${database_name}" "${DB_USER}" "${DB_PASSWORD}" <<'REMOTE_SCRIPT' || return 1
 set -Eeuo pipefail
 
-export PATH="\$HOME/.cargo/bin:\$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
 cd ~/blog
 
-export DB_NAME="${database_name}"
-export DB_USER="${DB_USER}"
-export DB_PASSWORD="${DB_PASSWORD}"
+export DB_NAME="$1"
+export DB_USER="$2"
+export DB_PASSWORD="$3"
 export FLASK_ENV="PRODUCTION"
 
 echo "Creating database schema..."
