@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Deployment**: Fixed critical environment variable syntax for Passenger UAPI calls
+
+  - Changed from numbered parameters (`envvar_name_1`, `envvar_value_1`) to repeated parameters (`envvar_name`, `envvar_value`)
+  - Applies to both `register_application` and `edit_application` UAPI functions
+  - Environment variables now successfully set in Passenger application configuration
+  - Verified all 8 environment variables (DB_NAME, DB_USER, DB_PASSWORD, VENV_PATH, GITHUB_PERSONAL_ACCESS_TOKEN, RESEND_API_KEY, CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY) are injected correctly
+  - Syntax documented in cpanel-deployment-patterns.md lines 171-183
+  - Files modified: `scripts/deploy.sh`
+
 - **Deployment**: Fixed deployment script to use Python src-layout structure for uv compatibility
 
   - Changed backend upload destination from `seeash/backend/` to `seeash/src/backend/` to match uv src-layout convention

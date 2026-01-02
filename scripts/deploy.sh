@@ -459,27 +459,27 @@ register_passenger() {
       domain="$DOMAIN" \
       base_uri="$BASE_URI" \
       deployment_mode="production" \
-      envvar_name_1="DB_NAME" envvar_value_1="$database_name" \
-      envvar_name_2="DB_USER" envvar_value_2="$DB_USER" \
-      envvar_name_3="DB_PASSWORD" envvar_value_3="$DB_PASSWORD" \
-      envvar_name_4="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value_4="$GITHUB_PERSONAL_ACCESS_TOKEN" \
-      envvar_name_5="RESEND_API_KEY" envvar_value_5="$RESEND_API_KEY" \
-      envvar_name_6="CLERK_PUBLISHABLE_KEY" envvar_value_6="$CLERK_PUBLISHABLE_KEY" \
-      envvar_name_7="CLERK_SECRET_KEY" envvar_value_7="$CLERK_SECRET_KEY" \
-      envvar_name_8="VENV_PATH" envvar_value_8="$venv_path" >/dev/null 2>&1 || return 1
+      envvar_name="DB_NAME" envvar_value="$database_name" \
+      envvar_name="DB_USER" envvar_value="$DB_USER" \
+      envvar_name="DB_PASSWORD" envvar_value="$DB_PASSWORD" \
+      envvar_name="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value="$GITHUB_PERSONAL_ACCESS_TOKEN" \
+      envvar_name="RESEND_API_KEY" envvar_value="$RESEND_API_KEY" \
+      envvar_name="CLERK_PUBLISHABLE_KEY" envvar_value="$CLERK_PUBLISHABLE_KEY" \
+      envvar_name="CLERK_SECRET_KEY" envvar_value="$CLERK_SECRET_KEY" \
+      envvar_name="VENV_PATH" envvar_value="$venv_path" >/dev/null 2>&1 || return 1
   else
     logger -t deploy.sh -p user.notice "Updating existing Passenger application path and environment variables"
     uapi_call PassengerApps edit_application \
       name="$APP_NAME" \
       path="$remote_path" \
-      envvar_name_1="DB_NAME" envvar_value_1="$database_name" \
-      envvar_name_2="DB_USER" envvar_value_2="$DB_USER" \
-      envvar_name_3="DB_PASSWORD" envvar_value_3="$DB_PASSWORD" \
-      envvar_name_4="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value_4="$GITHUB_PERSONAL_ACCESS_TOKEN" \
-      envvar_name_5="RESEND_API_KEY" envvar_value_5="$RESEND_API_KEY" \
-      envvar_name_6="CLERK_PUBLISHABLE_KEY" envvar_value_6="$CLERK_PUBLISHABLE_KEY" \
-      envvar_name_7="CLERK_SECRET_KEY" envvar_value_7="$CLERK_SECRET_KEY" \
-      envvar_name_8="VENV_PATH" envvar_value_8="$venv_path" >/dev/null 2>&1 || return 1
+      envvar_name="DB_NAME" envvar_value="$database_name" \
+      envvar_name="DB_USER" envvar_value="$DB_USER" \
+      envvar_name="DB_PASSWORD" envvar_value="$DB_PASSWORD" \
+      envvar_name="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value="$GITHUB_PERSONAL_ACCESS_TOKEN" \
+      envvar_name="RESEND_API_KEY" envvar_value="$RESEND_API_KEY" \
+      envvar_name="CLERK_PUBLISHABLE_KEY" envvar_value="$CLERK_PUBLISHABLE_KEY" \
+      envvar_name="CLERK_SECRET_KEY" envvar_value="$CLERK_SECRET_KEY" \
+      envvar_name="VENV_PATH" envvar_value="$venv_path" >/dev/null 2>&1 || return 1
   fi
 
   return 0
