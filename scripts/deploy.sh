@@ -307,6 +307,11 @@ upload_code() {
     return 1
   fi
 
+  logger -t deploy.sh -p user.info "Creating remote directory structure at ${SERVER_IP_ADDRESS}"
+  ssh -i "$SSH_PRIVATE_KEY_PATH" -p "$SSH_PORT" -o StrictHostKeyChecking=accept-new \
+    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}" \
+    "mkdir -p ${remote_path}/src" || return 1
+
   logger -t deploy.sh -p user.info "Uploading backend source code to ${SERVER_IP_ADDRESS}"
   rsync -avz --perms --checksum --delete \
     --exclude '.git' \
@@ -317,7 +322,7 @@ upload_code() {
     --exclude '.ruff_cache' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" "$backend_src" \
-    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/backend/" || return 1
+    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/src/backend/" || return 1
 
   logger -t deploy.sh -p user.info "Uploading passenger_wsgi.py to ${SERVER_IP_ADDRESS}"
   rsync -avz --perms --checksum \
@@ -332,8 +337,8 @@ upload_code() {
     --exclude '*.pyc' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/scripts/" \
-    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/scripts/" || return 1
+    "${PROJECT_ROOT}/monorepo/backend/src/scripts/" \
+    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/src/scripts/" || return 1
 
   logger -t deploy.sh -p user.info "Uploading pyproject.toml and uv.lock to ${SERVER_IP_ADDRESS}"
   rsync -avz --perms --checksum \

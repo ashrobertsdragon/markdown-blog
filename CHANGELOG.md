@@ -9,12 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Deployment**: Fixed deployment script to use Python src-layout structure for uv compatibility
+
+  - Changed backend upload destination from `seeash/backend/` to `seeash/src/backend/` to match uv src-layout convention
+  - Changed scripts upload destination from `seeash/scripts/` to `seeash/src/scripts/` for proper Python module import
+  - Added remote directory creation for `seeash/src` before file uploads
+  - Created `__init__.py` in `monorepo/backend/src/scripts/` to make scripts package importable
+  - Fixed local scripts source path from `monorepo/backend/scripts/` to `monorepo/backend/src/scripts/`
+  - Updated deployment tests to expect `seeash/src/backend/` instead of `seeash/backend/`
+  - Updated test helper to create `monorepo/backend/src/scripts/` directory structure
+  - Fixes uv package installation error: "Expected a Python module at: src/backend/__init__.py"
+  - Fixes schema creation error: "ModuleNotFoundError: No module named 'scripts'"
+  - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `backend/src/scripts/__init__.py` (created)
+
 - **Deployment**: Fixed deployment script to match production directory structure specifications
 
   - Changed remote application path from `/home/${CPANEL_USERNAME}/blog` to `/home/${CPANEL_USERNAME}/seeash`
   - Corrected backend source upload from `monorepo/backend/` to `monorepo/backend/src/backend/`
   - Added upload of `passenger_wsgi.py` from `monorepo/backend/src/` to `seeash/` (root level)
-  - Added upload of `scripts/` directory from `monorepo/backend/scripts/` to `seeash/scripts/`
+  - Added upload of `scripts/` directory to seeash (path later corrected to src-layout)
   - Added upload of `pyproject.toml` and `uv.lock` to root level for uv package management
   - Updated all remote script paths from `~/blog` to `~/seeash`
   - Updated virtual environment path from `~/blog/.venv` to `~/seeash/.venv`

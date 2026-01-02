@@ -259,7 +259,7 @@ setup_test_environment() {
   # Create backend directory structure for upload_code validation
   export PROJECT_ROOT="${BATS_TEST_TMPDIR}"
   mkdir -p "${BATS_TEST_TMPDIR}/monorepo/backend/src/backend"
-  mkdir -p "${BATS_TEST_TMPDIR}/monorepo/backend/scripts"
+  mkdir -p "${BATS_TEST_TMPDIR}/monorepo/backend/src/scripts"
   touch "${BATS_TEST_TMPDIR}/monorepo/backend/src/passenger_wsgi.py"
   touch "${BATS_TEST_TMPDIR}/monorepo/backend/pyproject.toml"
   touch "${BATS_TEST_TMPDIR}/monorepo/backend/uv.lock"
