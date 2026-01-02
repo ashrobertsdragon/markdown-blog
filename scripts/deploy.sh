@@ -326,6 +326,22 @@ upload_code() {
     fi
   fi
 
+  logger -t deploy.sh -p user.info "Copying WSGI entry point to domain root"
+  run_remote_command "${SERVER_IP_ADDRESS}" bash <<'REMOTE_SCRIPT' || return 1
+set -Eeuo pipefail
+domain_root="/home/ashrdvfi/seeash"
+app_wsgi="/home/${CPANEL_USERNAME}/blog/src/passenger_wsgi.py"
+
+if [[ -f "$app_wsgi" ]]; then
+  mkdir -p "$domain_root"
+  cp "$app_wsgi" "$domain_root/passenger_wsgi.py"
+  echo "✓ passenger_wsgi.py copied to domain root"
+else
+  echo "ERROR: passenger_wsgi.py not found at $app_wsgi" >&2
+  exit 1
+fi
+REMOTE_SCRIPT
+
   return 0
 }
 
@@ -373,6 +389,9 @@ REMOTE_SCRIPT
 }
 
 run_schema() {
+  local database_name
+  database_name="$(get_database_name)"
+
   logger -t deploy.sh -p user.info "Creating database schema on ${SERVER_IP_ADDRESS}"
   run_remote_command "${SERVER_IP_ADDRESS}" bash <<REMOTE_SCRIPT || return 1
 set -Eeuo pipefail
@@ -380,8 +399,7 @@ set -Eeuo pipefail
 export PATH="\$HOME/.cargo/bin:\$PATH"
 cd ~/blog
 
-export DB_HOST="localhost"
-export DB_NAME="$(get_database_name)"
+export DB_NAME="${database_name}"
 export DB_USER="${DB_USER}"
 export DB_PASSWORD="${DB_PASSWORD}"
 export FLASK_ENV="PRODUCTION"
@@ -398,6 +416,7 @@ register_passenger() {
   remote_path="$(get_remote_app_path)"
   local database_name
   database_name="$(get_database_name)"
+  local venv_path="/home/${CPANEL_USERNAME}/blog/.venv"
 
   logger -t deploy.sh -p user.info "Registering Passenger application: ${APP_NAME}"
 
@@ -417,26 +436,26 @@ register_passenger() {
       domain="$DOMAIN" \
       base_uri="$BASE_URI" \
       deployment_mode="production" \
-      envvar_name_1="DB_HOST" envvar_value_1="localhost" \
-      envvar_name_2="DB_NAME" envvar_value_2="$database_name" \
-      envvar_name_3="DB_USER" envvar_value_3="$DB_USER" \
-      envvar_name_4="DB_PASSWORD" envvar_value_4="$DB_PASSWORD" \
-      envvar_name_5="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value_5="$GITHUB_PERSONAL_ACCESS_TOKEN" \
-      envvar_name_6="RESEND_API_KEY" envvar_value_6="$RESEND_API_KEY" \
-      envvar_name_7="CLERK_PUBLISHABLE_KEY" envvar_value_7="$CLERK_PUBLISHABLE_KEY" \
-      envvar_name_8="CLERK_SECRET_KEY" envvar_value_8="$CLERK_SECRET_KEY" >/dev/null 2>&1 || return 1
+      envvar_name_1="DB_NAME" envvar_value_1="$database_name" \
+      envvar_name_2="DB_USER" envvar_value_2="$DB_USER" \
+      envvar_name_3="DB_PASSWORD" envvar_value_3="$DB_PASSWORD" \
+      envvar_name_4="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value_4="$GITHUB_PERSONAL_ACCESS_TOKEN" \
+      envvar_name_5="RESEND_API_KEY" envvar_value_5="$RESEND_API_KEY" \
+      envvar_name_6="CLERK_PUBLISHABLE_KEY" envvar_value_6="$CLERK_PUBLISHABLE_KEY" \
+      envvar_name_7="CLERK_SECRET_KEY" envvar_value_7="$CLERK_SECRET_KEY" \
+      envvar_name_8="VENV_PATH" envvar_value_8="$venv_path" >/dev/null 2>&1 || return 1
   else
     logger -t deploy.sh -p user.notice "Updating existing Passenger application environment variables"
     uapi_call PassengerApps update_application \
       name="$APP_NAME" \
-      envvar_name_1="DB_HOST" envvar_value_1="localhost" \
-      envvar_name_2="DB_NAME" envvar_value_2="$database_name" \
-      envvar_name_3="DB_USER" envvar_value_3="$DB_USER" \
-      envvar_name_4="DB_PASSWORD" envvar_value_4="$DB_PASSWORD" \
-      envvar_name_5="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value_5="$GITHUB_PERSONAL_ACCESS_TOKEN" \
-      envvar_name_6="RESEND_API_KEY" envvar_value_6="$RESEND_API_KEY" \
-      envvar_name_7="CLERK_PUBLISHABLE_KEY" envvar_value_7="$CLERK_PUBLISHABLE_KEY" \
-      envvar_name_8="CLERK_SECRET_KEY" envvar_value_8="$CLERK_SECRET_KEY" >/dev/null 2>&1 || return 1
+      envvar_name_1="DB_NAME" envvar_value_1="$database_name" \
+      envvar_name_2="DB_USER" envvar_value_2="$DB_USER" \
+      envvar_name_3="DB_PASSWORD" envvar_value_3="$DB_PASSWORD" \
+      envvar_name_4="GITHUB_PERSONAL_ACCESS_TOKEN" envvar_value_4="$GITHUB_PERSONAL_ACCESS_TOKEN" \
+      envvar_name_5="RESEND_API_KEY" envvar_value_5="$RESEND_API_KEY" \
+      envvar_name_6="CLERK_PUBLISHABLE_KEY" envvar_value_6="$CLERK_PUBLISHABLE_KEY" \
+      envvar_name_7="CLERK_SECRET_KEY" envvar_value_7="$CLERK_SECRET_KEY" \
+      envvar_name_8="VENV_PATH" envvar_value_8="$venv_path" >/dev/null 2>&1 || return 1
   fi
 
   return 0

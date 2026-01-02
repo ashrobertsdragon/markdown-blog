@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Deployment**: Fixed critical Passenger WSGI bootstrap issues (Task #27)
+  - Added VENV_PATH environment variable to Passenger registration
+    - Required by passenger_wsgi.py to bootstrap uv virtualenv before Flask import
+    - Added to both register_application and update_application UAPI calls
+    - Path: `/home/${CPANEL_USERNAME}/blog/.venv`
+  - Copy passenger_wsgi.py to domain root during code upload
+    - Passenger expects WSGI entry point in application root (~/seeash/)
+    - Added SSH command in upload_code() to copy from ~/blog/src/
+    - Includes validation to ensure source file exists before copying
+  - Remove explicit DB_HOST from schema creation
+    - Rely on ProductionDBSettings default 'localhost' resolution
+    - Handles both IPv4 and IPv6 gracefully via driver-level resolution
 - **Deployment**: Fixed frontend build path check in deployment script
   - Changed from `monorepo/frontend/build` to `monorepo/build` to match Vite output location
   - Deployment script now correctly detects frontend build directory
@@ -19,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Aligns with Passenger WSGI standard environment variable naming conventions
   - Resolves deployment failure where Flask could not connect to database
 - **Deployment**: Fixed schema creation during deployment to set required environment variables
-  - Added exports for `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `FLASK_ENV` in run_schema() function
+  - Added exports for `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `FLASK_ENV` in run_schema() function
   - Schema creation script now receives all required database configuration
   - Prevents "missing required fields" validation errors during remote schema execution
 
