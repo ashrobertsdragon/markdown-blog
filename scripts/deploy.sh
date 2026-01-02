@@ -400,6 +400,7 @@ install_application() {
 set -Eeuo pipefail
 
 export PATH="$HOME/.cargo/bin:$PATH"
+export UV_PROJECT_ENVIRONMENT="$HOME/virtualenv/seeash"
 cd ~/seeash
 
 echo "Installing application dependencies with uv..."
@@ -420,6 +421,7 @@ run_schema() {
 set -Eeuo pipefail
 
 export PATH="$HOME/.cargo/bin:$PATH"
+export UV_PROJECT_ENVIRONMENT="$HOME/virtualenv/seeash"
 cd ~/seeash
 
 export DB_NAME="$1"
@@ -439,7 +441,7 @@ register_passenger() {
   remote_path="$(get_remote_app_path)"
   local database_name
   database_name="$(get_database_name)"
-  local venv_path="/home/${CPANEL_USERNAME}/seeash/.venv"
+  local venv_path="/home/${CPANEL_USERNAME}/virtualenv/seeash"
 
   logger -t deploy.sh -p user.info "Registering Passenger application: ${APP_NAME}"
 

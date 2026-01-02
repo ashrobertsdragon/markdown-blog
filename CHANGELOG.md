@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Deployment**: Fixed virtual environment path to match cPanel conventions
+
+  - Changed from `/home/${CPANEL_USERNAME}/seeash/.venv` to `/home/${CPANEL_USERNAME}/virtualenv/seeash`
+  - Added `UV_PROJECT_ENVIRONMENT` variable to direct uv to create virtual environment in correct location
+  - Applies to both `install_application()` and `run_schema()` functions
+  - Updated `VENV_PATH` environment variable passed to Passenger
+  - Follows cPanel convention documented in cpanel-deployment-patterns.md lines 23-24, 73
+  - Virtual environment now created at `/home/ashrdvfi/virtualenv/seeash` instead of application root
+  - Files modified: `scripts/deploy.sh`
+
 - **Deployment**: Fixed critical environment variable syntax for Passenger UAPI calls
 
   - Changed from numbered parameters (`envvar_name_1`, `envvar_value_1`) to repeated parameters (`envvar_name`, `envvar_value`)
