@@ -6,7 +6,6 @@ initialization.
 
 Environment Variables:
     VENV_PATH: Path to Python virtual environment (uv-managed).
-               Defaults to /home/cpaneluser/virtualenv/blog if not set.
 
 Deployment Notes:
     - Passenger requires the WSGI application object to be named 'application'
@@ -25,6 +24,10 @@ References:
 
 import os
 import sys
+
+APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+if APP_ROOT not in sys.path:
+    sys.path.insert(0, APP_ROOT)
 
 
 def ensure_virtualenv(path: str | None = None) -> None:

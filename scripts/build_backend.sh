@@ -1,4 +1,4 @@
-#!/usr/bin.bash
-uv build --clear monorepo/backend
+#!/usr/bin/bash
+uv build --clear backend
 cp backend/dist/backend-* /var/www/ashlab/package/backend/
-generate_index.py backend
+scripts/generate_index.py backend
