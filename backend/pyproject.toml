@@ -16,6 +16,7 @@ version = "0.1.0"
 
 [project.scripts]
 create-schema = "scripts.create_schema:main"
+dev_flask = "scripts.run_dev_server:main"
 
 [build-system]
 requires = ["uv_build>=0.9.5,<0.10.0"]

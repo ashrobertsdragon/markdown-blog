@@ -22,7 +22,7 @@ class Post(SQLModel, table=True):
     published_html: str
     published: bool = Field(default=False)
     author_id: int | None = Field(
-        default=None, foreign_key="User.id", index=True
+        default=None, foreign_key="user.id", index=True
     )
     created_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))

@@ -37,6 +37,7 @@ USAGE:
 
 REQUIRED ENVIRONMENT VARIABLES:
   DOMAIN                       - Domain name
+  PRODUCTION_DOMAIN            - Production domain
   CPANEL_USERNAME              - cPanel/SSH username
   SERVER_IP_ADDRESS            - Server IP for SSH connection
   SSH_PRIVATE_KEY_PATH         - Path to SSH private key
@@ -190,6 +191,7 @@ sanitize_input() {
 validate_environment() {
   local required_vars=(
     DOMAIN
+    PRODUCTION_DOMAIN
     CPANEL_USERNAME
     SERVER_IP_ADDRESS
     SSH_PRIVATE_KEY_PATH
@@ -502,7 +504,7 @@ verify_deployment() {
 }
 
 confirm_production_deployment() {
-  if [[ "${DOMAIN}" == "ashlynantrobus.dev" ]] && [[ -t 0 ]] && [[ -z "${BATS_TEST_TMPDIR:-}" ]]; then
+  if [[ "${DOMAIN}" == "${PRODUCTION_DOMAIN}" ]] && [[ -t 0 ]] && [[ -z "${BATS_TEST_TMPDIR:-}" ]]; then
     printf "WARNING: Deploying to PRODUCTION domain: %s\n" "$DOMAIN" >&2
     printf "Continue? (yes/no): " >&2
     local response

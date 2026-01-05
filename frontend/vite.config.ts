@@ -11,6 +11,8 @@ export default defineConfig({
   },
   build: {
     outDir: '../build',
+    assetsDir: 'static',
+    emptyOutDir: true,
   },
   server: {
     port: 3000,

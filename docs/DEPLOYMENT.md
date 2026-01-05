@@ -1,6 +1,8 @@
-# Deployment Guide
+# cPanel Deployment Guide
 
-This document describes production deployment automation for the blog application to cPanel shared hosting.
+**Version**: 0.2.0
+**Target Environment**: cPanel Shared Hosting with Phusion Passenger
+**Deployment Method**: Automated via `monorepo/scripts/deploy.sh`
 
 ## Deployment Strategy
 
@@ -40,94 +42,26 @@ This project supports **two deployment paths** for different cPanel hosting envi
 ## Overview
 
 Both deployment scripts provide comprehensive automation for deploying the blog platform to cPanel hosting. They handle code upload, application installation with uv, and deployment verification. The key difference is how they handle database and application provisioning.
+---
 
-## Features
+## Table of Contents
 
-- **Idempotent Operations**: Safe to run multiple times - only creates resources that don't exist
-- **Database Provisioning**: Automatic PostgreSQL database, user, and privilege setup
-- **Code Deployment**: Rsync-based upload with checksum verification and deletion of stale files
-- **uv Package Management**: Automatic uv installation and dependency management on remote server
-- **Schema Migration**: Automatic database schema creation from SQLModel models
-- **Application Registration**: Passenger WSGI application configuration with environment variables
-- **Health Verification**: Post-deployment validation of critical endpoints
-- **Error Handling**: Exponential backoff retry logic for network operations
-- **Security**: Input sanitization, secret suppression, SSH key permission validation, audit logging
-- **Cross-Platform**: Compatible with Windows Git Bash and Linux environments
+1. [Introduction](#introduction)
+2. [Prerequisites](#prerequisites)
+3. [Automated Deployment](#automated-deployment)
+4. [Troubleshooting](#troubleshooting)
 
-## Prerequisites
+---
 
-### Local Environment
+## Introduction
 
-1. **Operating System**: Windows with Git Bash, Linux, or macOS
-1. **Required Tools**:
-   - `bash` 4.0+ (included in Git Bash on Windows)
-   - `ssh` client (OpenSSH)
-   - `rsync` (for Windows: install via Git Bash or WSL)
-1. **Frontend Build**: Run `npm run build` in `frontend/` directory before deploying
-1. **SSH Access**: SSH private key with access to cPanel server
+This document provides deployment instructions for the blog platform to a cPanel shared hosting environment. The deployment is fully automated using the `monorepo/scripts/deploy.sh` bash script. This script handles all infrastructure provisioning, code upload, dependency installation, and application registration, ensuring a consistent and repeatable process.
 
-### Environment Variables
+The script leverages SSH for server access and cPanel's UAPI (Universal API) for provisioning resources like PostgreSQL databases and Passenger applications.
 
-All environment variables must be set before running the deployment script. These are already configured in your local environment:
+### Deployment Philosophy
 
-| Variable                       | Description               | Example                     |
-| ------------------------------ | ------------------------- | --------------------------- |
-| `CPANEL_USERNAME`              | cPanel/SSH username       | `myuser`                    |
-| `SERVER_IP_ADDRESS`            | Server IP address for SSH | `198.51.100.50`             |
-| `SSH_PRIVATE_KEY_PATH`         | Path to SSH private key   | `C:/Users/user/.ssh/id_rsa` |
-| `SSH_PORT`                     | SSH port number           | `22`                        |
-| `CPANEL_POSTGRES_USER`         | PostgreSQL username       | `myuser_pguser`             |
-| `CPANEL_POSTGRES_PASSWORD`     | PostgreSQL password       | (sensitive)                 |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub API token          | `ghp_...`                   |
-| `RESEND_API_KEY`               | Resend email API key      | `re_...`                    |
-| `CLERK_PUBLISHABLE_KEY`        | Clerk auth public key     | `pk_test_...`               |
-| `CLERK_SECRET_KEY`             | Clerk auth secret key     | `sk_test_...`               |
-
-**Security Note**: Never commit these values to version control. They should only exist in your local environment or secure secret management system.
-
-### Remote Server Requirements
-
-1. **cPanel Hosting**: Shared hosting account with:
-   - PostgreSQL database support
-   - SSH access enabled
-   - Phusion Passenger available
-   - Python 3.13+ installed
-1. **Domain Configuration**: DNS pointing to server IP
-1. **cPanel UAPI Access**: Enabled for database and Passenger operations
-
-## Usage
-
-### Basic Deployment
-
-```bash
-cd monorepo/scripts
-./deploy.sh
-```
-
-The script will:
-
-1. Validate all required environment variables
-1. Configure SSH key with correct permissions
-1. Provision PostgreSQL database (idempotent)
-1. Upload backend code and frontend build files via rsync
-1. Ensure uv is installed on remote server
-1. Install application dependencies with `uv sync`
-1. Create database schema using `uv run scripts/create_schema.py`
-1. Register Passenger application with environment variables
-1. Verify deployment via health checks
-
-### Production Deployment Confirmation
-
-When deploying to the production domain (`ashlynantrobus.dev`), the script will prompt for confirmation in interactive terminals:
-
-```text
-WARNING: Deploying to PRODUCTION domain: ashlynantrobus.dev
-Continue? (yes/no):
-```
-
-Type `yes` to proceed or `no` to cancel.
-
-**Note**: This confirmation prompt is automatically bypassed when the script is run in a non-interactive environment (e.g., a CI/CD pipeline), allowing for safe, automated deployments.
+The deployment is guided by these principles:
 
 ## LiteSpeed Deployment (Manual Configuration Required)
 
@@ -243,142 +177,68 @@ The script will:
 
 ### Cross-Platform SSH Key Handling
 
-On **Windows Git Bash**, the script automatically uses the SSH key at `$SSH_PRIVATE_KEY_PATH`.
+---
 
-On **Linux/macOS**, the script will automatically run `linuxify_ssh_key.sh` (if available in project root) to copy the SSH key to a Linux-compatible location before use.
+## Prerequisites
 
-## Idempotency
+### Access Requirements
 
-The deployment script is fully idempotent - safe to run multiple times without side effects:
+- **cPanel Account**: An active shared hosting account with SSH access enabled.
+- **Domain**: A domain name configured in cPanel and pointing to the server's IP address.
+- **SSH Key**: A password-less SSH private key configured for access to your cPanel account.
 
-- **Database Creation**: Only creates database if it doesn't exist
-- **User Creation**: Only creates PostgreSQL user if it doesn't exist
-- **Privilege Grants**: Only grants privileges if not already granted
-- **Application Registration**: Creates new app or updates existing app configuration
-- **File Upload**: Rsync uses checksums to only transfer changed files
-- **uv Installation**: Only installs uv if not already present
+### Local Environment
 
-This means you can safely re-run the deployment after failures without manual cleanup.
+- **OS**: A Unix-like environment (Linux, macOS, or WSL on Windows).
+- **Tools**: `bash`, `ssh`, `rsync`, and `curl` must be installed.
+- **Node.js/npm**: Required to build the frontend artifacts locally before deployment.
 
-## Output and Logging
+### Required Environment Variables
 
-The script provides progress feedback during deployment:
+The `deploy.sh` script requires the following environment variables to be set. You can add them to a `.env` file in the project root and load them with `source .env` before running the script.
 
-```text
-Starting deployment to ashlynantrobus.dev...
-✓ Environment variables validated
-✓ SSH key configured
-✓ Database provisioned
-✓ Code uploaded
-✓ uv installation verified
-✓ Application installed
-✓ Database schema created
-✓ Passenger application registered
-✓ Deployment verified
+| Variable | Description | Example Value |
+| :--- | :--- | :--- |
+| `DOMAIN` | Target domain name | `example.com` |
+| `PRODUCTION_DOMAIN` | Production domain for confirmation prompt | `example.com` |
+| `CPANEL_USERNAME` | cPanel/SSH username | `myuser` |
+| `SERVER_IP_ADDRESS` | Server IP address for SSH | `198.51.100.50` |
+| `SSH_PRIVATE_KEY_PATH` | Path to your SSH private key | `~/.ssh/id_rsa` |
+| `SSH_PORT` | SSH port number | `22` |
+| `CPANEL_POSTGRES_USER` | PostgreSQL username | `myuser_blog` |
+| `CPANEL_POSTGRES_PASSWORD` | PostgreSQL password | `(sensitive)` |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub PAT for draft repo access | `ghp_...` |
+| `RESEND_API_KEY` | Resend email service API key | `re_...` |
+| `CLERK_PUBLISHABLE_KEY` | Clerk auth publishable key | `pk_test_...` |
+| `CLERK_SECRET_KEY` | Clerk auth secret key | `sk_test_...` |
+| `PRODUCTION_DOMAIN` | Production domain for confirmation prompt | `example.com` |
 
-Deployment completed successfully!
-Application URL: https://ashlynantrobus.dev
-```
+**Note**: The script will validate that all these variables are set before starting the deployment.
 
-All security-relevant operations are logged to syslog with the tag `deploy.sh`.
+---
 
-## Error Handling
+## Automated Deployment
 
-### Retry Logic
+The entire deployment process is handled by a single script.
 
-Network operations (health checks) use exponential backoff retry:
+### Step 1: Build Frontend Artifacts
 
-- Maximum retries: 5
-- Base delay: 2 seconds
-- Delay increases: 2s, 4s, 8s, 16s, 32s
-
-### Common Errors
-
-| Error                                      | Cause               | Solution                                  |
-| ------------------------------------------ | ------------------- | ----------------------------------------- |
-| `Required environment variable is not set` | Missing env var     | Set all required variables                |
-| `Backend source directory is empty`        | Missing code        | Ensure `monorepo/backend/` exists         |
-| `Frontend build directory is empty`        | Build not run       | Run `npm run build` in frontend/          |
-| `SSH connection failed`                    | Invalid key/network | Verify SSH key and server access          |
-| `Health check failed`                      | App not responding  | Check Passenger logs on server            |
-| `Failed to set restrictive permissions`    | SSH key permissions | Ensure key file is owned by current user  |
-| `Failed to install uv`                     | Network/curl error  | Check remote server internet connectivity |
-
-### Exit Codes
-
-- `0`: Deployment successful
-- `1`: Validation failure, deployment error, or user cancellation
-
-## Testing
-
-The deployment script has comprehensive BATS test coverage.
-
-### Running Tests
+The deployment script uploads the frontend, but does **not** build it. You must build the production-ready frontend artifacts first. You may use the build script for this.
 
 ```bash
-cd monorepo/scripts/tests
-
-# Run all tests
-bats .
-
-# Run specific test file
-bats deploy.bats
-
-# Run tests with specific filter
-bats deploy.bats --filter "database"
-
-# Run with verbose output
-bats deploy.bats --tap
+# Run the build script
+./scripts/build.sh
 ```
 
-### Test Coverage
+This will create a `monorepo/build` directory containing the static HTML, CSS, and JavaScript files.
 
-- **Environment Validation** (6 tests): Missing variables, invalid input, production confirmation.
-- **SSH Key Handling** (3 tests): Permissions and error handling.
-- **Database Provisioning** (6 tests): DB/user creation, privileges, idempotency.
-- **Code Upload** (5 tests): Rsync success/failure, frontend/backend assets.
-- **uv and Application Installation** (4 tests): Remote `uv` and dependency installation.
-- **Schema Execution** (3 tests): Remote schema script execution.
-- **Passenger Registration** (5 tests): App configuration and environment variables.
-- **Health Check Verification** (5 tests): Endpoint checks with retry logic.
+### Step 2: Run the Deployment Script
 
-All tests use mocks - no actual network calls or database operations.
-
-## Security Considerations
-
-### Secret Handling
-
-- Secrets are stored in environment variables (never in code)
-- UAPI calls redirect output to `/dev/null` to prevent logging passwords
-- Signal traps (`EXIT`, `INT`, `TERM`) automatically unset secrets on script termination
-- SSH key permissions validated (must be `600`)
-- Audit logging for all security-relevant operations
-
-### Known Limitations
-
-**Database password in process arguments**: During PostgreSQL user creation, the password briefly appears in process arguments due to cPanel UAPI design. This is mitigated by:
-
-1. Rapid execution (minimal exposure window)
-1. Automatic secret cleanup via signal traps
-1. UAPI output suppression
-
-### Input Validation
-
-The script validates environment variables to prevent injection attacks:
-
-- Blocks characters: `;`, `&`, `|`, `` ` ``, `$`, `(`, `)`
-- Validates SSH key file permissions
-- Strict SSH command construction to prevent injection
-
-### Audit Logging
-
-All security-relevant operations are logged to syslog:
+From the `monorepo` directory, execute the `deploy.sh` script.
 
 ```bash
-logger -t deploy.sh -p user.info "Creating database: cpaneluser_blogdb"
-logger -t deploy.sh -p user.notice "Deployment completed successfully"
-logger -t "deploy.sh[uapi_call]" -p user.warning "uapi Postgresql::list_databases failed"
-logger -t "deploy.sh[setup_ssh_key]" -p user.error "Failed to verify SSH key permissions"
+# Run the script
+./scripts/deploy.sh
 ```
 
 View logs with: `journalctl -t deploy.sh` (Linux) or `/var/log/messages` (cPanel)
@@ -495,33 +355,26 @@ To roll back a deployment:
 
 Potential improvements for future versions:
 
-- Automated rollback capability
-- Blue-green deployment support
-- Database migration management
-- Backup creation before deployment
-- Slack/email deployment notifications
-- Deployment metrics and timing
-- Parallel file upload optimization
-- Environment-specific configuration (staging/production)
+- **Error**: `Required environment variable is not set`
+  - **Cause**: One of the variables listed in the "Prerequisites" section is missing.
+  - **Solution**: Ensure all required environment variables are exported in your shell.
 
-## Related Documentation
+- **Error**: `SSH key file not found` or `Failed to set or verify proper permissions (600) on SSH key`
+  - **Cause**: The path in `SSH_PRIVATE_KEY_PATH` is incorrect, or the script could not set `chmod 600` on the key. This is common when running in WSL with a key stored on the Windows filesystem.
+  - **Solution**: Verify the key path. If using WSL, copy the key to the Linux filesystem (e.g., `~/.ssh/`) and update `SSH_PRIVATE_KEY_PATH`.
 
-- cPanel deployment strategies: `../cpanel-deployment-patterns.md`
-- Backend configuration: `backend/README.md`
-- WSGI entry point: `backend/src/passenger_wsgi.py`
-- Test documentation: `scripts/tests/README.md`
-- Project structure: `../.spec-workflow/steering/structure.md`
+### Deployment Fails at "provision_database"
 
-## Support
+- **Cause**: The cPanel user may not have permission to create PostgreSQL databases or users.
+- **Solution**: Log in to the cPanel web interface and verify that you can create a database manually. Check your hosting plan's features.
 
-For deployment issues:
+### Deployment Fails at "upload_code"
 
-1. Review error messages in script output
-1. Check syslog for audit trail
-1. Verify all prerequisites are met
-1. Run BATS tests to validate local environment
-1. Consult cPanel documentation for UAPI/Passenger issues
+- **Cause**: `rsync` or `ssh` command failed. This could be due to a network issue or an SSH connection problem.
+  - **Solution**: Check your internet connection and ensure you can connect to the server manually with `ssh -i $SSH_PRIVATE_KEY_PATH -p $SSH_PORT $CPANEL_USERNAME@$SERVER_IP_ADDRESS`.
 
-## License
+### Deployment Fails at "verify_deployment"
 
-This deployment script is part of the blog platform project and follows the same license.
+- **Error**: `Health check failed for endpoint...`
+  - **Cause**: The application started but is not healthy. This is most likely due to a runtime error.
+  - **Solution**: SSH into the server and check the application's error logs. The logs for the Passenger application are typically found in a `logs` or `stderr.log` file within the application directory on the server. Common issues include missing dependencies or incorrect environment variables. The script handles injecting variables, but a typo in a variable name could be the cause.
