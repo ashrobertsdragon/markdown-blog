@@ -4,6 +4,45 @@
 **Target Environment**: cPanel Shared Hosting with Phusion Passenger
 **Deployment Method**: Automated via `monorepo/scripts/deploy.sh`
 
+## Deployment Strategy
+
+This project supports **two deployment paths** for different cPanel hosting environments:
+
+### 1. Passenger with UAPI (deploy.sh)
+
+**Use when:** Your cPanel hosting uses Phusion Passenger web server
+
+**Characteristics:**
+
+- cPanel UAPI calls work reliably
+- Database and application provisioning fully automated
+- End-to-end automation in single command
+- Script: `scripts/deploy.sh`
+
+### 2. LiteSpeed with Manual Configuration (litespeed_deploy.sh)
+
+**Use when:** Your cPanel hosting uses LiteSpeed web server
+
+**Characteristics:**
+
+- cPanel UAPI calls **silently fail** (known cPanel/LiteSpeed limitation)
+- Application, and dependency installation must be configured via cPanel web UI manually
+- Deployment script handles code upload and verification
+- Script: `scripts/litespeed_deploy.sh`
+
+**Critical Limitation:** On LiteSpeed environments, UAPI database and Passenger application registration calls fail silently without error messages. You must use the cPanel web interface to manually create the database and configure the application.
+
+### Decision Matrix
+
+| Hosting Type     | Web Server | UAPI Works?       | Script to Use         | Manual Steps Required            |
+| ---------------- | ---------- | ----------------- | --------------------- | -------------------------------- |
+| cPanel Standard  | Passenger  | ✅ Yes            | `deploy.sh`           | None                             |
+| cPanel/LiteSpeed | LiteSpeed  | ❌ Fails Silently | `litespeed_deploy.sh` | Database setup, App registration |
+
+## Overview
+
+Both deployment scripts provide comprehensive automation for deploying the blog platform to cPanel hosting. They handle code upload, application installation with uv, and deployment verification. The key difference is how they handle database and application provisioning.
+
 ---
 
 ## Table of Contents
@@ -11,7 +50,9 @@
 1. [Introduction](#introduction)
 2. [Prerequisites](#prerequisites)
 3. [Automated Deployment](#automated-deployment)
-4. [Troubleshooting](#troubleshooting)
+4. [LiteSpeed Deployment](#litespeed-deployment-manual-configuration-required)
+5. [Deployment Architecture](#deployment-architecture)
+6. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -25,10 +66,9 @@ The script leverages SSH for server access and cPanel's UAPI (Universal API) for
 
 The deployment is guided by these principles:
 
-- **Automation**: A single script orchestrates the entire deployment from start to finish.
-- **Infrastructure as Code**: The `deploy.sh` script contains all logic for provisioning and configuration.
-- **Idempotency**: The script can be re-run safely without causing errors. It checks for existing resources before creating new ones.
-- **Security**: Secrets are loaded from environment variables and are not hardcoded. The script includes features to handle SSH keys securely and suppress secrets in logs.
+- **Idempotency**: The script can be run multiple times safely. It checks if resources (databases, users, apps) exist before attempting to create them.
+- **Security**: Secrets are injected via environment variables and never stored in files. SSH keys are validated for correct permissions.
+- **Verification**: The deployment is only considered successful if the application passes health checks on the live URL.
 
 ---
 
@@ -64,7 +104,6 @@ The `deploy.sh` script requires the following environment variables to be set. Y
 | `RESEND_API_KEY` | Resend email service API key | `re_...` |
 | `CLERK_PUBLISHABLE_KEY` | Clerk auth publishable key | `pk_test_...` |
 | `CLERK_SECRET_KEY` | Clerk auth secret key | `sk_test_...` |
-| `PRODUCTION_DOMAIN` | Production domain for confirmation prompt | `example.com` |
 
 **Note**: The script will validate that all these variables are set before starting the deployment.
 
@@ -94,40 +133,242 @@ From the `monorepo` directory, execute the `deploy.sh` script.
 ./scripts/deploy.sh
 ```
 
-If your domain is set to the production domain, the script will prompt for confirmation before deploying to production. Type `yes` to proceed.
+View logs with: `journalctl -t deploy.sh` (Linux) or `/var/log/messages` (cPanel)
 
-### Script Workflow
+---
 
-The script will perform the following steps automatically:
+## LiteSpeed Deployment (Manual Configuration Required)
 
-1. **Validate Environment**: Checks that all required environment variables are set and that the SSH key file exists and has the correct (`600`) permissions.
-2. **Provision Database**:
-    - Connects to the server via SSH.
-    - Uses cPanel UAPI to create the PostgreSQL database (`{CPANEL_USERNAME}_blogdb`) if it doesn't exist.
-    - Creates the PostgreSQL user (`{CPANEL_POSTGRES_USER}`) if it doesn't exist.
-    - Grants all privileges on the database to the user.
-3. **Upload Code**:
-    - Uploads the `monorepo/backend` directory to `~/blog/` on the server using `rsync`.
-    - Uploads the `monorepo/frontend/build` directory to `~/blog/build/` on the server.
-4. **Install Dependencies**:
-    - Ensures `uv` (the Python package manager) is installed on the server.
-    - Runs `uv sync --frozen` in the `~/blog` directory to install all Python dependencies listed in `uv.lock`.
-5. **Create Database Schema**:
-    - Executes the `create-schema` script (defined in `pyproject.toml`) on the server to create all necessary database tables.
-6. **Register Passenger Application**:
-    - Uses cPanel UAPI to create or update the Phusion Passenger application registration named `MarkdownBlog`.
-    - Injects all necessary secrets (database credentials, API keys) as environment variables into the application's runtime.
-7. **Verify Deployment**:
-    - Performs health checks by sending HTTP requests to the `/health`, `/health/db`, and `/health/github` endpoints.
-    - Uses a retry mechanism with exponential backoff to wait for the application to start.
+### When to Use LiteSpeed Deployment
 
-Upon successful completion, the script will print the application URL.
+Use `scripts/litespeed_deploy.sh` when your cPanel hosting environment uses **LiteSpeed web server** instead of Phusion Passenger. LiteSpeed environments experience silent UAPI failures that prevent automated database and application provisioning.
+
+### Key Differences from Passenger Deployment
+
+| Operation                | Passenger (deploy.sh)  | LiteSpeed (litespeed_deploy.sh)       |
+| ------------------------ | ---------------------- | ------------------------------------- |
+| Database creation        | ✅ Automated via UAPI  | ⚠️ Manual via cPanel web UI           |
+| Database user creation   | ✅ Automated via UAPI  | ⚠️ Manual via cPanel web UI           |
+| Application registration | ✅ Automated via UAPI  | ⚠️ Manual via cPanel web UI           |
+| Code upload              | ✅ Automated via rsync | ✅ Automated via rsync                |
+| Dependency installation  | ✅ Automated with uv   | ✅ Automated with uv                  |
+| Schema creation          | ✅ Automated           | ✅ Automated (after manual DB setup)  |
+| Health verification      | ✅ Automated           | ✅ Automated (after manual app setup) |
+
+### Manual Pre-Deployment Steps (LiteSpeed Only)
+
+Before running `litespeed_deploy.sh`, you must manually configure the following via cPanel web interface:
+
+#### 1. Create PostgreSQL Database
+
+1. Log into cPanel web interface
+1. Navigate to **Databases** → **PostgreSQL Databases**
+1. Create database: `${CPANEL_USERNAME}_blogdb`
+1. Note the database name for environment variables
+
+#### 2. Create PostgreSQL User
+
+1. In **PostgreSQL Databases**, scroll to **PostgreSQL Users**
+1. Create user with strong password
+1. Note username and password for environment variables
+
+#### 3. Grant User Privileges
+
+1. In **PostgreSQL Databases**, scroll to **Add User To Database**
+1. Select the user created in step 2
+1. Select the database created in step 1
+1. Grant **ALL PRIVILEGES**
+
+#### 4. Register Passenger Application
+
+1. Navigate to **Software** → **Setup Python App** (or **Setup Node.js App** if available)
+1. Click **Create Application**
+1. Configure:
+   - **Python version**: 3.13.5 (must match `pyproject.toml`)
+   - **Application root**: `/home/${CPANEL_USERNAME}/seeash`
+   - **Application URL**: Your domain (e.g., `ashlynantrobus.dev`)
+   - **Application startup file**: `passenger_wsgi.py`
+   - **Application Entry point**: `application`
+1. Add environment variables (click **Add Variable** for each):
+   - `DB_NAME`: Database name from step 1
+   - `DB_USER`: Username from step 2
+   - `DB_PASSWORD`: Password from step 2
+   - `VENV_PATH`: `/home/${CPANEL_USERNAME}/virtualenv/seeash`
+   - `GITHUB_PERSONAL_ACCESS_TOKEN`: Your GitHub token
+   - `RESEND_API_KEY`: Your Resend API key
+   - `CLERK_PUBLISHABLE_KEY`: Your Clerk public key
+   - `CLERK_SECRET_KEY`: Your Clerk secret key
+1. Save the configuration
+
+### Running LiteSpeed Deployment
+
+After completing the manual setup steps above:
+
+```bash
+cd monorepo/scripts
+./litespeed_deploy.sh
+```
+
+The script will:
+
+1. Validate all required environment variables
+1. Configure SSH key permissions
+1. Upload backend code and frontend build files via rsync
+1. Install uv on remote server (if not present)
+1. Install application dependencies with `uv sync`
+1. Create database schema using `uv run scripts/create_schema.py`
+1. Verify deployment via health checks
+1. Report deployment status
+
+### LiteSpeed Deployment Notes
+
+- **UAPI calls are not used** - The script skips all UAPI operations that fail silently on LiteSpeed
+- **Manual restart may be required** - After first deployment, restart the Passenger app in cPanel
+- **Database schema is automated** - Once the database is created manually, schema creation works normally
+- **Environment variables must match** - Ensure cPanel environment variables match your local `.env` variables
+- **requirements.txt available** - A `backend/requirements.txt` file is provided for compatibility with environments that don't support uv
+
+### Troubleshooting LiteSpeed Deployments
+
+**Health checks fail after deployment:**
+
+- Verify application is registered correctly in cPanel
+- Check that all 8 environment variables are set in cPanel
+- Manually restart the application in cPanel → Setup Python App
+- Check Passenger logs: `~/seeash/passenger.log`
+
+**Database connection errors:**
+
+- Verify database was created with correct name
+- Verify user has ALL PRIVILEGES on the database
+- Test connection manually: `psql -h localhost -U $DB_USER -d $DB_NAME`
+
+**uv installation fails:**
+
+- Check remote server internet connectivity
+- Verify curl is available: `ssh ... "which curl"`
+- Try manual installation: `ssh ... "curl -LsSf https://astral.sh/uv/install.sh | sh"`
+
+### Cross-Platform SSH Key Handling
+
+---
+
+## Deployment Architecture
+
+### Remote Directory Structure
+
+```plaintext
+/home/$CPANEL_USERNAME/seeash/
+├── passenger_wsgi.py   # WSGI entry point
+├── pyproject.toml      # uv project definition
+├── uv.lock             # Dependency lockfile
+├── requirements.txt    # Fallback dependency list
+├── scripts/
+│   └── create_schema.py    # Database schema creation script
+├── backend/                # Application code
+│   ├── main.py
+│   ├── config.py
+│   ├── domain/
+│   ├── application/
+│   ├── infrastructure/
+│   └── api/
+├── build/                  # Frontend static files (optional)
+│   ├── index.html
+│   ├── static/
+│   └── assets/
+└── .venv/                  # uv-managed virtual environment
+    ├── bin/
+    ├── lib/
+    └── pyvenv.cfg
+```
+
+### Database Naming Convention
+
+- Database: `${CPANEL_USERNAME}_blogdb`
+- User: Value of `$CPANEL_POSTGRES_USER` environment variable
+- Connection: `localhost` (cPanel default)
+
+### Passenger Configuration
+
+The script registers a Passenger application with:
+
+- **Name**: `BlogAppProd`
+- **Domain**: `ashlynantrobus.dev`
+- **Base URI**: `/` (root)
+- **Deployment Mode**: `production`
+- **Environment Variables**: All secrets injected at application level
+
+---
+
+## Rollback
+
+To roll back a deployment:
+
+1. **Database**: PostgreSQL is idempotent - old schema remains intact
+1. **Code**: Deploy previous git commit or manually revert files
+1. **Passenger**: Use cPanel interface to restart application
+
+**Note**: The script does not currently support automated rollback. Manual intervention required.
 
 ---
 
 ## Troubleshooting
 
-### Deployment Fails at "validate_environment"
+### Debugging Failed Deployments
+
+1. **Check SSH connectivity**:
+
+   ```bash
+   ssh -i "$SSH_PRIVATE_KEY_PATH" -p "$SSH_PORT" "$CPANEL_USERNAME@$SERVER_IP_ADDRESS"
+   ```
+
+1. **Verify remote directory structure**:
+
+   ```bash
+   ssh ... "ls -la ~/seeash"
+   ```
+
+1. **Check Passenger logs** (via cPanel or SSH):
+
+   ```bash
+   tail -f ~/seeash/passenger.log
+   ```
+
+1. **Test health endpoints manually**:
+
+   ```bash
+   curl https://ashlynantrobus.dev/health
+   curl https://ashlynantrobus.dev/health/db
+   curl https://ashlynantrobus.dev/health/github
+   ```
+
+1. **Verify database connectivity** (via SSH):
+
+   ```bash
+   psql -h localhost -U "$CPANEL_POSTGRES_USER" -d "${CPANEL_USERNAME}_blogdb"
+   ```
+
+1. **Check uv installation**:
+
+   ```bash
+   ssh ... "~/.cargo/bin/uv --version"
+   ```
+
+### Common Issues
+
+**Frontend build missing**: Ensure you run `npm run build` before deploying.
+
+**SSH key permissions error**: The key must be owned by the current user and have `600` permissions. On Windows, this may require administrator privileges.
+
+**Health check timeout**: Passenger may take 30-60 seconds to start the application on first deployment. The script automatically retries with backoff.
+
+**Database connection refused**: Verify PostgreSQL is running in cPanel and credentials are correct.
+
+**uv not found**: The script installs uv automatically. If installation fails, check remote server internet connectivity and curl availability.
+
+## Future Enhancements
+
+Potential improvements for future versions:
 
 - **Error**: `Required environment variable is not set`
   - **Cause**: One of the variables listed in the "Prerequisites" section is missing.

@@ -7,19 +7,149 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Deployment**: Added LiteSpeed deployment script for cPanel environments with UAPI limitations
+
+  - Created `scripts/litespeed_deploy.sh` (435 lines) for cPanel/LiteSpeed hosting
+  - LiteSpeed environments experience silent UAPI failures requiring manual web UI configuration
+  - Comprehensive deployment automation with security features:
+    - Strict error handling with inherit_errexit and pipefail
+    - Signal traps to unset secrets on EXIT/INT/TERM
+    - Input sanitization for environment variables
+    - SSH key permission validation with TOCTOU mitigation
+    - Secret suppression in UAPI calls
+    - Audit logging to syslog for security-relevant operations
+  - Deployment process:
+    - Validates environment variables and SSH key permissions
+    - Provisions PostgreSQL database, user, and privileges (idempotent)
+    - Uploads code via rsync with checksum verification
+    - Installs uv on remote server if not present
+    - Installs dependencies with uv sync
+    - Creates database schema using uv run scripts/create_schema.py
+    - Registers/updates Passenger application with environment variables
+    - Verifies deployment via health check endpoints with exponential backoff
+  - Dual deployment strategy: Use `deploy.sh` for Passenger (UAPI works), `litespeed_deploy.sh` for LiteSpeed (UAPI fails silently)
+  - Files added: `scripts/litespeed_deploy.sh`
+
+- **Build**: Added backend build automation script
+
+  - Created `scripts/build_backend.sh` for automated backend builds
+  - Uses `uv build --clear` to create distribution packages
+  - Copies built packages to `/var/www/ashlab/package/backend/`
+  - Generates package index with `scripts/generate_index.py`
+  - Files added: `scripts/build_backend.sh`, `scripts/generate_index.py`
+
+- **Deployment**: Added requirements.txt for traditional pip-based deployments
+
+  - Created `backend/requirements.txt` with frozen dependencies
+  - Provides fallback deployment path for environments without uv
+  - Mirrors dependencies from `pyproject.toml` for compatibility
+  - Files added: `backend/requirements.txt`
+
+### Changed
+
+- **Backend**: Locked Python version requirement to exact match
+
+  - Changed from `>=3.13.5` to `==3.13.5` in `backend/pyproject.toml`
+  - Ensures consistent Python version across deployments
+  - Updated `backend/uv.lock` to remove Python 3.14 wheels
+  - Files modified: `backend/pyproject.toml`, `backend/uv.lock`
+
+- **Backend**: Improved WSGI entry point module resolution
+
+  - Added `APP_ROOT` to `sys.path` in `passenger_wsgi.py`
+  - Ensures proper module imports in production Passenger environment
+  - Files modified: `backend/src/passenger_wsgi.py`
+
+### Removed
+
+- **Tests**: Removed temporary BATS test file
+
+  - Deleted `scripts/tests/deploy_config_fix.bats` (should not have been committed)
+  - Main BATS test suite remains intact in `scripts/tests/`
+  - Files removed: `scripts/tests/deploy_config_fix.bats`
+
 ### Fixed
 
+- **Deployment**: Fixed virtual environment path to match cPanel conventions
+
+  - Changed from `/home/${CPANEL_USERNAME}/seeash/.venv` to `/home/${CPANEL_USERNAME}/virtualenv/seeash`
+  - Added `UV_PROJECT_ENVIRONMENT` variable to direct uv to create virtual environment in correct location
+  - Applies to both `install_application()` and `run_schema()` functions
+  - Updated `VENV_PATH` environment variable passed to Passenger
+  - Follows cPanel convention documented in cpanel-deployment-patterns.md lines 23-24, 73
+  - Virtual environment now created at `/home/ashrdvfi/virtualenv/seeash` instead of application root
+  - Files modified: `scripts/deploy.sh`
+
+- **Deployment**: Fixed critical environment variable syntax for Passenger UAPI calls
+
+  - Changed from numbered parameters (`envvar_name_1`, `envvar_value_1`) to repeated parameters (`envvar_name`, `envvar_value`)
+  - Applies to both `register_application` and `edit_application` UAPI functions
+  - Environment variables now successfully set in Passenger application configuration
+  - Verified all 8 environment variables (DB_NAME, DB_USER, DB_PASSWORD, VENV_PATH, GITHUB_PERSONAL_ACCESS_TOKEN, RESEND_API_KEY, CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY) are injected correctly
+  - Syntax documented in cpanel-deployment-patterns.md lines 171-183
+  - Files modified: `scripts/deploy.sh`
+
+- **Deployment**: Fixed deployment script to use Python src-layout structure for uv compatibility
+
+  - Changed backend upload destination from `seeash/backend/` to `seeash/src/backend/` to match uv src-layout convention
+  - Changed scripts upload destination from `seeash/scripts/` to `seeash/src/scripts/` for proper Python module import
+  - Added remote directory creation for `seeash/src` before file uploads
+  - Created `__init__.py` in `monorepo/backend/src/scripts/` to make scripts package importable
+  - Fixed local scripts source path from `monorepo/backend/scripts/` to `monorepo/backend/src/scripts/`
+  - Updated deployment tests to expect `seeash/src/backend/` instead of `seeash/backend/`
+  - Updated test helper to create `monorepo/backend/src/scripts/` directory structure
+  - Fixes uv package installation error: "Expected a Python module at: src/backend/__init__.py"
+  - Fixes schema creation error: "ModuleNotFoundError: No module named 'scripts'"
+  - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `backend/src/scripts/__init__.py` (created)
+
+- **Deployment**: Fixed deployment script to match production directory structure specifications
+
+  - Changed remote application path from `/home/${CPANEL_USERNAME}/blog` to `/home/${CPANEL_USERNAME}/seeash`
+  - Corrected backend source upload from `monorepo/backend/` to `monorepo/backend/src/backend/`
+  - Added upload of `passenger_wsgi.py` from `monorepo/backend/src/` to `seeash/` (root level)
+  - Added upload of `scripts/` directory to seeash (path later corrected to src-layout)
+  - Added upload of `pyproject.toml` and `uv.lock` to root level for uv package management
+  - Updated all remote script paths from `~/blog` to `~/seeash`
+  - Updated virtual environment path from `~/blog/.venv` to `~/seeash/.venv`
+  - Removed hardcoded username "ashrdvfi" from WSGI copy section
+  - Removed unnecessary WSGI copy remote script (handled by rsync now)
+  - Updated deployment tests to expect new paths and directory structure
+  - Updated test helper to create correct backend source structure for tests
+  - Updated DEPLOYMENT.md documentation to reflect correct remote directory structure
+  - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `docs/DEPLOYMENT.md`
+
+- **Deployment**: Fixed critical Passenger WSGI bootstrap issues (Task #27)
+
+  - Added VENV_PATH environment variable to Passenger registration
+    - Required by passenger_wsgi.py to bootstrap uv virtualenv before Flask import
+    - Added to both register_application and update_application UAPI calls
+    - Path: `/home/${CPANEL_USERNAME}/blog/.venv`
+  - Copy passenger_wsgi.py to domain root during code upload
+    - Passenger expects WSGI entry point in application root (~/seeash/)
+    - Added SSH command in upload_code() to copy from ~/blog/src/
+    - Includes validation to ensure source file exists before copying
+  - Remove explicit DB_HOST from schema creation
+    - Rely on ProductionDBSettings default 'localhost' resolution
+    - Handles both IPv4 and IPv6 gracefully via driver-level resolution
+
 - **Deployment**: Fixed frontend build path check in deployment script
+
   - Changed from `monorepo/frontend/build` to `monorepo/build` to match Vite output location
   - Deployment script now correctly detects frontend build directory
   - Prevents "frontend build directory missing" errors during deployment
+
 - **Backend**: Fixed ProductionDBSettings to use standard database environment variable names
+
   - Removed `CPANEL_` prefix from ProductionDBSettings configuration
   - Now reads `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` directly (no prefix)
   - Aligns with Passenger WSGI standard environment variable naming conventions
   - Resolves deployment failure where Flask could not connect to database
+
 - **Deployment**: Fixed schema creation during deployment to set required environment variables
-  - Added exports for `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `FLASK_ENV` in run_schema() function
+
+  - Added exports for `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `FLASK_ENV` in run_schema() function
   - Schema creation script now receives all required database configuration
   - Prevents "missing required fields" validation errors during remote schema execution
 

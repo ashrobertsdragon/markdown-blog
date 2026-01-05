@@ -428,8 +428,8 @@ teardown() {
   assert_exit_success "$status"
   assert_file_exists "${RSYNC_LOG}"
   run cat "${RSYNC_LOG}"
-  assert_contains "$output" "monorepo/backend/"
-  assert_not_contains "$output" "blog/backend/"
+  assert_contains "$output" "monorepo/backend/src/backend/"
+  assert_contains "$output" "seeash/backend/"
   assert_contains "$output" "ssh"
 }
 

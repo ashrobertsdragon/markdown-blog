@@ -11,7 +11,7 @@ dependencies = [
 ]
 description = "Blog platform with Flask + React"
 name = "backend"
-requires-python = ">=3.13.5"
+requires-python = "==3.13.5"
 version = "0.1.0"
 
 [project.scripts]
