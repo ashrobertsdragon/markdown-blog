@@ -48,10 +48,11 @@ Both deployment scripts provide comprehensive automation for deploying the blog 
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [LiteSpeed Deployment](#litespeed-deployment-manual-configuration-required)
-3. [Prerequisites](#prerequisites)
-4. [Automated Deployment](#automated-deployment)
-5. [Troubleshooting](#troubleshooting)
+2. [Prerequisites](#prerequisites)
+3. [Automated Deployment](#automated-deployment)
+4. [LiteSpeed Deployment](#litespeed-deployment-manual-configuration-required)
+5. [Deployment Architecture](#deployment-architecture)
+6. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -68,6 +69,73 @@ The deployment is guided by these principles:
 - **Idempotency**: The script can be run multiple times safely. It checks if resources (databases, users, apps) exist before attempting to create them.
 - **Security**: Secrets are injected via environment variables and never stored in files. SSH keys are validated for correct permissions.
 - **Verification**: The deployment is only considered successful if the application passes health checks on the live URL.
+
+---
+
+## Prerequisites
+
+### Access Requirements
+
+- **cPanel Account**: An active shared hosting account with SSH access enabled.
+- **Domain**: A domain name configured in cPanel and pointing to the server's IP address.
+- **SSH Key**: A password-less SSH private key configured for access to your cPanel account.
+
+### Local Environment
+
+- **OS**: A Unix-like environment (Linux, macOS, or WSL on Windows).
+- **Tools**: `bash`, `ssh`, `rsync`, and `curl` must be installed.
+- **Node.js/npm**: Required to build the frontend artifacts locally before deployment.
+
+### Required Environment Variables
+
+The `deploy.sh` script requires the following environment variables to be set. You can add them to a `.env` file in the project root and load them with `source .env` before running the script.
+
+| Variable | Description | Example Value |
+| :--- | :--- | :--- |
+| `DOMAIN` | Target domain name | `example.com` |
+| `PRODUCTION_DOMAIN` | Production domain for confirmation prompt | `example.com` |
+| `CPANEL_USERNAME` | cPanel/SSH username | `myuser` |
+| `SERVER_IP_ADDRESS` | Server IP address for SSH | `198.51.100.50` |
+| `SSH_PRIVATE_KEY_PATH` | Path to your SSH private key | `~/.ssh/id_rsa` |
+| `SSH_PORT` | SSH port number | `22` |
+| `CPANEL_POSTGRES_USER` | PostgreSQL username | `myuser_blog` |
+| `CPANEL_POSTGRES_PASSWORD` | PostgreSQL password | `(sensitive)` |
+| `GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub PAT for draft repo access | `ghp_...` |
+| `RESEND_API_KEY` | Resend email service API key | `re_...` |
+| `CLERK_PUBLISHABLE_KEY` | Clerk auth publishable key | `pk_test_...` |
+| `CLERK_SECRET_KEY` | Clerk auth secret key | `sk_test_...` |
+
+**Note**: The script will validate that all these variables are set before starting the deployment.
+
+---
+
+## Automated Deployment
+
+The entire deployment process is handled by a single script.
+
+### Step 1: Build Frontend Artifacts
+
+The deployment script uploads the frontend, but does **not** build it. You must build the production-ready frontend artifacts first. You may use the build script for this.
+
+```bash
+# Run the build script
+./scripts/build.sh
+```
+
+This will create a `monorepo/build` directory containing the static HTML, CSS, and JavaScript files.
+
+### Step 2: Run the Deployment Script
+
+From the `monorepo` directory, execute the `deploy.sh` script.
+
+```bash
+# Run the script
+./scripts/deploy.sh
+```
+
+View logs with: `journalctl -t deploy.sh` (Linux) or `/var/log/messages` (cPanel)
+
+---
 
 ## LiteSpeed Deployment (Manual Configuration Required)
 
@@ -185,70 +253,6 @@ The script will:
 
 ---
 
-## Prerequisites
-
-### Access Requirements
-
-- **cPanel Account**: An active shared hosting account with SSH access enabled.
-- **Domain**: A domain name configured in cPanel and pointing to the server's IP address.
-- **SSH Key**: A password-less SSH private key configured for access to your cPanel account.
-
-### Local Environment
-
-- **OS**: A Unix-like environment (Linux, macOS, or WSL on Windows).
-- **Tools**: `bash`, `ssh`, `rsync`, and `curl` must be installed.
-- **Node.js/npm**: Required to build the frontend artifacts locally before deployment.
-
-### Required Environment Variables
-
-The `deploy.sh` script requires the following environment variables to be set. You can add them to a `.env` file in the project root and load them with `source .env` before running the script.
-
-| Variable | Description | Example Value |
-| :--- | :--- | :--- |
-| `DOMAIN` | Target domain name | `example.com` |
-| `PRODUCTION_DOMAIN` | Production domain for confirmation prompt | `example.com` |
-| `CPANEL_USERNAME` | cPanel/SSH username | `myuser` |
-| `SERVER_IP_ADDRESS` | Server IP address for SSH | `198.51.100.50` |
-| `SSH_PRIVATE_KEY_PATH` | Path to your SSH private key | `~/.ssh/id_rsa` |
-| `SSH_PORT` | SSH port number | `22` |
-| `CPANEL_POSTGRES_USER` | PostgreSQL username | `myuser_blog` |
-| `CPANEL_POSTGRES_PASSWORD` | PostgreSQL password | `(sensitive)` |
-| `GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub PAT for draft repo access | `ghp_...` |
-| `RESEND_API_KEY` | Resend email service API key | `re_...` |
-| `CLERK_PUBLISHABLE_KEY` | Clerk auth publishable key | `pk_test_...` |
-| `CLERK_SECRET_KEY` | Clerk auth secret key | `sk_test_...` |
-| `PRODUCTION_DOMAIN` | Production domain for confirmation prompt | `example.com` |
-
-**Note**: The script will validate that all these variables are set before starting the deployment.
-
----
-
-## Automated Deployment
-
-The entire deployment process is handled by a single script.
-
-### Step 1: Build Frontend Artifacts
-
-The deployment script uploads the frontend, but does **not** build it. You must build the production-ready frontend artifacts first. You may use the build script for this.
-
-```bash
-# Run the build script
-./scripts/build.sh
-```
-
-This will create a `monorepo/build` directory containing the static HTML, CSS, and JavaScript files.
-
-### Step 2: Run the Deployment Script
-
-From the `monorepo` directory, execute the `deploy.sh` script.
-
-```bash
-# Run the script
-./scripts/deploy.sh
-```
-
-View logs with: `journalctl -t deploy.sh` (Linux) or `/var/log/messages` (cPanel)
-
 ## Deployment Architecture
 
 ### Remote Directory Structure
@@ -294,6 +298,8 @@ The script registers a Passenger application with:
 - **Deployment Mode**: `production`
 - **Environment Variables**: All secrets injected at application level
 
+---
+
 ## Rollback
 
 To roll back a deployment:
@@ -303,6 +309,8 @@ To roll back a deployment:
 1. **Passenger**: Use cPanel interface to restart application
 
 **Note**: The script does not currently support automated rollback. Manual intervention required.
+
+---
 
 ## Troubleshooting
 
