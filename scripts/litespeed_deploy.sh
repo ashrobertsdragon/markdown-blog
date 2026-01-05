@@ -315,13 +315,6 @@ upload_code() {
     "${PROJECT_ROOT}/monorepo/backend/src/scripts/" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/scripts/" || return 1
 
-  logger -t deploy.sh -p user.info "Uploading passenger_wsgi.py to ${SERVER_IP_ADDRESS}"
-  rsync -avz --perms --checksum \
-    -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
-    -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/src/passenger_wsgi.py" \
-    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
-
   rsync -avz --perms --checksum \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
