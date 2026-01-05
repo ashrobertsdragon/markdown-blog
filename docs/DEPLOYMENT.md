@@ -26,8 +26,8 @@ This project supports **two deployment paths** for different cPanel hosting envi
 **Characteristics:**
 
 - cPanel UAPI calls **silently fail** (known cPanel/LiteSpeed limitation)
-- Database and application must be configured via cPanel web UI manually
-- Deployment script handles code upload, dependency installation, and verification
+- Application, and dependency installation must be configured via cPanel web UI manually
+- Deployment script handles code upload and verification
 - Script: `scripts/litespeed_deploy.sh`
 
 **Critical Limitation:** On LiteSpeed environments, UAPI database and Passenger application registration calls fail silently without error messages. You must use the cPanel web interface to manually create the database and configure the application.
@@ -42,14 +42,16 @@ This project supports **two deployment paths** for different cPanel hosting envi
 ## Overview
 
 Both deployment scripts provide comprehensive automation for deploying the blog platform to cPanel hosting. They handle code upload, application installation with uv, and deployment verification. The key difference is how they handle database and application provisioning.
+
 ---
 
 ## Table of Contents
 
 1. [Introduction](#introduction)
-2. [Prerequisites](#prerequisites)
-3. [Automated Deployment](#automated-deployment)
-4. [Troubleshooting](#troubleshooting)
+2. [LiteSpeed Deployment](#litespeed-deployment-manual-configuration-required)
+3. [Prerequisites](#prerequisites)
+4. [Automated Deployment](#automated-deployment)
+5. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -62,6 +64,10 @@ The script leverages SSH for server access and cPanel's UAPI (Universal API) for
 ### Deployment Philosophy
 
 The deployment is guided by these principles:
+
+- **Idempotency**: The script can be run multiple times safely. It checks if resources (databases, users, apps) exist before attempting to create them.
+- **Security**: Secrets are injected via environment variables and never stored in files. SSH keys are validated for correct permissions.
+- **Verification**: The deployment is only considered successful if the application passes health checks on the live URL.
 
 ## LiteSpeed Deployment (Manual Configuration Required)
 
@@ -252,6 +258,7 @@ View logs with: `journalctl -t deploy.sh` (Linux) or `/var/log/messages` (cPanel
 ├── passenger_wsgi.py   # WSGI entry point
 ├── pyproject.toml      # uv project definition
 ├── uv.lock             # Dependency lockfile
+├── requirements.txt    # Fallback dependency list
 ├── scripts/
 │   └── create_schema.py    # Database schema creation script
 ├── backend/                # Application code

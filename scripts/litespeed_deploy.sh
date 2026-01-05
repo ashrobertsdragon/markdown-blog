@@ -41,6 +41,7 @@ REQUIRED ENVIRONMENT VARIABLES:
   SERVER_IP_ADDRESS            - Server IP for SSH connection
   SSH_PRIVATE_KEY_PATH         - Path to SSH private key
   SSH_PORT                     - SSH port number
+  VENV_PATH                    - Path to virtual environment
   DB_USER                      - PostgreSQL username
   DB_PASSWORD                  - PostgreSQL password
   GITHUB_PERSONAL_ACCESS_TOKEN - GitHub API token
@@ -297,28 +298,29 @@ upload_code() {
   remote_path="$(get_remote_app_path)"
 
   logger -t deploy.sh -p user.info "Creating directory structure on ${SERVER_IP_ADDRESS}"
-  run_remote_command "${SERVER_IP_ADDRESS}" "mkdir -p \"${remote_path}/scripts\" \"${remote_path}/build\"" \"${remote_path}/backend\" || return 1
+  run_remote_command "${SERVER_IP_ADDRESS}" "mkdir -p \"${remote_path}/scripts\" \"${remote_path}/build\" \"${remote_path}/backend\"" || return 1
 
   logger -t deploy.sh -p user.info "Uploading backend to ${SERVER_IP_ADDRESS}"
   rsync -avz --perms --checksum \
     --exclude '__pycache__' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/src/backend" \
-    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
+    "${PROJECT_ROOT}/monorepo/backend/src/backend/" \
+    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/backend/" || return 1
 
   rsync -avz --perms --checksum \
     --exclude '__pycache__' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/src/scripts" \
+    "${PROJECT_ROOT}/monorepo/backend/src/scripts/" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/scripts/" || return 1
 
+  logger -t deploy.sh -p user.info "Uploading passenger_wsgi.py to ${SERVER_IP_ADDRESS}"
   rsync -avz --perms --checksum \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/requirements.txt" \
-    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/entry.py"ls || return 1
+    "${PROJECT_ROOT}/monorepo/backend/src/passenger_wsgi.py" \
+    "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
 
   rsync -avz --perms --checksum \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
@@ -345,29 +347,6 @@ upload_code() {
       "$frontend_src" \
       "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/build/" || return 1
   fi
-  return 0
-}
-
-run_schema() {
-  local database_name
-  database_name="$(get_database_name)"
-
-  logger -t deploy.sh -p user.info "Creating database schema on ${SERVER_IP_ADDRESS}"
-  run_remote_command "${SERVER_IP_ADDRESS}" bash -s "${database_name}" "${DB_USER}" "${DB_PASSWORD}" <<'REMOTE_SCRIPT' || return 1
-set -Eeuo pipefail
-
-cd ~/seeash
-
-export DB_NAME="$1"
-export DB_USER="$2"
-export DB_PASSWORD="$3"
-export FLASK_ENV="PRODUCTION"
-
-source ${VENV_PATH}/bin/activate
-echo "Creating database schema..."
-python3 scripts/create_schema.py
-REMOTE_SCRIPT
-
   return 0
 }
 
@@ -416,9 +395,6 @@ main() {
 
   upload_code || return 1
   printf "✓ Code uploaded\n"
-
-  # run_schema || return 1
-  printf "✓ Database schema created\n"
 
  verify_deployment || return 1
  printf "✓ Deployment verified\n"

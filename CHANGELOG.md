@@ -100,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed local scripts source path from `monorepo/backend/scripts/` to `monorepo/backend/src/scripts/`
   - Updated deployment tests to expect `seeash/src/backend/` instead of `seeash/backend/`
   - Updated test helper to create `monorepo/backend/src/scripts/` directory structure
-  - Fixes uv package installation error: "Expected a Python module at: src/backend/**init**.py"
+  - Fixes uv package installation error: "Expected a Python module at: src/backend/__init__.py"
   - Fixes schema creation error: "ModuleNotFoundError: No module named 'scripts'"
   - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `backend/src/scripts/__init__.py` (created)
 
