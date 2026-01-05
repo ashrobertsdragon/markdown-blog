@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Deployment**: Added LiteSpeed deployment script for cPanel environments with UAPI limitations
+
+  - Created `scripts/litespeed_deploy.sh` (435 lines) for cPanel/LiteSpeed hosting
+  - LiteSpeed environments experience silent UAPI failures requiring manual web UI configuration
+  - Comprehensive deployment automation with security features:
+    - Strict error handling with inherit_errexit and pipefail
+    - Signal traps to unset secrets on EXIT/INT/TERM
+    - Input sanitization for environment variables
+    - SSH key permission validation with TOCTOU mitigation
+    - Secret suppression in UAPI calls
+    - Audit logging to syslog for security-relevant operations
+  - Deployment process:
+    - Validates environment variables and SSH key permissions
+    - Provisions PostgreSQL database, user, and privileges (idempotent)
+    - Uploads code via rsync with checksum verification
+    - Installs uv on remote server if not present
+    - Installs dependencies with uv sync
+    - Creates database schema using uv run scripts/create_schema.py
+    - Registers/updates Passenger application with environment variables
+    - Verifies deployment via health check endpoints with exponential backoff
+  - Dual deployment strategy: Use `deploy.sh` for Passenger (UAPI works), `litespeed_deploy.sh` for LiteSpeed (UAPI fails silently)
+  - Files added: `scripts/litespeed_deploy.sh`
+
+- **Build**: Added backend build automation script
+
+  - Created `scripts/build_backend.sh` for automated backend builds
+  - Uses `uv build --clear` to create distribution packages
+  - Copies built packages to `/var/www/ashlab/package/backend/`
+  - Generates package index with `scripts/generate_index.py`
+  - Files added: `scripts/build_backend.sh`, `scripts/generate_index.py`
+
+- **Deployment**: Added requirements.txt for traditional pip-based deployments
+
+  - Created `backend/requirements.txt` with frozen dependencies
+  - Provides fallback deployment path for environments without uv
+  - Mirrors dependencies from `pyproject.toml` for compatibility
+  - Files added: `backend/requirements.txt`
+
+### Changed
+
+- **Backend**: Locked Python version requirement to exact match
+
+  - Changed from `>=3.13.5` to `==3.13.5` in `backend/pyproject.toml`
+  - Ensures consistent Python version across deployments
+  - Updated `backend/uv.lock` to remove Python 3.14 wheels
+  - Files modified: `backend/pyproject.toml`, `backend/uv.lock`
+
+- **Backend**: Improved WSGI entry point module resolution
+
+  - Added `APP_ROOT` to `sys.path` in `passenger_wsgi.py`
+  - Ensures proper module imports in production Passenger environment
+  - Files modified: `backend/src/passenger_wsgi.py`
+
+### Removed
+
+- **Tests**: Removed temporary BATS test file
+
+  - Deleted `scripts/tests/deploy_config_fix.bats` (should not have been committed)
+  - Main BATS test suite remains intact in `scripts/tests/`
+  - Files removed: `scripts/tests/deploy_config_fix.bats`
+
 ### Fixed
 
 - **Deployment**: Fixed virtual environment path to match cPanel conventions
@@ -37,7 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed local scripts source path from `monorepo/backend/scripts/` to `monorepo/backend/src/scripts/`
   - Updated deployment tests to expect `seeash/src/backend/` instead of `seeash/backend/`
   - Updated test helper to create `monorepo/backend/src/scripts/` directory structure
-  - Fixes uv package installation error: "Expected a Python module at: src/backend/__init__.py"
+  - Fixes uv package installation error: "Expected a Python module at: src/backend/**init**.py"
   - Fixes schema creation error: "ModuleNotFoundError: No module named 'scripts'"
   - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `backend/src/scripts/__init__.py` (created)
 

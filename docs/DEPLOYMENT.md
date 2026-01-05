@@ -2,9 +2,44 @@
 
 This document describes production deployment automation for the blog application to cPanel shared hosting.
 
+## Deployment Strategy
+
+This project supports **two deployment paths** for different cPanel hosting environments:
+
+### 1. Passenger with UAPI (deploy.sh)
+
+**Use when:** Your cPanel hosting uses Phusion Passenger web server
+
+**Characteristics:**
+
+- cPanel UAPI calls work reliably
+- Database and application provisioning fully automated
+- End-to-end automation in single command
+- Script: `scripts/deploy.sh`
+
+### 2. LiteSpeed with Manual Configuration (litespeed_deploy.sh)
+
+**Use when:** Your cPanel hosting uses LiteSpeed web server
+
+**Characteristics:**
+
+- cPanel UAPI calls **silently fail** (known cPanel/LiteSpeed limitation)
+- Database and application must be configured via cPanel web UI manually
+- Deployment script handles code upload, dependency installation, and verification
+- Script: `scripts/litespeed_deploy.sh`
+
+**Critical Limitation:** On LiteSpeed environments, UAPI database and Passenger application registration calls fail silently without error messages. You must use the cPanel web interface to manually create the database and configure the application.
+
+### Decision Matrix
+
+| Hosting Type     | Web Server | UAPI Works?       | Script to Use         | Manual Steps Required            |
+| ---------------- | ---------- | ----------------- | --------------------- | -------------------------------- |
+| cPanel Standard  | Passenger  | ✅ Yes            | `deploy.sh`           | None                             |
+| cPanel/LiteSpeed | LiteSpeed  | ❌ Fails Silently | `litespeed_deploy.sh` | Database setup, App registration |
+
 ## Overview
 
-The deployment script (`scripts/deploy.sh`) provides end-to-end automation for deploying the blog platform to cPanel hosting with Phusion Passenger. It handles database provisioning, code upload, application installation with uv, and application registration in a single command.
+Both deployment scripts provide comprehensive automation for deploying the blog platform to cPanel hosting. They handle code upload, application installation with uv, and deployment verification. The key difference is how they handle database and application provisioning.
 
 ## Features
 
@@ -93,6 +128,118 @@ Continue? (yes/no):
 Type `yes` to proceed or `no` to cancel.
 
 **Note**: This confirmation prompt is automatically bypassed when the script is run in a non-interactive environment (e.g., a CI/CD pipeline), allowing for safe, automated deployments.
+
+## LiteSpeed Deployment (Manual Configuration Required)
+
+### When to Use LiteSpeed Deployment
+
+Use `scripts/litespeed_deploy.sh` when your cPanel hosting environment uses **LiteSpeed web server** instead of Phusion Passenger. LiteSpeed environments experience silent UAPI failures that prevent automated database and application provisioning.
+
+### Key Differences from Passenger Deployment
+
+| Operation                | Passenger (deploy.sh)  | LiteSpeed (litespeed_deploy.sh)       |
+| ------------------------ | ---------------------- | ------------------------------------- |
+| Database creation        | ✅ Automated via UAPI  | ⚠️ Manual via cPanel web UI           |
+| Database user creation   | ✅ Automated via UAPI  | ⚠️ Manual via cPanel web UI           |
+| Application registration | ✅ Automated via UAPI  | ⚠️ Manual via cPanel web UI           |
+| Code upload              | ✅ Automated via rsync | ✅ Automated via rsync                |
+| Dependency installation  | ✅ Automated with uv   | ✅ Automated with uv                  |
+| Schema creation          | ✅ Automated           | ✅ Automated (after manual DB setup)  |
+| Health verification      | ✅ Automated           | ✅ Automated (after manual app setup) |
+
+### Manual Pre-Deployment Steps (LiteSpeed Only)
+
+Before running `litespeed_deploy.sh`, you must manually configure the following via cPanel web interface:
+
+#### 1. Create PostgreSQL Database
+
+1. Log into cPanel web interface
+1. Navigate to **Databases** → **PostgreSQL Databases**
+1. Create database: `${CPANEL_USERNAME}_blogdb`
+1. Note the database name for environment variables
+
+#### 2. Create PostgreSQL User
+
+1. In **PostgreSQL Databases**, scroll to **PostgreSQL Users**
+1. Create user with strong password
+1. Note username and password for environment variables
+
+#### 3. Grant User Privileges
+
+1. In **PostgreSQL Databases**, scroll to **Add User To Database**
+1. Select the user created in step 2
+1. Select the database created in step 1
+1. Grant **ALL PRIVILEGES**
+
+#### 4. Register Passenger Application
+
+1. Navigate to **Software** → **Setup Python App** (or **Setup Node.js App** if available)
+1. Click **Create Application**
+1. Configure:
+   - **Python version**: 3.13.5 (must match `pyproject.toml`)
+   - **Application root**: `/home/${CPANEL_USERNAME}/seeash`
+   - **Application URL**: Your domain (e.g., `ashlynantrobus.dev`)
+   - **Application startup file**: `passenger_wsgi.py`
+   - **Application Entry point**: `application`
+1. Add environment variables (click **Add Variable** for each):
+   - `DB_NAME`: Database name from step 1
+   - `DB_USER`: Username from step 2
+   - `DB_PASSWORD`: Password from step 2
+   - `VENV_PATH`: `/home/${CPANEL_USERNAME}/virtualenv/seeash`
+   - `GITHUB_PERSONAL_ACCESS_TOKEN`: Your GitHub token
+   - `RESEND_API_KEY`: Your Resend API key
+   - `CLERK_PUBLISHABLE_KEY`: Your Clerk public key
+   - `CLERK_SECRET_KEY`: Your Clerk secret key
+1. Save the configuration
+
+### Running LiteSpeed Deployment
+
+After completing the manual setup steps above:
+
+```bash
+cd monorepo/scripts
+./litespeed_deploy.sh
+```
+
+The script will:
+
+1. Validate all required environment variables
+1. Configure SSH key permissions
+1. Upload backend code and frontend build files via rsync
+1. Install uv on remote server (if not present)
+1. Install application dependencies with `uv sync`
+1. Create database schema using `uv run scripts/create_schema.py`
+1. Verify deployment via health checks
+1. Report deployment status
+
+### LiteSpeed Deployment Notes
+
+- **UAPI calls are not used** - The script skips all UAPI operations that fail silently on LiteSpeed
+- **Manual restart may be required** - After first deployment, restart the Passenger app in cPanel
+- **Database schema is automated** - Once the database is created manually, schema creation works normally
+- **Environment variables must match** - Ensure cPanel environment variables match your local `.env` variables
+- **requirements.txt available** - A `backend/requirements.txt` file is provided for compatibility with environments that don't support uv
+
+### Troubleshooting LiteSpeed Deployments
+
+**Health checks fail after deployment:**
+
+- Verify application is registered correctly in cPanel
+- Check that all 8 environment variables are set in cPanel
+- Manually restart the application in cPanel → Setup Python App
+- Check Passenger logs: `~/seeash/passenger.log`
+
+**Database connection errors:**
+
+- Verify database was created with correct name
+- Verify user has ALL PRIVILEGES on the database
+- Test connection manually: `psql -h localhost -U $DB_USER -d $DB_NAME`
+
+**uv installation fails:**
+
+- Check remote server internet connectivity
+- Verify curl is available: `ssh ... "which curl"`
+- Try manual installation: `ssh ... "curl -LsSf https://astral.sh/uv/install.sh | sh"`
 
 ### Cross-Platform SSH Key Handling
 
