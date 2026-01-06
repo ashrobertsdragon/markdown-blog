@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: User model supports external authentication provider integration
+
+  - Added support for storing external authentication provider user identifiers
+  - Database includes unique index on authentication provider ID for fast JWT validation lookups
+  - Nullable field design ensures backward compatibility with existing users
+  - Enables secure integration with third-party authentication services
+  - Files modified: `backend/src/backend/infrastructure/persistence/models.py`
+  - Files added: `backend/tests/integration/test_user_clerk_id.py`
+
 - **Deployment**: Added LiteSpeed deployment script for cPanel environments with UAPI limitations
 
   - Created `scripts/litespeed_deploy.sh` (435 lines) for cPanel/LiteSpeed hosting
@@ -100,7 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed local scripts source path from `monorepo/backend/scripts/` to `monorepo/backend/src/scripts/`
   - Updated deployment tests to expect `seeash/src/backend/` instead of `seeash/backend/`
   - Updated test helper to create `monorepo/backend/src/scripts/` directory structure
-  - Fixes uv package installation error: "Expected a Python module at: src/backend/__init__.py"
+  - Fixes uv package installation error: "Expected a Python module at: src/backend/**init**.py"
   - Fixes schema creation error: "ModuleNotFoundError: No module named 'scripts'"
   - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `backend/src/scripts/__init__.py` (created)
 
