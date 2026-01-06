@@ -3,19 +3,24 @@
 import pytest
 from sqlalchemy import inspect
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session
+from sqlmodel import Session, SQLModel, create_engine
 
-from backend.infrastructure.persistence.database import get_engine
 from backend.infrastructure.persistence.models import User
 
 
 @pytest.fixture
-def db_session():
-    """Provide a database session for tests."""
-    engine = get_engine()
+def db_session(test_settings):
+    """Provide a database session for tests with in-memory SQLite."""
+    engine = create_engine("sqlite:///:memory:", echo=False)
+
+    SQLModel.metadata.create_all(engine)
+
     with Session(engine) as session:
         yield session
         session.rollback()
+
+    SQLModel.metadata.drop_all(engine)
+    engine.dispose()
 
 
 def test_clerk_user_id_unique_constraint(db_session):
@@ -57,8 +62,7 @@ def test_clerk_user_id_allows_multiple_nulls(db_session):
 
 def test_clerk_user_id_index_exists(db_session):
     """Database should have index on clerk_user_id for performance."""
-    engine = get_engine()
-    inspector = inspect(engine)
+    inspector = inspect(db_session.get_bind())
 
     indexes = inspector.get_indexes("user")
 
