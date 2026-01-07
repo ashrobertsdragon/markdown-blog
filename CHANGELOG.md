@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: User role enumeration with permission hierarchy
+
+  - Created Role value object as StrEnum with three authorization levels (authenticated, author, admin)
+  - Implemented role-based permission methods for author and admin access control
+  - Automatic lowercase string conversion using auto() for database compatibility
+  - Immutable enum members ensure thread-safe singleton instances
+  - JSON serializable for API responses and database storage
+  - Type-safe with full type hints for IDE support and static analysis
+  - Test suite: 40 comprehensive unit tests with 100% code coverage
+  - Files added: `backend/src/backend/domain/value_objects/role.py`, `backend/src/backend/domain/value_objects/__init__.py`, `backend/tests/unit/test_role.py`
+
 - **Backend**: User model supports external authentication provider integration
 
   - Added support for storing external authentication provider user identifiers
