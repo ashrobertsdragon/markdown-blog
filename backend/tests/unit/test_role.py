@@ -1,6 +1,7 @@
 from enum import StrEnum
 
 import pytest
+
 from backend.domain.value_objects.role import Role
 
 
