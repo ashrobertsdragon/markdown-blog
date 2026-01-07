@@ -98,7 +98,7 @@ def test_role_instances_can_be_used_in_sets() -> None:
 
 def test_role_members_are_immutable() -> None:
     with pytest.raises(AttributeError):
-        Role.ADMIN.value = "modified"
+        Role.ADMIN.value = "modified"  # type: ignore[misc]
 
 
 def test_role_string_comparison_authenticated() -> None:
