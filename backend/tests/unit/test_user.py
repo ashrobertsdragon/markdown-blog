@@ -15,8 +15,8 @@ import datetime as dt
 from datetime import datetime
 
 import pytest
-from backend.domain.aggregates.user import User
 
+from backend.domain.aggregates.user import User
 from backend.domain.value_objects.role import Role
 
 
