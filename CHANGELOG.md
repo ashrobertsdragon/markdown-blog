@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: User aggregate root for authentication and authorization
+
+  - Created User aggregate implementing Domain-Driven Design patterns for identity management
+  - Factory method `create_from_clerk()` enables seamless integration with Clerk authentication provider
+  - Role-based access control via `change_role()` method supporting authenticated, author, and admin roles
+  - Immutable `created_at` timestamp ensures audit trail integrity for compliance and security tracking
+  - API serialization via `to_dict()` method with optional sensitive field exclusion for secure data exposure
+  - Full type safety with comprehensive type hints and runtime validation using Pydantic
+  - Test suite: 14 comprehensive unit tests with 100% code coverage validating factory methods, role transitions, serialization, and edge cases
+  - Files added: `backend/src/backend/domain/aggregates/user.py`, `backend/src/backend/domain/aggregates/__init__.py`, `backend/tests/unit/test_user.py`
+
 - **Backend**: User role enumeration with permission hierarchy
 
   - Created Role value object as StrEnum with three authorization levels (authenticated, author, admin)
