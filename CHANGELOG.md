@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: User persistence layer with repository pattern for database operations
+
+  - Implemented UserRepository class in `backend/src/backend/infrastructure/persistence/user_repository.py` for CRUD operations on User aggregate
+  - Converts between SQLModel User table models and domain User aggregates with bidirectional mapping
+  - Supports flexible session management: accepts injected sessions for testing or creates sessions from connection pool for production
+  - Methods: `find_by_clerk_id()` with indexed lookup, `find_by_id()`, `save()` with insert/update logic, `list_all()` with optional pagination
+  - Comprehensive test suite: 29 tests (20 unit tests for conversion logic, 9 integration tests for database operations) with full coverage
+  - Files added: `backend/src/backend/infrastructure/persistence/user_repository.py`, `backend/tests/unit/test_user_repository.py`, `backend/tests/integration/test_user_repository.py`
+
 - **Backend**: User aggregate root for authentication and authorization
 
   - Created User aggregate implementing Domain-Driven Design patterns for identity management
