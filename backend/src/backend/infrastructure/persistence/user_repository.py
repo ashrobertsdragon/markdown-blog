@@ -64,6 +64,8 @@ class UserRepository:
                 return self._to_domain(user_model)
             return None
 
+        return None
+
     def find_by_id(self, user_id: int) -> DomainUser | None:
         """Find user by primary key ID.
 
@@ -87,6 +89,8 @@ class UserRepository:
             if user_model:
                 return self._to_domain(user_model)
             return None
+
+        return None
 
     def save(self, user: DomainUser) -> DomainUser:
         """Save or update user in database.

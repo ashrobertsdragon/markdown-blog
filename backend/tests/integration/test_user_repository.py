@@ -120,6 +120,7 @@ def test_save_update_persists_changes(db_session):
 
     updated_user = repo.save(saved_user)
 
+    assert updated_user.id is not None
     retrieved_user = repo.find_by_id(updated_user.id)
 
     assert retrieved_user is not None
@@ -269,6 +270,7 @@ def test_role_enum_string_conversion_roundtrip(db_session):
         )
 
         saved_user = repo.save(user)
+        assert saved_user.id is not None
         retrieved_user = repo.find_by_id(saved_user.id)
 
         assert retrieved_user is not None
@@ -305,6 +307,7 @@ def test_created_at_timestamp_preserved_on_update(db_session):
     saved_user.email = "updated@example.com"
     updated_user = repo.save(saved_user)
 
+    assert updated_user.id is not None
     retrieved_user = repo.find_by_id(updated_user.id)
 
     assert retrieved_user is not None
