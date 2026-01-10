@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import ClassVar
 
 from pydantic import Field, PostgresDsn
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+)
 
 
 class FlaskEnv(StrEnum):
@@ -46,6 +49,48 @@ class FlaskSettings(BaseSettings):
         if self.STATIC_PATH:
             return str(self.STATIC_PATH)
         return str(self.BUILD_DIR / "static")
+
+
+class ClerkSettings(BaseSettings):
+    """Clerk authentication settings.
+
+    PARAMETERS:
+        clerk_publishable_key (str): Clerk publishable key
+            (safe to expose on frontend).
+        clerk_secret_key (str): Clerk secret key
+            (keep secure, backend only).
+    """
+
+    model_config = SettingsConfigDict(case_sensitive=True)
+
+    clerk_publishable_key: str = Field(
+        default=..., validation_alias="CLERK_PUBLISHABLE_KEY"
+    )
+    clerk_secret_key: str = Field(
+        default=..., validation_alias="CLERK_SECRET_KEY"
+    )
+
+
+class Settings(BaseSettings):
+    """Application settings combining Clerk authentication configuration.
+
+    PARAMETERS:
+        clerk_publishable_key (str): Clerk publishable key
+            (safe to expose on frontend).
+        clerk_secret_key (str): Clerk secret key
+            (keep secure, backend only).
+        environment (str | None): Optional environment identifier.
+    """
+
+    model_config = SettingsConfigDict(
+        case_sensitive=True, extra="allow", populate_by_name=True
+    )
+
+    clerk_publishable_key: str = Field(
+        default=..., alias="CLERK_PUBLISHABLE_KEY"
+    )
+    clerk_secret_key: str = Field(default=..., alias="CLERK_SECRET_KEY")
+    environment: str | None = None
 
 
 class DBSettings(BaseSettings):

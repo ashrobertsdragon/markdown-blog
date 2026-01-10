@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Clerk authentication adapter with JWT verification and JWKS caching
+
+  - Implemented ClerkAuthAdapter class in `backend/src/backend/infrastructure/auth/clerk_auth_adapter.py` for secure JWT token validation
+  - RS256 algorithm support with Clerk's public key fetched from JWKS endpoint
+  - HS256 fallback for test environments with secret key-based validation
+  - JWKS public key caching with 1-hour TTL to minimize external API calls and avoid rate limiting
+  - Comprehensive error handling with clear authentication failure messages
+  - Security logging for failed authentication attempts with user ID extraction
+  - Added ClerkSettings configuration class in `backend/src/backend/config.py` for environment-based Clerk credentials
+  - Added Settings class combining all application configuration with Pydantic validation
+  - Configured Pydantic mypy plugin for proper type checking support
+  - Test suite: 29 unit tests with mocked JWKS endpoints and PyJWT validation, 9 integration tests (skipped in CI, require real Clerk tokens)
+  - 79% code coverage for ClerkAuthAdapter module with comprehensive test coverage of all error paths
+  - Dependencies added: `pyjwt>=2.10.1`, `cryptography>=46.0.3`, `requests>=2.32.5`
+  - Files added: `backend/src/backend/infrastructure/auth/clerk_auth_adapter.py`, `backend/src/backend/infrastructure/auth/__init__.py`, `backend/tests/unit/test_clerk_auth_adapter.py`, `backend/tests/integration/test_clerk_auth_adapter_integration.py`
+  - Files modified: `backend/src/backend/config.py`, `backend/pyproject.toml`
+
 - **Backend**: User persistence layer with repository pattern for database operations
 
   - Implemented UserRepository class in `backend/src/backend/infrastructure/persistence/user_repository.py` for CRUD operations on User aggregate
