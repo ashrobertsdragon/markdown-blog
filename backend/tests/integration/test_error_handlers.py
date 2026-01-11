@@ -14,23 +14,23 @@ def app():
     from backend.exceptions import AuthenticationError, AuthorizationError
 
     @app.errorhandler(AuthenticationError)
-    def handle_authentication_error(error: AuthenticationError) -> Response:
+    def handle_authentication_error(
+        error: AuthenticationError,
+    ) -> tuple[Response, int]:
         from flask import jsonify
 
-        response = jsonify({"error": str(error)})
-        response.status_code = 401
-        return response
+        return jsonify({"error": str(error)}), 401
 
     @app.errorhandler(AuthorizationError)
-    def handle_authorization_error(error: AuthorizationError) -> Response:
+    def handle_authorization_error(
+        error: AuthorizationError,
+    ) -> tuple[Response, int]:
         from flask import jsonify
 
         payload = {"error": error.message}
         if error.required_role is not None:
             payload["required_role"] = error.required_role
-        response = jsonify(payload)
-        response.status_code = 403
-        return response
+        return jsonify(payload), 403
 
     @app.route("/test-auth-error")
     def test_auth_error() -> Never:

@@ -54,7 +54,9 @@ def create_app() -> Flask:
     app.register_blueprint(health_bp, url_prefix="")
 
     @app.errorhandler(AuthenticationError)
-    def handle_authentication_error(error: AuthenticationError) -> Response:
+    def handle_authentication_error(
+        error: AuthenticationError,
+    ) -> tuple[Response, int]:
         """Handle authentication failures with 401 response.
 
         Args:
@@ -63,12 +65,12 @@ def create_app() -> Flask:
         Returns:
             JSON response with error message and 401 status code.
         """
-        response = jsonify({"error": str(error)})
-        response.status_code = 401
-        return response
+        return jsonify({"error": str(error)}), 401
 
     @app.errorhandler(AuthorizationError)
-    def handle_authorization_error(error: AuthorizationError) -> Response:
+    def handle_authorization_error(
+        error: AuthorizationError,
+    ) -> tuple[Response, int]:
         """Handle authorization failures with 403 response.
 
         Args:
@@ -81,9 +83,7 @@ def create_app() -> Flask:
         payload = {"error": error.message}
         if error.required_role is not None:
             payload["required_role"] = error.required_role
-        response = jsonify(payload)
-        response.status_code = 403
-        return response
+        return jsonify(payload), 403
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
