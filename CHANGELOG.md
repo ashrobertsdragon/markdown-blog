@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Centralized exception handling for authentication and authorization
+
+  - Created custom exception classes AuthenticationError and AuthorizationError in `backend/src/backend/exceptions.py`
+  - AuthenticationError for 401 Unauthorized responses handling invalid tokens, expired sessions, and missing authorization headers
+  - AuthorizationError for 403 Forbidden responses with optional required_role field indicating minimum role needed for access
+  - Flask error handlers registered in `backend/src/backend/main.py` for consistent JSON error responses across all endpoints
+  - Centralized exception module accessible to all layers following Hexagonal Architecture dependency rules
+  - Refactored ClerkAuthAdapter to import AuthenticationError from central module eliminating duplicate exception definitions
+  - Comprehensive test suite: 22 unit tests for exception creation and attributes, 21 integration tests for Flask error handler responses and HTTP status codes
+  - All tests pass with 100% coverage of exception classes and error handler logic
+  - Files added: `backend/src/backend/exceptions.py`, `backend/tests/unit/test_exceptions.py`, `backend/tests/integration/test_error_handlers.py`
+  - Files modified: `backend/src/backend/main.py`, `backend/src/backend/infrastructure/auth/clerk_auth_adapter.py`, `backend/src/backend/infrastructure/auth/__init__.py`, `backend/tests/unit/test_clerk_auth_adapter.py`, `backend/tests/integration/test_clerk_auth_adapter.py`
+
 - **Backend**: Clerk authentication adapter with JWT verification and JWKS caching
 
   - Implemented ClerkAuthAdapter class in `backend/src/backend/infrastructure/auth/clerk_auth_adapter.py` for secure JWT token validation

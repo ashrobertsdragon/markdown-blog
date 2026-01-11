@@ -3,10 +3,8 @@ import os
 import pytest
 
 from backend.config import Settings
-from backend.infrastructure.auth.clerk_auth_adapter import (
-    AuthenticationError,
-    ClerkAuthAdapter,
-)
+from backend.exceptions import AuthenticationError
+from backend.infrastructure.auth.clerk_auth_adapter import ClerkAuthAdapter
 from tests.utils import has_internet
 
 

@@ -13,6 +13,7 @@ from flask_cors import CORS
 
 from backend.api.routes.health import health_bp
 from backend.config import FlaskEnv, FlaskSettings
+from backend.exceptions import AuthenticationError, AuthorizationError
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,38 @@ def create_app() -> Flask:
         CORS(app)
 
     app.register_blueprint(health_bp, url_prefix="")
+
+    @app.errorhandler(AuthenticationError)
+    def handle_authentication_error(error: AuthenticationError) -> Response:
+        """Handle authentication failures with 401 response.
+
+        Args:
+            error: The caught AuthenticationError instance.
+
+        Returns:
+            JSON response with error message and 401 status code.
+        """
+        response = jsonify({"error": str(error)})
+        response.status_code = 401
+        return response
+
+    @app.errorhandler(AuthorizationError)
+    def handle_authorization_error(error: AuthorizationError) -> Response:
+        """Handle authorization failures with 403 response.
+
+        Args:
+            error: The caught AuthorizationError instance.
+
+        Returns:
+            JSON response with error message, optional required_role,
+            and 403 status code.
+        """
+        payload = {"error": error.message}
+        if error.required_role is not None:
+            payload["required_role"] = error.required_role
+        response = jsonify(payload)
+        response.status_code = 403
+        return response
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")

@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives.serialization import (
 )
 
 from backend.config import Settings
+from backend.exceptions import AuthenticationError
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +33,6 @@ class JWTPayload(TypedDict, total=False):
     iat: int
     azp: str
     sid: str
-
-
-class AuthenticationError(Exception):
-    """Raised when JWT validation fails."""
-
-    pass
 
 
 class ClerkAuthAdapter:
