@@ -210,7 +210,9 @@ def test_me_endpoint_creates_new_user_on_first_login(client, valid_jwt_payload):
 def test_me_endpoint_preserves_existing_user_role(
     client, valid_jwt_payload, admin_user
 ):
-    """GET /auth/me should preserve existing user role (not reset to authenticated).
+    """GET /auth/me should preserve existing user role.
+
+    User role should not be reset to authenticated on subsequent logins.
 
     Tests that subsequent logins by users with elevated roles (AUTHOR, ADMIN)
     don't have their roles reset to AUTHENTICATED.
