@@ -49,9 +49,49 @@ from backend.exceptions import AuthenticationError, AuthorizationError
 from backend.infrastructure.auth.clerk_auth_adapter import ClerkAuthAdapter
 from backend.infrastructure.persistence.user_repository import UserRepository
 
-settings = Settings()
-clerk_auth_adapter = ClerkAuthAdapter(settings)
-user_repository = UserRepository()
+_settings: Settings | None = None
+_clerk_adapter: ClerkAuthAdapter | None = None
+_user_repo: UserRepository | None = None
+
+
+def _get_settings() -> Settings:
+    """Lazily initialize Settings instance.
+
+    Returns:
+        Settings instance (singleton pattern)
+    """
+    global _settings
+    if _settings is None:
+        _settings = Settings()
+    return _settings
+
+
+def _get_clerk_adapter() -> ClerkAuthAdapter:
+    """Lazily initialize ClerkAuthAdapter instance.
+
+    Returns:
+        ClerkAuthAdapter instance (singleton pattern)
+    """
+    global _clerk_adapter
+    if _clerk_adapter is None:
+        _clerk_adapter = ClerkAuthAdapter(_get_settings())
+    return _clerk_adapter
+
+
+def _get_user_repository() -> UserRepository:
+    """Lazily initialize UserRepository instance.
+
+    Returns:
+        UserRepository instance (singleton pattern)
+    """
+    global _user_repo
+    if _user_repo is None:
+        _user_repo = UserRepository()
+    return _user_repo
+
+
+clerk_auth_adapter: ClerkAuthAdapter | None = None
+user_repository: UserRepository | None = None
 
 
 def require_auth(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -92,6 +132,9 @@ def require_auth(f: Callable[..., Any]) -> Callable[..., Any]:
 
     @wraps(f)
     def decorated(*args: Any, **kwargs: Any) -> Any:
+        clerk_adapter = clerk_auth_adapter or _get_clerk_adapter()
+        user_repo = user_repository or _get_user_repository()
+
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:
@@ -109,18 +152,18 @@ def require_auth(f: Callable[..., Any]) -> Callable[..., Any]:
         if not token:
             raise AuthenticationError("Empty token")
 
-        payload = clerk_auth_adapter.verify_token(token)
+        payload = clerk_adapter.verify_token(token)
 
         clerk_user_id = payload["sub"]
         email = payload["email"]
 
-        user = user_repository.find_by_clerk_user_id(clerk_user_id)
+        user = user_repo.find_by_clerk_user_id(clerk_user_id)
 
         if user is None:
             user = User.create_from_clerk(
                 clerk_user_id=clerk_user_id, email=email
             )
-            user_repository.add(user)
+            user_repo.add(user)
 
         g.current_user = user
 

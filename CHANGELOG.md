@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Backend**: Fixed CI test failures due to eager initialization of Settings in auth middleware
+  - Refactored auth_middleware.py to use lazy initialization pattern for Settings, ClerkAuthAdapter, and UserRepository
+  - Prevents ValidationError during module import when CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY environment variables are not set
+  - Implemented singleton pattern with private getter functions (\_get_settings, \_get_clerk_adapter, \_get_user_repository)
+  - Module-level variables (clerk_auth_adapter, user_repository) now default to None for test mock compatibility
+  - Adapters and repositories are instantiated only when decorators are actually invoked, not at import time
+  - All 208 unit tests pass including 17 auth middleware tests with full backward compatibility
+  - No breaking changes to decorator API or test mocking patterns
+  - File modified: `backend/src/backend/api/middleware/auth_middleware.py`
+
 ### Added
 
 - **Backend**: JWT authentication middleware with role-based access control
