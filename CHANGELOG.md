@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: JWT authentication middleware with role-based access control
+
+  - Implemented `@require_auth` decorator for protecting Flask endpoints with JWT token validation
+  - Implemented `@require_role(role)` decorator for enforcing role-based access control with three authorization levels (authenticated, author, admin)
+  - Automatic user creation on first authentication via Clerk integration
+  - User context injection into Flask's `g` object for access throughout request lifecycle
+  - Comprehensive error handling with AuthenticationError (401) and AuthorizationError (403) responses
+  - Integration with ClerkAuthAdapter for JWT verification and user claims extraction
+  - UserRepository integration for fetching or creating users based on Clerk user ID
+  - Test suite: 26 unit tests with 100% coverage validating decorator behavior, role enforcement, error handling, and user auto-creation
+  - Files created: `backend/src/backend/api/middleware/__init__.py`, `backend/src/backend/api/middleware/auth_middleware.py`, `backend/tests/unit/test_auth_middleware.py`
+  - Files modified: `backend/src/backend/infrastructure/persistence/user_repository.py` (added `find_by_clerk_user_id()` method)
+
 - **Backend**: Centralized exception handling for authentication and authorization
 
   - Created custom exception classes AuthenticationError and AuthorizationError in `backend/src/backend/exceptions.py`

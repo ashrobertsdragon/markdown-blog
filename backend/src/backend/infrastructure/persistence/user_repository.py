@@ -66,6 +66,17 @@ class UserRepository:
 
         return None
 
+    def find_by_clerk_user_id(self, clerk_user_id: str) -> DomainUser | None:
+        """Alias for find_by_clerk_id for backwards compatibility.
+
+        Args:
+            clerk_user_id: Clerk's unique user identifier
+
+        Returns:
+            DomainUser aggregate if found, None otherwise
+        """
+        return self.find_by_clerk_id(clerk_user_id)
+
     def find_by_id(self, user_id: int) -> DomainUser | None:
         """Find user by primary key ID.
 
@@ -117,6 +128,17 @@ class UserRepository:
             return self._save_with_session(session, user)
 
         raise RuntimeError("Failed to obtain database session")
+
+    def add(self, user: DomainUser) -> DomainUser:
+        """Alias for save method for backwards compatibility.
+
+        Args:
+            user: DomainUser aggregate to persist
+
+        Returns:
+            DomainUser aggregate with updated ID and database state
+        """
+        return self.save(user)
 
     def list_all(self, limit: int = 50, offset: int = 0) -> list[DomainUser]:
         """List all users with pagination.
