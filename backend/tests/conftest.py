@@ -70,6 +70,8 @@ def test_env(clean_env):
     clean_env.setenv("LOCAL_DB_NAME", "test_db")
     clean_env.setenv("LOCAL_DB_USER", "test_user")
     clean_env.setenv("LOCAL_DB_PASSWORD", "test_password")
+    clean_env.setenv("CLERK_PUBLISHABLE_KEY", "pk_test_fake_key_for_testing")
+    clean_env.setenv("CLERK_SECRET_KEY", "sk_test_fake_secret_for_testing")
     return clean_env
 
 

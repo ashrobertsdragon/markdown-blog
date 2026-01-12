@@ -21,6 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Auth routes blueprint with user profile endpoint
+
+  - Implemented GET /api/auth/me endpoint for retrieving authenticated user profile
+  - Returns user data including id, clerk_user_id, email, role, and created_at in JSON format
+  - Protected with @require_auth decorator for JWT validation
+  - Blueprint registered at /auth URL prefix in Flask application factory
+  - Comprehensive integration test suite with 10 tests covering valid authentication, missing/invalid/expired tokens, new user creation, role preservation, JSON response format, and CORS headers
+  - All tests pass with complete coverage of authentication flows
+  - Files created: `backend/src/backend/api/routes/auth.py`, `backend/tests/integration/test_api_routes_auth.py`
+  - Files modified: `backend/src/backend/main.py`, `backend/tests/conftest.py`
+
 - **Backend**: JWT authentication middleware with role-based access control
 
   - Implemented `@require_auth` decorator for protecting Flask endpoints with JWT token validation
