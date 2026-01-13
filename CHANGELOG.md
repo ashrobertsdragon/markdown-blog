@@ -21,6 +21,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Admin user management routes with role-based access control
+
+  - Implemented GET /api/users endpoint for listing all users with pagination (admin only)
+  - Implemented PUT /api/users/:id/role endpoint for updating user roles (admin only)
+  - Pagination support with configurable limit (1-100, default 50) and offset (default 0) query parameters
+  - Role validation ensuring only valid roles (authenticated, author, admin) can be assigned
+  - Protected with @require_auth and @require_role('admin') decorators for secure admin-only access
+  - Comprehensive error handling: 400 for invalid parameters, 404 for non-existent users, 403 for non-admins
+  - Integration test suite with 12 tests covering admin authentication, pagination, role updates, error cases, and authorization enforcement
+  - All tests pass with complete coverage of user management flows
+  - Files created: `backend/src/backend/api/routes/users.py`, `backend/tests/integration/test_api_routes_users.py`
+  - Files modified: `backend/src/backend/main.py` (registered users blueprint at /users prefix)
+
 - **Backend**: Auth routes blueprint with user profile endpoint
 
   - Implemented GET /api/auth/me endpoint for retrieving authenticated user profile
