@@ -1,0 +1,99 @@
+"""Custom exception classes for blog API error handling.
+
+This module provides centralized exception definitions used across all
+layers of the application (infrastructure, application, API). These
+exceptions enable consistent error handling and HTTP response generation
+throughout the application.
+
+Exception Hierarchy:
+    Exception
+    ├── AuthenticationError (401 Unauthorized)
+    └── AuthorizationError (403 Forbidden)
+
+Usage Examples:
+    Authentication failure:
+        >>> raise AuthenticationError("Invalid JWT token")
+
+    Authorization failure:
+        >>> raise AuthorizationError(
+        ...     "Admin access required",
+        ...     required_role="admin"
+        ... )
+
+    Catching exceptions:
+        >>> try:
+        ...     verify_token(token)
+        ... except AuthenticationError as e:
+        ...     return {"error": e.message}, 401
+
+Error Handlers:
+    Flask error handlers for these exceptions are registered in main.py
+    via the register_error_handlers() function from
+    api.middleware.error_handler.
+
+Notes:
+    - These exceptions should be raised from infrastructure adapters,
+      application handlers, or API routes
+    - Error handlers convert them to JSON responses with appropriate
+      HTTP status codes
+    - All exception messages should be user-safe (no internal details)
+"""
+
+
+class AuthenticationError(Exception):
+    """Raised when JWT validation fails or user credentials are invalid.
+
+    This exception represents authentication failures (401 Unauthorized),
+    such as:
+    - Invalid JWT token
+    - Expired JWT token
+    - Missing authentication credentials
+    - Invalid API key
+
+    Attributes:
+        message: User-facing error description
+
+    Example:
+        >>> raise AuthenticationError("JWT token has expired")
+    """
+
+    def __init__(self, message: str) -> None:
+        """Initialize authentication error.
+
+        Args:
+            message: User-facing error description
+        """
+        self.message = message
+        super().__init__(message)
+
+
+class AuthorizationError(Exception):
+    """Raised when user lacks required permissions for an operation.
+
+    This exception represents authorization failures (403 Forbidden),
+    such as:
+    - Insufficient role/permissions
+    - Attempting to access another user's resource
+    - Missing required scope
+
+    Attributes:
+        message: User-facing error description
+        required_role: Optional role name that was required for the operation
+
+    Example:
+        >>> raise AuthorizationError(
+        ...     "Admin role required to delete posts",
+        ...     required_role="admin"
+        ... )
+    """
+
+    def __init__(self, message: str, required_role: str | None = None) -> None:
+        """Initialize authorization error.
+
+        Args:
+            message: User-facing error description
+            required_role: Optional role name that was required
+        """
+        self.message = message
+        self.required_role = required_role
+        super().__init__(message)

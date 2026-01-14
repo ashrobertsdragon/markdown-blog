@@ -18,6 +18,7 @@ from pytest import MonkeyPatch
 
 from backend.main import create_app
 from tests.e2e.utils import wait_for_server
+from tests.utils import has_internet
 
 PROJECT_ROOT = Path(__file__).parents[3]
 BUILD_DIR = PROJECT_ROOT / "build"
@@ -102,6 +103,7 @@ def test_health_db_endpoint_responds(flask_server):
 
 
 @pytest.mark.external
+@pytest.mark.skipif(not has_internet(), reason="Internet required")
 def test_health_github_endpoint_responds(flask_server):
     """Verify GET /health/github returns appropriate status.
 

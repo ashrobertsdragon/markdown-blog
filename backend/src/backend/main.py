@@ -11,8 +11,11 @@ from urllib.parse import unquote
 from flask import Flask, Response, jsonify, send_from_directory
 from flask_cors import CORS
 
+from backend.api.routes.auth import auth_bp
 from backend.api.routes.health import health_bp
+from backend.api.routes.users import users_bp
 from backend.config import FlaskEnv, FlaskSettings
+from backend.exceptions import AuthenticationError, AuthorizationError
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +54,40 @@ def create_app() -> Flask:
         CORS(app)
 
     app.register_blueprint(health_bp, url_prefix="")
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(users_bp, url_prefix="/users")
+
+    @app.errorhandler(AuthenticationError)
+    def handle_authentication_error(
+        error: AuthenticationError,
+    ) -> tuple[Response, int]:
+        """Handle authentication failures with 401 response.
+
+        Args:
+            error: The caught AuthenticationError instance.
+
+        Returns:
+            JSON response with error message and 401 status code.
+        """
+        return jsonify({"error": str(error)}), 401
+
+    @app.errorhandler(AuthorizationError)
+    def handle_authorization_error(
+        error: AuthorizationError,
+    ) -> tuple[Response, int]:
+        """Handle authorization failures with 403 response.
+
+        Args:
+            error: The caught AuthorizationError instance.
+
+        Returns:
+            JSON response with error message, optional required_role,
+            and 403 status code.
+        """
+        payload = {"error": error.message}
+        if error.required_role is not None:
+            payload["required_role"] = error.required_role
+        return jsonify(payload), 403
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")

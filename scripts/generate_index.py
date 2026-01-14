@@ -20,9 +20,7 @@ def main(package: str) -> None:
     if not package_dir.exists():
         raise FileNotFoundError(package_dir)
     files = sorted(
-        f
-        for f in package_dir.iterdir()
-        if f.is_file() and not f.name.endswith(".html")
+        f for f in package_dir.iterdir() if f.is_file() and not f.name.endswith(".html")
     )
 
     lines = [

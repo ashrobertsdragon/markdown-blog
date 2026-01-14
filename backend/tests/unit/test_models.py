@@ -89,3 +89,26 @@ def test_post_created_at_and_updated_at_are_same_on_creation():
     # due to the separate lambda calls
     time_diff = abs((post.updated_at - post.created_at).total_seconds())
     assert time_diff < 0.001  # Less than 1ms difference
+
+
+def test_user_clerk_user_id_defaults_to_none():
+    """User.clerk_user_id should default to None for backward compatibility."""
+    user = User(email="test@example.com", role="authenticated")
+    assert user.clerk_user_id is None
+
+
+def test_user_clerk_user_id_accepts_string():
+    """User.clerk_user_id should accept valid Clerk user ID strings."""
+    user = User(
+        email="test@example.com",
+        role="authenticated",
+        clerk_user_id="user_2abc123xyz",
+    )
+    assert user.clerk_user_id == "user_2abc123xyz"
+
+
+def test_user_can_be_created_without_clerk_user_id():
+    """User should be creatable without providing clerk_user_id."""
+    user = User(email="newuser@example.com")
+    assert hasattr(user, "clerk_user_id")
+    assert user.clerk_user_id is None

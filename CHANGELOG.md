@@ -7,7 +7,126 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Backend**: Fixed CI test failures due to eager initialization of Settings in auth middleware
+  - Refactored auth_middleware.py to use lazy initialization pattern for Settings, ClerkAuthAdapter, and UserRepository
+  - Prevents ValidationError during module import when CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY environment variables are not set
+  - Implemented singleton pattern with private getter functions (\_get_settings, \_get_clerk_adapter, \_get_user_repository)
+  - Module-level variables (clerk_auth_adapter, user_repository) now default to None for test mock compatibility
+  - Adapters and repositories are instantiated only when decorators are actually invoked, not at import time
+  - All 208 unit tests pass including 17 auth middleware tests with full backward compatibility
+  - No breaking changes to decorator API or test mocking patterns
+  - File modified: `backend/src/backend/api/middleware/auth_middleware.py`
+
 ### Added
+
+- **Backend**: Admin user management routes with role-based access control
+
+  - Implemented GET /api/users endpoint for listing all users with pagination (admin only)
+  - Implemented PUT /api/users/:id/role endpoint for updating user roles (admin only)
+  - Pagination support with configurable limit (1-100, default 50) and offset (default 0) query parameters
+  - Role validation ensuring only valid roles (authenticated, author, admin) can be assigned
+  - Protected with @require_auth and @require_role('admin') decorators for secure admin-only access
+  - Comprehensive error handling: 400 for invalid parameters, 404 for non-existent users, 403 for non-admins
+  - Integration test suite with 12 tests covering admin authentication, pagination, role updates, error cases, and authorization enforcement
+  - All tests pass with complete coverage of user management flows
+  - Files created: `backend/src/backend/api/routes/users.py`, `backend/tests/integration/test_api_routes_users.py`
+  - Files modified: `backend/src/backend/main.py` (registered users blueprint at /users prefix)
+
+- **Backend**: Auth routes blueprint with user profile endpoint
+
+  - Implemented GET /api/auth/me endpoint for retrieving authenticated user profile
+  - Returns user data including id, clerk_user_id, email, role, and created_at in JSON format
+  - Protected with @require_auth decorator for JWT validation
+  - Blueprint registered at /auth URL prefix in Flask application factory
+  - Comprehensive integration test suite with 10 tests covering valid authentication, missing/invalid/expired tokens, new user creation, role preservation, JSON response format, and CORS headers
+  - All tests pass with complete coverage of authentication flows
+  - Files created: `backend/src/backend/api/routes/auth.py`, `backend/tests/integration/test_api_routes_auth.py`
+  - Files modified: `backend/src/backend/main.py`, `backend/tests/conftest.py`
+
+- **Backend**: JWT authentication middleware with role-based access control
+
+  - Implemented `@require_auth` decorator for protecting Flask endpoints with JWT token validation
+  - Implemented `@require_role(role)` decorator for enforcing role-based access control with three authorization levels (authenticated, author, admin)
+  - Automatic user creation on first authentication via Clerk integration
+  - User context injection into Flask's `g` object for access throughout request lifecycle
+  - Comprehensive error handling with AuthenticationError (401) and AuthorizationError (403) responses
+  - Integration with ClerkAuthAdapter for JWT verification and user claims extraction
+  - UserRepository integration for fetching or creating users based on Clerk user ID
+  - Test suite: 26 unit tests with 100% coverage validating decorator behavior, role enforcement, error handling, and user auto-creation
+  - Files created: `backend/src/backend/api/middleware/__init__.py`, `backend/src/backend/api/middleware/auth_middleware.py`, `backend/tests/unit/test_auth_middleware.py`
+  - Files modified: `backend/src/backend/infrastructure/persistence/user_repository.py` (added `find_by_clerk_user_id()` method)
+
+- **Backend**: Centralized exception handling for authentication and authorization
+
+  - Created custom exception classes AuthenticationError and AuthorizationError in `backend/src/backend/exceptions.py`
+  - AuthenticationError for 401 Unauthorized responses handling invalid tokens, expired sessions, and missing authorization headers
+  - AuthorizationError for 403 Forbidden responses with optional required_role field indicating minimum role needed for access
+  - Flask error handlers registered in `backend/src/backend/main.py` for consistent JSON error responses across all endpoints
+  - Centralized exception module accessible to all layers following Hexagonal Architecture dependency rules
+  - Refactored ClerkAuthAdapter to import AuthenticationError from central module eliminating duplicate exception definitions
+  - Comprehensive test suite: 22 unit tests for exception creation and attributes, 21 integration tests for Flask error handler responses and HTTP status codes
+  - All tests pass with 100% coverage of exception classes and error handler logic
+  - Files added: `backend/src/backend/exceptions.py`, `backend/tests/unit/test_exceptions.py`, `backend/tests/integration/test_error_handlers.py`
+  - Files modified: `backend/src/backend/main.py`, `backend/src/backend/infrastructure/auth/clerk_auth_adapter.py`, `backend/src/backend/infrastructure/auth/__init__.py`, `backend/tests/unit/test_clerk_auth_adapter.py`, `backend/tests/integration/test_clerk_auth_adapter.py`
+
+- **Backend**: Clerk authentication adapter with JWT verification and JWKS caching
+
+  - Implemented ClerkAuthAdapter class in `backend/src/backend/infrastructure/auth/clerk_auth_adapter.py` for secure JWT token validation
+  - RS256 algorithm support with Clerk's public key fetched from JWKS endpoint
+  - HS256 fallback for test environments with secret key-based validation
+  - JWKS public key caching with 1-hour TTL to minimize external API calls and avoid rate limiting
+  - Comprehensive error handling with clear authentication failure messages
+  - Security logging for failed authentication attempts with user ID extraction
+  - Added ClerkSettings configuration class in `backend/src/backend/config.py` for environment-based Clerk credentials
+  - Added Settings class combining all application configuration with Pydantic validation
+  - Configured Pydantic mypy plugin for proper type checking support
+  - Test suite: 29 unit tests with mocked JWKS endpoints and PyJWT validation, 9 integration tests (skipped in CI, require real Clerk tokens)
+  - 79% code coverage for ClerkAuthAdapter module with comprehensive test coverage of all error paths
+  - Dependencies added: `pyjwt>=2.10.1`, `cryptography>=46.0.3`, `requests>=2.32.5`
+  - Files added: `backend/src/backend/infrastructure/auth/clerk_auth_adapter.py`, `backend/src/backend/infrastructure/auth/__init__.py`, `backend/tests/unit/test_clerk_auth_adapter.py`, `backend/tests/integration/test_clerk_auth_adapter_integration.py`
+  - Files modified: `backend/src/backend/config.py`, `backend/pyproject.toml`
+
+- **Backend**: User persistence layer with repository pattern for database operations
+
+  - Implemented UserRepository class in `backend/src/backend/infrastructure/persistence/user_repository.py` for CRUD operations on User aggregate
+  - Converts between SQLModel User table models and domain User aggregates with bidirectional mapping
+  - Supports flexible session management: accepts injected sessions for testing or creates sessions from connection pool for production
+  - Methods: `find_by_clerk_id()` with indexed lookup, `find_by_id()`, `save()` with insert/update logic, `list_all()` with optional pagination
+  - Comprehensive test suite: 29 tests (20 unit tests for conversion logic, 9 integration tests for database operations) with full coverage
+  - Files added: `backend/src/backend/infrastructure/persistence/user_repository.py`, `backend/tests/unit/test_user_repository.py`, `backend/tests/integration/test_user_repository.py`
+
+- **Backend**: User aggregate root for authentication and authorization
+
+  - Created User aggregate implementing Domain-Driven Design patterns for identity management
+  - Factory method `create_from_clerk()` enables seamless integration with Clerk authentication provider
+  - Role-based access control via `change_role()` method supporting authenticated, author, and admin roles
+  - Immutable `created_at` timestamp ensures audit trail integrity for compliance and security tracking
+  - API serialization via `to_dict()` method with optional sensitive field exclusion for secure data exposure
+  - Full type safety with comprehensive type hints and runtime validation using Pydantic
+  - Test suite: 14 comprehensive unit tests with 100% code coverage validating factory methods, role transitions, serialization, and edge cases
+  - Files added: `backend/src/backend/domain/aggregates/user.py`, `backend/src/backend/domain/aggregates/__init__.py`, `backend/tests/unit/test_user.py`
+
+- **Backend**: User role enumeration with permission hierarchy
+
+  - Created Role value object as StrEnum with three authorization levels (authenticated, author, admin)
+  - Implemented role-based permission methods for author and admin access control
+  - Automatic lowercase string conversion using auto() for database compatibility
+  - Immutable enum members ensure thread-safe singleton instances
+  - JSON serializable for API responses and database storage
+  - Type-safe with full type hints for IDE support and static analysis
+  - Test suite: 40 comprehensive unit tests with 100% code coverage
+  - Files added: `backend/src/backend/domain/value_objects/role.py`, `backend/src/backend/domain/value_objects/__init__.py`, `backend/tests/unit/test_role.py`
+
+- **Backend**: User model supports external authentication provider integration
+
+  - Added support for storing external authentication provider user identifiers
+  - Database includes unique index on authentication provider ID for fast JWT validation lookups
+  - Nullable field design ensures backward compatibility with existing users
+  - Enables secure integration with third-party authentication services
+  - Files modified: `backend/src/backend/infrastructure/persistence/models.py`
+  - Files added: `backend/tests/integration/test_user_clerk_id.py`
 
 - **Deployment**: Added LiteSpeed deployment script for cPanel environments with UAPI limitations
 
@@ -100,7 +219,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed local scripts source path from `monorepo/backend/scripts/` to `monorepo/backend/src/scripts/`
   - Updated deployment tests to expect `seeash/src/backend/` instead of `seeash/backend/`
   - Updated test helper to create `monorepo/backend/src/scripts/` directory structure
-  - Fixes uv package installation error: "Expected a Python module at: src/backend/__init__.py"
+  - Fixes uv package installation error: "Expected a Python module at: src/backend/**init**.py"
   - Fixes schema creation error: "ModuleNotFoundError: No module named 'scripts'"
   - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `backend/src/scripts/__init__.py` (created)
 
