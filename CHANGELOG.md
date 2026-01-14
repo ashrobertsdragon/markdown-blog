@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: Installed Clerk React SDK for user authentication
+
+  - Added @clerk/clerk-react@5.59.3 package to enable frontend authentication capabilities
+  - Provides React components and hooks for user sign-in, sign-up, and session management
+  - Integrates with Clerk authentication service matching backend JWT verification
+  - Dependencies added: @clerk/clerk-react@5.59.3
+  - Files modified: `frontend/package.json`, `frontend/package-lock.json`
+
 - **Backend**: Admin user management routes with role-based access control
 
   - Implemented GET /api/users endpoint for listing all users with pagination (admin only)
