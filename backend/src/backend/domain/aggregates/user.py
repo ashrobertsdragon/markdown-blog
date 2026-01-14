@@ -15,7 +15,7 @@ class User:
     """
 
     id: int | None
-    clerk_user_id: str
+    clerk_user_id: str | None
     email: str
     role: Role
     created_at: datetime

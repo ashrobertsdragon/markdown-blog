@@ -481,9 +481,11 @@ def test_get_public_key_uses_cached_key_on_second_call(
     mock_get.assert_called_once()
 
 
+@patch("jwt.decode")
+@patch("jwt.get_unverified_header")
 @patch("requests.get")
 def test_jwks_endpoint_called_once_for_multiple_tokens(
-    mock_get, adapter, jwks_response, dev_settings
+    mock_get, mock_get_header, mock_decode, adapter, jwks_response, dev_settings
 ):
     """Test JWKS endpoint called only once for multiple token verifications.
 
@@ -492,6 +494,8 @@ def test_jwks_endpoint_called_once_for_multiple_tokens(
 
     Args:
         mock_get: Mocked requests.get function
+        mock_get_header: Mocked jwt.get_unverified_header function
+        mock_decode: Mocked jwt.decode function
         adapter: ClerkAuthAdapter fixture
         jwks_response: Mock JWKS response fixture
         dev_settings: Settings fixture
@@ -501,30 +505,20 @@ def test_jwks_endpoint_called_once_for_multiple_tokens(
     mock_response.status_code = 200
     mock_get.return_value = mock_response
 
-    token1 = jwt.encode(
+    mock_get_header.return_value = {"kid": "test_key_id_123", "alg": "RS256"}
+    mock_decode.side_effect = [
         {
             "sub": "user_1",
             "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
         },
-        dev_settings.clerk_secret_key,
-        algorithm="HS256",
-        headers={"kid": "test_key_id_123"},
-    )
-    token2 = jwt.encode(
         {
             "sub": "user_2",
             "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
         },
-        dev_settings.clerk_secret_key,
-        algorithm="HS256",
-        headers={"kid": "test_key_id_123"},
-    )
+    ]
 
-    with patch.object(
-        adapter, "_get_public_key", wraps=adapter._get_public_key
-    ):
-        adapter.verify_token(token1)
-        adapter.verify_token(token2)
+    adapter.verify_token("token1")
+    adapter.verify_token("token2")
 
     mock_get.assert_called_once()
 

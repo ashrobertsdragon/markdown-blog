@@ -1,5 +1,7 @@
 """Clerk authentication adapter for JWT verification."""
 
+import base64
+import binascii
 import logging
 import time
 from typing import Any, TypedDict
@@ -97,8 +99,6 @@ class ClerkAuthAdapter:
             if alg == "HS256":
                 key = self.config.clerk_secret_key
                 algorithms = ["HS256"]
-                if kid:
-                    self._get_public_key(kid)
             elif kid:
                 key = self._get_public_key(kid)
                 algorithms = ["RS256"]
@@ -204,21 +204,21 @@ class ClerkAuthAdapter:
         if pub_key.startswith("pk_test_"):
             domain_part = pub_key.replace("pk_test_", "").split("$")[0]
             try:
-                import base64
-
                 decoded = base64.b64decode(domain_part + "==").decode("utf-8")
                 domain = decoded
-            except Exception:
-                domain = "clerk.example.com"
+            except (binascii.Error, UnicodeDecodeError) as e:
+                raise ValueError(
+                    f"Failed to decode Clerk domain from publishable key: {e}"
+                )
         elif pub_key.startswith("pk_live_"):
             domain_part = pub_key.replace("pk_live_", "").split("$")[0]
             try:
-                import base64
-
                 decoded = base64.b64decode(domain_part + "==").decode("utf-8")
                 domain = decoded
-            except Exception:
-                domain = "clerk.example.com"
+            except (binascii.Error, UnicodeDecodeError) as e:
+                raise ValueError(
+                    f"Failed to decode Clerk domain from publishable key: {e}"
+                )
         else:
             domain = "clerk.example.com"
 
@@ -265,8 +265,6 @@ class ClerkAuthAdapter:
         Raises:
             ValueError: If JWK data is invalid or incomplete
         """
-        import base64
-
         try:
             n_bytes = base64.urlsafe_b64decode(jwk["n"] + "==")
             e_bytes = base64.urlsafe_b64decode(jwk["e"] + "==")

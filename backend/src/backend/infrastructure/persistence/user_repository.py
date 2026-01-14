@@ -224,7 +224,7 @@ class UserRepository:
 
         return DomainUser(
             id=user_model.id,
-            clerk_user_id=user_model.clerk_user_id or "",
+            clerk_user_id=user_model.clerk_user_id,
             email=user_model.email,
             role=Role(user_model.role),
             created_at=created_at,
