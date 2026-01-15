@@ -1,17 +1,19 @@
+import { ClerkProvider } from '@clerk/clerk-react'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App'
 import '@/index.css'
 
-/**
- * Vite entry point - Initialize React 18 application
- *
- * Sets up the React application root using React 18's createRoot API.
- * Wraps the application in StrictMode for additional development checks
- * including detecting unexpected side effects and deprecated API usage.
- *
- * @throws {Error} If root element with id="root" is not found in the DOM
- */
+const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+
+if (!publishableKey) {
+  throw new Error(
+    'Missing Clerk configuration: VITE_CLERK_PUBLISHABLE_KEY environment variable is not set.\n' +
+      'Please add it to your .env file or environment configuration.\n' +
+      'See .env.example for setup instructions.'
+  )
+}
+
 const rootElement = document.getElementById('root')
 
 if (!rootElement) {
@@ -20,6 +22,8 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <ClerkProvider publishableKey={publishableKey}>
+      <App />
+    </ClerkProvider>
   </React.StrictMode>
 )

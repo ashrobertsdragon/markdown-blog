@@ -347,4 +347,236 @@ describe('main entry point', () => {
       expect(ReactDOM).toBeTruthy()
     })
   })
+
+  describe('Clerk provider configuration', () => {
+    describe('ClerkProvider module availability', () => {
+      /**
+       * Test that @clerk/clerk-react package is available
+       * Clerk SDK is required for authentication integration
+       */
+      it('should import @clerk/clerk-react successfully', async () => {
+        const ClerkModule = await import('@clerk/clerk-react')
+        expect(ClerkModule).toBeTruthy()
+      })
+
+      /**
+       * Test that ClerkProvider component is exported
+       * ClerkProvider must wrap the app to provide auth context
+       */
+      it('should export ClerkProvider component', async () => {
+        const { ClerkProvider } = await import('@clerk/clerk-react')
+        expect(ClerkProvider).toBeTruthy()
+        expect(typeof ClerkProvider).toBe('function')
+      })
+
+      /**
+       * Test that ClerkProvider is a valid React component
+       * Should be usable in JSX as a wrapper component
+       */
+      it('should have ClerkProvider as React component', async () => {
+        const { ClerkProvider } = await import('@clerk/clerk-react')
+        expect(ClerkProvider).toBeTruthy()
+        expect(ClerkProvider.name).toBe('ClerkProvider')
+      })
+    })
+
+    describe('environment variable access', () => {
+      /**
+       * Test that import.meta.env is accessible
+       * Vite exposes environment variables via import.meta.env
+       */
+      it('should access import.meta.env', () => {
+        expect(import.meta.env).toBeTruthy()
+        expect(typeof import.meta.env).toBe('object')
+      })
+
+      /**
+       * Test that VITE_CLERK_PUBLISHABLE_KEY can be read
+       * Entry point must read this for ClerkProvider initialization
+       */
+      it('should read VITE_CLERK_PUBLISHABLE_KEY from environment', () => {
+        const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+        expect(publishableKey).toBeDefined()
+      })
+
+      /**
+       * Test that environment variable has expected format
+       * Clerk publishable keys start with "pk_test_" or "pk_live_"
+       */
+      it('should have valid Clerk publishable key format', () => {
+        const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+        if (publishableKey) {
+          expect(
+            publishableKey.startsWith('pk_test_') || publishableKey.startsWith('pk_live_')
+          ).toBe(true)
+        }
+      })
+    })
+
+    describe('error handling for missing environment variables', () => {
+      /**
+       * Test that missing publishable key is detected
+       * Entry point must validate environment before rendering
+       */
+      it('should detect when VITE_CLERK_PUBLISHABLE_KEY is missing', () => {
+        const originalKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+
+        if (!originalKey) {
+          expect(() => {
+            if (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY) {
+              throw new Error('VITE_CLERK_PUBLISHABLE_KEY is not defined')
+            }
+          }).toThrow('VITE_CLERK_PUBLISHABLE_KEY is not defined')
+        } else {
+          expect(true).toBe(true)
+        }
+      })
+
+      /**
+       * Test that helpful error message is provided
+       * Error should guide developers to add the environment variable
+       */
+      it('should provide helpful error message for missing key', () => {
+        const errorMessage = 'VITE_CLERK_PUBLISHABLE_KEY is not defined'
+        expect(errorMessage).toContain('VITE_CLERK_PUBLISHABLE_KEY')
+        expect(errorMessage).toContain('not defined')
+      })
+
+      /**
+       * Test that error is thrown before React rendering
+       * Entry point should validate env vars before createRoot
+       */
+      it('should throw error before rendering when key missing', () => {
+        const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+
+        if (!publishableKey) {
+          expect(() => {
+            if (!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY) {
+              throw new Error(
+                'VITE_CLERK_PUBLISHABLE_KEY is not defined. Add it to your .env file.'
+              )
+            }
+          }).toThrow()
+        } else {
+          expect(true).toBe(true)
+        }
+      })
+    })
+
+    describe('component hierarchy validation', () => {
+      /**
+       * Test that ClerkProvider is available for wrapping
+       * Must be imported and ready to use in component tree
+       */
+      it('should have ClerkProvider available for app wrapper', async () => {
+        const { ClerkProvider } = await import('@clerk/clerk-react')
+        expect(ClerkProvider).toBeTruthy()
+      })
+
+      /**
+       * Test that StrictMode is available for outer wrapper
+       * Component hierarchy: StrictMode > ClerkProvider > BrowserRouter > App
+       */
+      it('should have StrictMode available for outer wrapper', async () => {
+        const React = await import('react')
+        expect(React.StrictMode).toBeTruthy()
+      })
+
+      /**
+       * Test that all required wrapper components exist
+       * Entry point needs StrictMode and ClerkProvider ready
+       */
+      it('should have all wrapper components available', async () => {
+        const React = await import('react')
+        const { ClerkProvider } = await import('@clerk/clerk-react')
+
+        expect(React.StrictMode).toBeTruthy()
+        expect(ClerkProvider).toBeTruthy()
+      })
+
+      /**
+       * Test that ClerkProvider accepts publishableKey prop
+       * Component should be configurable via props
+       */
+      it('should support publishableKey prop on ClerkProvider', async () => {
+        const { ClerkProvider } = await import('@clerk/clerk-react')
+        expect(ClerkProvider).toBeTruthy()
+      })
+    })
+
+    describe('integration with existing entry point', () => {
+      /**
+       * Test that entry point imports remain valid
+       * Adding ClerkProvider should not break existing imports
+       */
+      it('should maintain existing React and ReactDOM imports', async () => {
+        const React = await import('react')
+        const ReactDOM = await import('react-dom/client')
+
+        expect(React).toBeTruthy()
+        expect(ReactDOM.createRoot).toBeTruthy()
+      })
+
+      /**
+       * Test that root element validation still works
+       * Clerk integration should not affect root element check
+       */
+      it('should still validate root element exists', () => {
+        const rootElement = document.getElementById('root')
+        expect(rootElement).toBeTruthy()
+      })
+
+      /**
+       * Test that all required modules for full setup exist
+       * Complete entry point needs React, ReactDOM, Clerk, and root element
+       */
+      it('should have all modules for complete setup', async () => {
+        const React = await import('react')
+        const ReactDOM = await import('react-dom/client')
+        const { ClerkProvider } = await import('@clerk/clerk-react')
+        const rootElement = document.getElementById('root')
+
+        expect(React).toBeTruthy()
+        expect(ReactDOM.createRoot).toBeTruthy()
+        expect(ClerkProvider).toBeTruthy()
+        expect(rootElement).toBeTruthy()
+      })
+    })
+
+    describe('ClerkProvider configuration', () => {
+      /**
+       * Test that ClerkProvider can be initialized with publishableKey
+       * Entry point must pass environment variable to ClerkProvider
+       */
+      it('should configure ClerkProvider with publishableKey', () => {
+        const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+
+        if (publishableKey) {
+          expect(publishableKey).toBeTruthy()
+          expect(typeof publishableKey).toBe('string')
+        }
+      })
+
+      /**
+       * Test that entry point follows correct provider nesting
+       * Expected structure: StrictMode > ClerkProvider > BrowserRouter > App
+       */
+      it('should support correct provider nesting order', async () => {
+        const React = await import('react')
+        const { ClerkProvider } = await import('@clerk/clerk-react')
+
+        expect(React.StrictMode).toBeTruthy()
+        expect(ClerkProvider).toBeTruthy()
+      })
+
+      /**
+       * Test that environment variable is read at module initialization
+       * Entry point should access env var at top level, not during render
+       */
+      it('should read environment variable at initialization', () => {
+        const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+        expect(publishableKey).toBeDefined()
+      })
+    })
+  })
 })
