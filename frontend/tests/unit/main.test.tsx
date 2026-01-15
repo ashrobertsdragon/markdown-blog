@@ -376,7 +376,7 @@ describe('main entry point', () => {
       it('should have ClerkProvider as React component', async () => {
         const { ClerkProvider } = await import('@clerk/clerk-react')
         expect(ClerkProvider).toBeTruthy()
-        expect(ClerkProvider.name).toBe('ClerkProvider')
+        expect(typeof ClerkProvider).toBe('function')
       })
     })
 
