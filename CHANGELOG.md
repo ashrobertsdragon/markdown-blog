@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: Authentication context provider for global auth state management
+
+  - Implemented AuthProvider component wrapping Clerk's useUser hook for centralized authentication state
+  - Created useAuth() custom hook for accessing user authentication context throughout application
+  - Type-safe authentication state including user, isLoaded, isSignedIn, and role properties
+  - Automatic role fallback to 'authenticated' when not present in Clerk publicMetadata
+  - Biome configuration updated to support React context file patterns
+  - Comprehensive test suite with 18 tests validating provider setup, context access, role handling, and error boundaries
+  - All tests passing with full coverage of authentication context flows
+  - Files created: `frontend/src/context/AuthContext.tsx`, `frontend/tests/unit/AuthContext.test.tsx`
+  - Files modified: `frontend/biome.json`
+
 - **Frontend**: Clerk authentication provider integration at application root
 
   - Wrapped React app with ClerkProvider in main.tsx for application-wide authentication context
