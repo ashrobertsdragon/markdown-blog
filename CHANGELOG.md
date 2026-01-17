@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: Route protection component for authentication and role-based authorization
+
+  - Implemented ProtectedRoute component wrapping React Router routes with declarative auth enforcement
+  - Loading state handling with spinner while authentication state initializes
+  - Automatic redirect to login page for unauthenticated users with original URL preservation
+  - Automatic redirect to forbidden page for users with insufficient role permissions
+  - Role hierarchy enforcement: admin can access all routes, author can access author and authenticated routes, authenticated can only access authenticated routes
+  - Type-safe TypeScript implementation with exported ProtectedRouteProps interface
+  - Proper React Router v6 integration using Navigate component and useLocation hook for state preservation
+  - Comprehensive test suite with 32 tests validating loading states, authentication checks, role authorization, component API, edge cases, and navigation behavior
+  - All tests passing with 100% code coverage
+  - Files created: `frontend/src/components/auth/ProtectedRoute.tsx`, `frontend/tests/unit/ProtectedRoute.test.tsx`
+
 - **Frontend**: Authentication context provider for global auth state management
 
   - Implemented AuthProvider component wrapping Clerk's useUser hook for centralized authentication state
