@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom'
+import "@testing-library/jest-dom";
 
 /**
  * Test environment setup for Vitest
@@ -7,6 +7,6 @@ import '@testing-library/jest-dom'
  * required by the React application entry point.
  */
 
-const rootElement = document.createElement('div')
-rootElement.id = 'root'
-document.body.appendChild(rootElement)
+const rootElement = document.createElement("div");
+rootElement.id = "root";
+document.body.appendChild(rootElement);

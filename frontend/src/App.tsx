@@ -1,6 +1,6 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import Home from '@/pages/Home'
-import NotFound from '@/pages/NotFound'
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Home from "@/pages/Home";
+import NotFound from "@/pages/NotFound";
 
 /**
  * Root application component with client-side routing
@@ -16,12 +16,12 @@ import NotFound from '@/pages/NotFound'
  * @returns Root application component with routing configuration
  */
 export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
-  )
+	return (
+		<BrowserRouter>
+			<Routes>
+				<Route path="/" element={<Home />} />
+				<Route path="*" element={<NotFound />} />
+			</Routes>
+		</BrowserRouter>
+	);
 }
