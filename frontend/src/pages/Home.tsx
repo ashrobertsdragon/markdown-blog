@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type HealthResponse, healthService } from "@/services/healthService";
 
 /**
@@ -44,31 +46,34 @@ export default function Home() {
 
 	if (error) {
 		return (
-			<div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-				<div className="text-center">
-					<p className="mb-4 text-4xl font-bold text-red-600">
-						Error: Unable to load health status
-					</p>
-				</div>
+			<div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">
+				<Alert variant="destructive" className="max-w-md">
+					<AlertTitle>Connection Error</AlertTitle>
+					<AlertDescription>
+						Error: Unable to load health status. Please try again later.
+					</AlertDescription>
+				</Alert>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
+		<div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">
 			<div className="text-center">
 				<h1 className="mb-4 text-4xl font-bold text-gray-800">Home</h1>
-				<div className="rounded-lg bg-white p-6 shadow-md">
-					<p className="mb-2 text-xl font-semibold text-gray-700">
-						System Status
-					</p>
-					<p className="text-lg text-gray-600">
-						Status:{" "}
-						<span className="font-medium text-green-600">
-							{healthData?.status}
-						</span>
-					</p>
-				</div>
+				<Card className="max-w-md">
+					<CardHeader>
+						<CardTitle>System Status</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<p className="text-lg text-gray-600">
+							Status:{" "}
+							<span className="font-medium text-green-600">
+								{healthData?.status}
+							</span>
+						</p>
+					</CardContent>
+				</Card>
 			</div>
 		</div>
 	);

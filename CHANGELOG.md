@@ -58,6 +58,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files modified: `frontend/src/main.tsx`, `frontend/vitest.config.ts`
   - Files created: `frontend/tests/unit/main.test.tsx`
 
+### Changed
+
+- **Frontend**: Refactored NotFound and Home pages to use ShadCN UI components for design consistency
+
+  - Replaced custom Tailwind-styled link in NotFound page with ShadCN Button component using asChild pattern
+  - Replaced custom div card in Home page with ShadCN Card component (CardHeader, CardTitle, CardContent)
+  - Replaced plain text error display in Home page with ShadCN Alert component with destructive variant
+  - Ensures consistent design system across all frontend pages matching Forbidden page implementation
+  - All existing tests updated and passing (3 NotFound tests, 17 Home tests)
+  - No breaking changes to component behavior or user experience
+  - Files modified: `frontend/src/pages/NotFound.tsx`, `frontend/src/pages/Home.tsx`, `frontend/tests/unit/NotFound.test.tsx`, `frontend/tests/unit/Home.test.tsx`
+
 ### Fixed
 
 - **Backend**: Fixed CI test failures due to eager initialization of Settings in auth middleware

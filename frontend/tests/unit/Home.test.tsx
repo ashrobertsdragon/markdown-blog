@@ -137,7 +137,8 @@ describe("Home", () => {
 			render(<Home />);
 
 			await waitFor(() => {
-				expect(screen.getByText(/error/i)).toBeInTheDocument();
+				expect(screen.getByRole("alert")).toBeInTheDocument();
+				expect(screen.getByText("Connection Error")).toBeInTheDocument();
 			});
 		});
 
@@ -167,10 +168,9 @@ describe("Home", () => {
 			render(<Home />);
 
 			await waitFor(() => {
+				expect(screen.getByRole("alert")).toBeInTheDocument();
 				expect(
-					screen.getByText(
-						/unable to load health status|failed to load|error/i,
-					),
+					screen.getByText(/unable to load health status/i),
 				).toBeInTheDocument();
 			});
 		});
@@ -287,7 +287,7 @@ describe("Home", () => {
 
 			await waitFor(() => {
 				expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-				expect(screen.getByText(/error/i)).toBeInTheDocument();
+				expect(screen.getByRole("alert")).toBeInTheDocument();
 			});
 		});
 	});
