@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: Protected routes implementation with role-based access control
+
+  - Implemented route protection for /admin and /author paths using ProtectedRoute component with requireRole prop
+  - Created Admin.tsx placeholder page for admin dashboard with Tailwind CSS styling
+  - Created Author.tsx placeholder page for author dashboard with Tailwind CSS styling
+  - Integrated AuthProvider wrapper around Routes in App.tsx for global authentication state
+  - Added /login route as public access point for unauthenticated users
+  - Added /forbidden route as public error page for unauthorized access attempts
+  - Protected routes enforce both authentication (user must be signed in) and authorization (user must have required role)
+  - Role hierarchy enforced: admin can access all routes, author can access author routes, authenticated users redirected to forbidden page
+  - Created custom test utilities in test-utils.tsx with MemoryRouter support for route testing with initialEntries
+  - Exported AppRoutes component separately for testing flexibility (MemoryRouter in tests, BrowserRouter in production)
+  - Comprehensive test suite with 38 tests validating route protection, loading states, authentication redirects, authorization checks, and public route access
+  - All 203 tests passing with no regressions, production build succeeds
+  - Files created: `frontend/src/pages/Admin.tsx`, `frontend/src/pages/Author.tsx`, `frontend/tests/test-utils.tsx`
+  - Files modified: `frontend/src/App.tsx`, `frontend/tests/unit/App.test.tsx`
+
 - **Frontend**: 403 Forbidden error page with ShadCN UI components
 
   - Implemented Forbidden page displaying clear error messaging for users who lack permissions to access a page

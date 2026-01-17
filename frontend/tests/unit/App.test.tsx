@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "@/App";
+import { render, screen } from "../test-utils";
 
 /**
  * Mock the Home page component to isolate routing logic
@@ -15,6 +15,46 @@ vi.mock("@/pages/Home", () => ({
  */
 vi.mock("@/pages/NotFound", () => ({
 	default: () => <div data-testid="notfound-component">Not Found Page</div>,
+}));
+
+/**
+ * Mock the Login page component for authentication flow testing
+ */
+vi.mock("@/pages/Login", () => ({
+	default: () => <div data-testid="login-component">Login Page</div>,
+}));
+
+/**
+ * Mock the Forbidden page component for authorization testing
+ */
+vi.mock("@/pages/Forbidden", () => ({
+	default: () => <div data-testid="forbidden-component">Forbidden Page</div>,
+}));
+
+/**
+ * Mock the Admin page component for protected route testing
+ * This page does not exist yet - will be created in GREEN phase
+ */
+vi.mock("@/pages/Admin", () => ({
+	default: () => <div data-testid="admin-component">Admin Page</div>,
+}));
+
+/**
+ * Mock the Author page component for protected route testing
+ * This page does not exist yet - will be created in GREEN phase
+ */
+vi.mock("@/pages/Author", () => ({
+	default: () => <div data-testid="author-component">Author Page</div>,
+}));
+
+/**
+ * Mock the AuthContext to control authentication state in tests
+ */
+vi.mock("@/context/AuthContext", () => ({
+	useAuth: vi.fn(),
+	AuthProvider: ({ children }: { children: React.ReactNode }) => (
+		<>{children}</>
+	),
 }));
 
 /**
@@ -272,6 +312,442 @@ describe("App", () => {
 			// Home route should be active at "/"
 			const homeComponent = screen.queryByTestId("home-component");
 			expect(homeComponent).toBeInTheDocument();
+		});
+	});
+
+	describe("Protected Routes", () => {
+		let mockUseAuth: ReturnType<typeof vi.fn>;
+
+		beforeEach(async () => {
+			vi.clearAllMocks();
+			const authModule = await import("@/context/AuthContext");
+			mockUseAuth = vi.mocked(authModule.useAuth);
+		});
+
+		describe("Admin Route Protection", () => {
+			/**
+			 * Test that unauthenticated users are redirected to login when accessing /admin
+			 * Requirement 7.1: Unauthenticated user visits /admin → redirected to /login with location state
+			 */
+			it("should redirect unauthenticated users to login page when accessing /admin", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: false,
+					role: "authenticated",
+					userId: null,
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/admin"],
+				});
+
+				const loginComponent = screen.queryByTestId("login-component");
+				expect(loginComponent).toBeInTheDocument();
+
+				const adminComponent = screen.queryByTestId("admin-component");
+				expect(adminComponent).not.toBeInTheDocument();
+			});
+
+			/**
+			 * Test that authenticated admin users can access /admin route
+			 * Requirement 7.2: Authenticated admin user visits /admin → sees admin page
+			 */
+			it("should allow authenticated admin users to access admin page", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "admin",
+					userId: "admin-user-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/admin"],
+				});
+
+				const adminComponent = screen.queryByTestId("admin-component");
+				expect(adminComponent).toBeInTheDocument();
+
+				const loginComponent = screen.queryByTestId("login-component");
+				expect(loginComponent).not.toBeInTheDocument();
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).not.toBeInTheDocument();
+			});
+
+			/**
+			 * Test that authenticated non-admin users are redirected to forbidden page
+			 * Requirement 7.3: Authenticated non-admin visits /admin → redirected to /forbidden
+			 */
+			it("should redirect authenticated non-admin users to forbidden page when accessing /admin", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "authenticated",
+					userId: "regular-user-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/admin"],
+				});
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).toBeInTheDocument();
+
+				const adminComponent = screen.queryByTestId("admin-component");
+				expect(adminComponent).not.toBeInTheDocument();
+
+				const loginComponent = screen.queryByTestId("login-component");
+				expect(loginComponent).not.toBeInTheDocument();
+			});
+
+			/**
+			 * Test that authenticated author users are redirected to forbidden page
+			 * Authors do not have admin privileges
+			 */
+			it("should redirect authenticated author users to forbidden page when accessing /admin", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "author",
+					userId: "author-user-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/admin"],
+				});
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).toBeInTheDocument();
+
+				const adminComponent = screen.queryByTestId("admin-component");
+				expect(adminComponent).not.toBeInTheDocument();
+			});
+
+			/**
+			 * Test that loading state shows loading message instead of admin content
+			 * While auth is loading, protected content should not be visible
+			 */
+			it("should show loading state while auth is loading for /admin route", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: false,
+					isSignedIn: false,
+					role: "authenticated",
+					userId: null,
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/admin"],
+				});
+
+				const loadingText = screen.queryByText("Loading...");
+				expect(loadingText).toBeInTheDocument();
+
+				const adminComponent = screen.queryByTestId("admin-component");
+				expect(adminComponent).not.toBeInTheDocument();
+			});
+		});
+
+		describe("Author Route Protection", () => {
+			/**
+			 * Test that unauthenticated users are redirected to login when accessing /author
+			 * Similar to admin route, requires authentication first
+			 */
+			it("should redirect unauthenticated users to login page when accessing /author", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: false,
+					role: "authenticated",
+					userId: null,
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/author"],
+				});
+
+				const loginComponent = screen.queryByTestId("login-component");
+				expect(loginComponent).toBeInTheDocument();
+
+				const authorComponent = screen.queryByTestId("author-component");
+				expect(authorComponent).not.toBeInTheDocument();
+			});
+
+			/**
+			 * Test that authenticated author users can access /author route
+			 * Authors should have access to author-specific features
+			 */
+			it("should allow authenticated author users to access author page", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "author",
+					userId: "author-user-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/author"],
+				});
+
+				const authorComponent = screen.queryByTestId("author-component");
+				expect(authorComponent).toBeInTheDocument();
+
+				const loginComponent = screen.queryByTestId("login-component");
+				expect(loginComponent).not.toBeInTheDocument();
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).not.toBeInTheDocument();
+			});
+
+			/**
+			 * Test that authenticated admin users can access /author route
+			 * Admins have hierarchical access (admin > author > authenticated)
+			 */
+			it("should allow authenticated admin users to access author page", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "admin",
+					userId: "admin-user-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/author"],
+				});
+
+				const authorComponent = screen.queryByTestId("author-component");
+				expect(authorComponent).toBeInTheDocument();
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).not.toBeInTheDocument();
+			});
+
+			/**
+			 * Test that authenticated regular users are redirected to forbidden page
+			 * Regular authenticated users do not have author privileges
+			 */
+			it("should redirect authenticated regular users to forbidden page when accessing /author", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "authenticated",
+					userId: "regular-user-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/author"],
+				});
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).toBeInTheDocument();
+
+				const authorComponent = screen.queryByTestId("author-component");
+				expect(authorComponent).not.toBeInTheDocument();
+			});
+
+			/**
+			 * Test that loading state shows loading message for /author route
+			 * Protected content should not be visible during auth loading
+			 */
+			it("should show loading state while auth is loading for /author route", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: false,
+					isSignedIn: false,
+					role: "authenticated",
+					userId: null,
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/author"],
+				});
+
+				const loadingText = screen.queryByText("Loading...");
+				expect(loadingText).toBeInTheDocument();
+
+				const authorComponent = screen.queryByTestId("author-component");
+				expect(authorComponent).not.toBeInTheDocument();
+			});
+		});
+
+		describe("Login and Forbidden Routes", () => {
+			/**
+			 * Test that /login route is accessible to all users
+			 * Public route should not require authentication
+			 */
+			it("should render login page when accessing /login route", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: false,
+					role: "authenticated",
+					userId: null,
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/login"],
+				});
+
+				const loginComponent = screen.queryByTestId("login-component");
+				expect(loginComponent).toBeInTheDocument();
+			});
+
+			/**
+			 * Test that /forbidden route is accessible
+			 * Forbidden page should be directly accessible
+			 */
+			it("should render forbidden page when accessing /forbidden route", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "authenticated",
+					userId: "user-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/forbidden"],
+				});
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).toBeInTheDocument();
+			});
+
+			/**
+			 * Test that authenticated users can still access /login
+			 * Login page should be accessible even when signed in
+			 */
+			it("should allow authenticated users to access login page", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "admin",
+					userId: "admin-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/login"],
+				});
+
+				const loginComponent = screen.queryByTestId("login-component");
+				expect(loginComponent).toBeInTheDocument();
+			});
+
+			/**
+			 * Test that unauthenticated users can access /forbidden
+			 * Forbidden page should be publicly accessible
+			 */
+			it("should allow unauthenticated users to access forbidden page", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: false,
+					role: "authenticated",
+					userId: null,
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/forbidden"],
+				});
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).toBeInTheDocument();
+			});
+		});
+
+		describe("Public Routes", () => {
+			/**
+			 * Test that home page is accessible without authentication
+			 * Public routes should work regardless of auth state
+			 */
+			it("should allow unauthenticated users to access home page", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: false,
+					role: "authenticated",
+					userId: null,
+					signOut: vi.fn(),
+				});
+
+				render(<App />);
+
+				const homeComponent = screen.queryByTestId("home-component");
+				expect(homeComponent).toBeInTheDocument();
+			});
+
+			/**
+			 * Test that authenticated users can access home page
+			 * Home page should remain public
+			 */
+			it("should allow authenticated users to access home page", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "admin",
+					userId: "admin-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />);
+
+				const homeComponent = screen.queryByTestId("home-component");
+				expect(homeComponent).toBeInTheDocument();
+			});
+		});
+
+		describe("Post-Login Redirect Behavior", () => {
+			/**
+			 * Test that login redirect preserves original destination
+			 * Location state should be passed to login page
+			 */
+			it("should pass location state when redirecting to login from protected route", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: false,
+					role: "authenticated",
+					userId: null,
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/admin"],
+				});
+
+				const loginComponent = screen.queryByTestId("login-component");
+				expect(loginComponent).toBeInTheDocument();
+			});
+
+			/**
+			 * Test that role hierarchy is respected in protected routes
+			 * Admin should have access to both admin and author routes
+			 */
+			it("should respect role hierarchy in protected routes", () => {
+				mockUseAuth.mockReturnValue({
+					isLoaded: true,
+					isSignedIn: true,
+					role: "admin",
+					userId: "admin-123",
+					signOut: vi.fn(),
+				});
+
+				render(<App />, {
+					initialEntries: ["/author"],
+				});
+
+				const authorComponent = screen.queryByTestId("author-component");
+				expect(authorComponent).toBeInTheDocument();
+
+				const forbiddenComponent = screen.queryByTestId("forbidden-component");
+				expect(forbiddenComponent).not.toBeInTheDocument();
+			});
 		});
 	});
 });

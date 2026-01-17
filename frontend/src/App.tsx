@@ -1,6 +1,43 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AuthProvider } from "@/context/AuthContext";
+import Admin from "@/pages/Admin";
+import Author from "@/pages/Author";
+import Forbidden from "@/pages/Forbidden";
 import Home from "@/pages/Home";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
+
+/**
+ * Application routes component
+ * Exported separately to allow testing with different router types
+ */
+export function AppRoutes() {
+	return (
+		<Routes>
+			<Route path="/" element={<Home />} />
+			<Route path="/login" element={<Login />} />
+			<Route path="/forbidden" element={<Forbidden />} />
+			<Route
+				path="/admin"
+				element={
+					<ProtectedRoute requireRole="admin">
+						<Admin />
+					</ProtectedRoute>
+				}
+			/>
+			<Route
+				path="/author"
+				element={
+					<ProtectedRoute requireRole="author">
+						<Author />
+					</ProtectedRoute>
+				}
+			/>
+			<Route path="*" element={<NotFound />} />
+		</Routes>
+	);
+}
 
 /**
  * Root application component with client-side routing
@@ -11,6 +48,10 @@ import NotFound from "@/pages/NotFound";
  *
  * Routes:
  * - "/" - Home page displaying system health status
+ * - "/login" - Login page for authentication
+ * - "/forbidden" - Forbidden page for unauthorized access
+ * - "/admin" - Admin dashboard (protected, requires admin role)
+ * - "/author" - Author dashboard (protected, requires author role)
  * - "*" - 404 Not Found page for unmatched routes
  *
  * @returns Root application component with routing configuration
@@ -18,10 +59,9 @@ import NotFound from "@/pages/NotFound";
 export default function App() {
 	return (
 		<BrowserRouter>
-			<Routes>
-				<Route path="/" element={<Home />} />
-				<Route path="*" element={<NotFound />} />
-			</Routes>
+			<AuthProvider>
+				<AppRoutes />
+			</AuthProvider>
 		</BrowserRouter>
 	);
 }
