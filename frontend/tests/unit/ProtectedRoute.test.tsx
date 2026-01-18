@@ -26,7 +26,7 @@ describe("ProtectedRoute Component", () => {
 				role: "authenticated",
 			} as AuthContextType);
 
-			render(
+			const { container } = render(
 				<MemoryRouter>
 					<ProtectedRoute>
 						<div>Protected Content</div>
@@ -34,7 +34,8 @@ describe("ProtectedRoute Component", () => {
 				</MemoryRouter>,
 			);
 
-			expect(screen.getByText(/loading/i)).toBeInTheDocument();
+			const spinner = container.querySelector(".animate-spin");
+			expect(spinner).toBeTruthy();
 			expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
 		});
 
@@ -666,7 +667,7 @@ describe("ProtectedRoute Component", () => {
 				role: "authenticated",
 			} as AuthContextType);
 
-			render(
+			const { container } = render(
 				<MemoryRouter>
 					<ProtectedRoute>
 						<div>Protected Content</div>
@@ -674,7 +675,8 @@ describe("ProtectedRoute Component", () => {
 				</MemoryRouter>,
 			);
 
-			expect(screen.getByText(/loading/i)).toBeInTheDocument();
+			const spinner = container.querySelector(".animate-spin");
+			expect(spinner).toBeTruthy();
 		});
 
 		it("should prioritize loading state over authentication check", () => {
@@ -685,7 +687,7 @@ describe("ProtectedRoute Component", () => {
 				role: "authenticated",
 			} as AuthContextType);
 
-			render(
+			const { container } = render(
 				<MemoryRouter>
 					<ProtectedRoute>
 						<div>Protected Content</div>
@@ -693,7 +695,8 @@ describe("ProtectedRoute Component", () => {
 				</MemoryRouter>,
 			);
 
-			expect(screen.getByText(/loading/i)).toBeInTheDocument();
+			const spinner = container.querySelector(".animate-spin");
+			expect(spinner).toBeTruthy();
 			expect(screen.queryByText("Protected Content")).not.toBeInTheDocument();
 		});
 
@@ -705,7 +708,7 @@ describe("ProtectedRoute Component", () => {
 				role: "authenticated",
 			} as AuthContextType);
 
-			const { rerender } = render(
+			const { container, rerender } = render(
 				<MemoryRouter initialEntries={["/protected"]}>
 					<Routes>
 						<Route
@@ -721,7 +724,8 @@ describe("ProtectedRoute Component", () => {
 				</MemoryRouter>,
 			);
 
-			expect(screen.getByText(/loading/i)).toBeInTheDocument();
+			const spinner = container.querySelector(".animate-spin");
+			expect(spinner).toBeTruthy();
 
 			mockUseAuth.mockReturnValue({
 				user: { id: "user_123" },

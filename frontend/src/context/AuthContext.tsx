@@ -21,9 +21,13 @@ export interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
 	const { user, isLoaded, isSignedIn } = useUser();
 
-	const role =
-		(user?.publicMetadata?.role as "authenticated" | "author" | "admin") ||
-		"authenticated";
+	const roleValue = user?.publicMetadata?.role;
+	const role: AuthContextType["role"] =
+		roleValue === "admin" ||
+		roleValue === "author" ||
+		roleValue === "authenticated"
+			? roleValue
+			: "authenticated";
 
 	const value: AuthContextType = {
 		user,

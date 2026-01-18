@@ -334,8 +334,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: false,
 					role: "authenticated",
-					userId: null,
-					signOut: vi.fn(),
+					user: null,
 				});
 
 				render(<App />, {
@@ -358,8 +357,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "admin",
-					userId: "admin-user-123",
-					signOut: vi.fn(),
+					user: { id: "admin-user-123" } as never,
 				});
 
 				render(<App />, {
@@ -385,8 +383,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "authenticated",
-					userId: "regular-user-123",
-					signOut: vi.fn(),
+					user: { id: "regular-user-123" } as never,
 				});
 
 				render(<App />, {
@@ -412,8 +409,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "author",
-					userId: "author-user-123",
-					signOut: vi.fn(),
+					user: { id: "author-user-123" } as never,
 				});
 
 				render(<App />, {
@@ -436,16 +432,15 @@ describe("App", () => {
 					isLoaded: false,
 					isSignedIn: false,
 					role: "authenticated",
-					userId: null,
-					signOut: vi.fn(),
+					user: null,
 				});
 
-				render(<App />, {
+				const { container } = render(<App />, {
 					initialEntries: ["/admin"],
 				});
 
-				const loadingText = screen.queryByText("Loading...");
-				expect(loadingText).toBeInTheDocument();
+				const loadingSpinner = container.querySelector(".animate-spin");
+				expect(loadingSpinner).toBeTruthy();
 
 				const adminComponent = screen.queryByTestId("admin-component");
 				expect(adminComponent).not.toBeInTheDocument();
@@ -462,8 +457,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: false,
 					role: "authenticated",
-					userId: null,
-					signOut: vi.fn(),
+					user: null,
 				});
 
 				render(<App />, {
@@ -486,8 +480,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "author",
-					userId: "author-user-123",
-					signOut: vi.fn(),
+					user: { id: "author-user-123" } as never,
 				});
 
 				render(<App />, {
@@ -513,8 +506,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "admin",
-					userId: "admin-user-123",
-					signOut: vi.fn(),
+					user: { id: "admin-user-123" } as never,
 				});
 
 				render(<App />, {
@@ -537,8 +529,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "authenticated",
-					userId: "regular-user-123",
-					signOut: vi.fn(),
+					user: { id: "regular-user-123" } as never,
 				});
 
 				render(<App />, {
@@ -561,16 +552,15 @@ describe("App", () => {
 					isLoaded: false,
 					isSignedIn: false,
 					role: "authenticated",
-					userId: null,
-					signOut: vi.fn(),
+					user: null,
 				});
 
-				render(<App />, {
+				const { container } = render(<App />, {
 					initialEntries: ["/author"],
 				});
 
-				const loadingText = screen.queryByText("Loading...");
-				expect(loadingText).toBeInTheDocument();
+				const loadingSpinner = container.querySelector(".animate-spin");
+				expect(loadingSpinner).toBeTruthy();
 
 				const authorComponent = screen.queryByTestId("author-component");
 				expect(authorComponent).not.toBeInTheDocument();
@@ -587,8 +577,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: false,
 					role: "authenticated",
-					userId: null,
-					signOut: vi.fn(),
+					user: null,
 				});
 
 				render(<App />, {
@@ -608,8 +597,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "authenticated",
-					userId: "user-123",
-					signOut: vi.fn(),
+					user: { id: "user-123" } as never,
 				});
 
 				render(<App />, {
@@ -629,8 +617,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "admin",
-					userId: "admin-123",
-					signOut: vi.fn(),
+					user: { id: "admin-123" } as never,
 				});
 
 				render(<App />, {
@@ -650,8 +637,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: false,
 					role: "authenticated",
-					userId: null,
-					signOut: vi.fn(),
+					user: null,
 				});
 
 				render(<App />, {
@@ -673,8 +659,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: false,
 					role: "authenticated",
-					userId: null,
-					signOut: vi.fn(),
+					user: null,
 				});
 
 				render(<App />);
@@ -692,8 +677,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "admin",
-					userId: "admin-123",
-					signOut: vi.fn(),
+					user: { id: "admin-123" } as never,
 				});
 
 				render(<App />);
@@ -713,8 +697,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: false,
 					role: "authenticated",
-					userId: null,
-					signOut: vi.fn(),
+					user: null,
 				});
 
 				render(<App />, {
@@ -734,8 +717,7 @@ describe("App", () => {
 					isLoaded: true,
 					isSignedIn: true,
 					role: "admin",
-					userId: "admin-123",
-					signOut: vi.fn(),
+					user: { id: "admin-123" } as never,
 				});
 
 				render(<App />, {
