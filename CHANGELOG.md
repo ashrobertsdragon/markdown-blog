@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Frontend**: Comprehensive E2E authentication flow tests with Playwright
+  - Created playwright.config.ts with multi-browser testing (Chromium, Firefox, WebKit)
+  - Implemented web server auto-start for frontend (Vite port 3000) and backend (Flask port 5000)
+  - Configured test reporting: HTML, JSON, and JUnit XML formats
+  - Created tests/e2e/auth-flow.spec.ts with 39 comprehensive authentication tests
+  - Test coverage includes: redirect behavior, protected routes, role-based access control, API endpoints, browser compatibility, performance, and reliability
+  - Created tests/e2e/fixtures/helpers.ts with 10 reusable test utility functions for common operations (wait for API calls, token extraction, auth verification, login/logout flows, database checks)
+  - Implemented test suites: Authentication Flow (24 tests), Role-Based Access Control (4 tests), Browser Compatibility (3 tests), Performance & Reliability (6 tests)
+  - Added npm scripts: test:e2e (run all tests), test:e2e:ui (interactive UI), test:e2e:debug (debug mode)
+  - Created tests/e2e/README.md with complete documentation: test patterns, configuration, debugging guide, best practices, CI/CD integration
+  - Tests verify unauthenticated redirects, JWT token format, role hierarchy enforcement, API health endpoints, session persistence, memory usage, and cross-browser functionality
+  - All tests use explicit waits to avoid flakiness: page.waitForURL(), page.waitForLoadState(), page.waitForFunction()
+  - Playwright installed as dev dependency (@playwright/test ^1.57.0)
+  - Tests run deterministically without flakiness in both local development and CI environments
+
 ### Fixed
 
 - **Frontend**: Code review fixes for authentication implementation
