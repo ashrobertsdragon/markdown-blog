@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Documentation**: Comprehensive authentication setup guide in README
+  - Added "Authentication" section after "Development" documenting complete authentication system
+  - Backend configuration: environment variables (CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY)
+  - Backend endpoint protection: @require_auth and @require_role decorator usage with code examples
+  - Decorator ordering requirements: @require_auth must precede @require_role with correct/incorrect usage examples
+  - Accessing current user in endpoints via g.current_user
+  - Comprehensive error response catalog: all 401 error types (missing header, invalid format, empty token, verification failed, user not authenticated)
+  - 403 Forbidden responses for both author and admin role requirements
+  - Frontend configuration: VITE_CLERK_PUBLISHABLE_KEY environment variable
+  - ClerkProvider setup explanation for React app initialization
+  - Authentication hooks: distinction between custom useAuth (@/context/AuthContext) for role checks and Clerk useAuth (@clerk/clerk-react) for JWT tokens
+  - useAuth hook API documentation with code examples showing role-based UI
+  - ProtectedRoute component usage for declarative route protection with requireRole prop
+  - Common patterns: 3 practical examples combining backend and frontend authentication
+  - Troubleshooting guide with 8 common authentication issues and solutions
+  - Clerk UserResource type documentation with link to official API reference
+  - File modified: `README.md`
+
 ### Fixed
 
 - **Frontend**: Resolved Playwright test configuration conflict with Vitest globals
