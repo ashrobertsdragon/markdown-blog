@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Configuration**: Enhanced Clerk environment variable documentation
+
+  - Added CLERK_PUBLISHABLE_KEY to backend .env.example for frontend integration consistency
+  - Improved comments for all Clerk authentication variables explaining purpose and security considerations
+  - Backend .env.example now documents three Clerk variables: CLERK_SECRET_KEY (JWT verification), CLERK_PUBLISHABLE_KEY (frontend integration), CLERK_WEBHOOK_SECRET_KEY (webhook validation)
+  - Frontend .env.example enhanced with detailed comments explaining VITE_CLERK_PUBLISHABLE_KEY usage and relationship to backend configuration
+  - All placeholder values use consistent "your_clerk\_\*" pattern
+  - Files modified: `backend/.env.example`, `frontend/.env.example`
+
 - **Frontend**: Protected routes implementation with role-based access control
 
   - Implemented route protection for /admin and /author paths using ProtectedRoute component with requireRole prop
