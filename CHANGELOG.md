@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Frontend**: Resolved Playwright test configuration conflict with Vitest globals
+  - Fixed "Playwright Test did not expect test.describe() to be called here" error caused by TypeScript configuration
+  - Created separate tsconfig.playwright.json for Playwright tests with only @playwright/test types
+  - Excluded tests/e2e directory from main tsconfig.json to prevent vitest/globals type pollution
+  - All 39 authentication E2E tests (117 total across 3 browsers) now load and run successfully
+  - Files modified: `frontend/tsconfig.json` (added exclude for tests/e2e)
+  - Files created: `frontend/tsconfig.playwright.json` (dedicated TypeScript config for Playwright)
+
 ### Added
 
 - **Frontend**: Comprehensive E2E authentication flow tests with Playwright
