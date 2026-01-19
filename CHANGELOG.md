@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Backend**: URL slug validation and normalization for blog posts
+  - Implemented immutable Slug value object with automatic formatting
+  - Converts uppercase to lowercase, replaces spaces with hyphens, removes special characters
+  - Enforces validation: non-empty, maximum 200 characters, alphanumeric and hyphens only
+  - Secure against path traversal attacks with comprehensive input sanitization
+  - 100% test coverage with 22 unit tests
+  - Files created: `backend/src/backend/domain/value_objects/slug.py`, `backend/tests/unit/test_slug.py`
+
 ### Fixed
 
 - **Backend**: Corrected authentication blueprint URL prefixes to match specification
