@@ -17,7 +17,7 @@ Architecture:
 Usage:
     Register blueprint in Flask app:
         >>> from backend.api.routes.users import users_bp
-        >>> app.register_blueprint(users_bp, url_prefix="/users")
+        >>> app.register_blueprint(users_bp, url_prefix="/api/users")
 """
 
 from flask import Blueprint, Response, jsonify, request
@@ -80,7 +80,7 @@ def list_users() -> tuple[Response, int]:
 
     Example:
         >>> curl -H "Authorization: Bearer <admin_token>" \
-        >>>      "http://api/users?limit=25&offset=50"
+        >>>      "http://<your-api-host>/api/users?limit=25&offset=50"
     """
     limit = request.args.get("limit", 50, type=int)
     offset = request.args.get("offset", 0, type=int)
@@ -155,7 +155,7 @@ def update_user_role(user_id: int) -> tuple[Response, int]:
         >>> curl -X PUT -H "Authorization: Bearer <admin_token>" \
         >>>      -H "Content-Type: application/json" \
         >>>      -d '{"role": "author"}' \
-        >>>      "http://api/users/5/role"
+        >>>      "http://<your-api-host>/api/users/5/role"
     """
     request_data = request.get_json()
     if request_data is None:

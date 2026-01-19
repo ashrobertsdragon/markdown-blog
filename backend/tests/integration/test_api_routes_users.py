@@ -74,7 +74,7 @@ def test_list_users_with_admin_token_returns_200(
         ),
     ):
         response = client.get(
-            "/users",
+            "/api/users",
             headers={"Authorization": "Bearer admin_token_123"},
         )
 
@@ -87,7 +87,7 @@ def test_list_users_with_admin_token_returns_200(
 
 def test_list_users_without_auth_returns_401(client):
     """GET /users without Authorization header should return 401."""
-    response = client.get("/users")
+    response = client.get("/api/users")
 
     assert response.status_code == 401
     assert "error" in response.json
@@ -120,7 +120,7 @@ def test_list_users_with_non_admin_returns_403(
         ),
     ):
         response = client.get(
-            "/users",
+            "/api/users",
             headers={"Authorization": "Bearer user_token_456"},
         )
 
@@ -153,7 +153,7 @@ def test_list_users_pagination_parameters_work(
         ),
     ):
         response = client.get(
-            "/users?limit=25&offset=50",
+            "/api/users?limit=25&offset=50",
             headers={"Authorization": "Bearer admin_token_123"},
         )
 
@@ -190,7 +190,7 @@ def test_update_user_role_with_admin_token_returns_200(
         ),
     ):
         response = client.put(
-            "/users/5/role",
+            "/api/users/5/role",
             headers={"Authorization": "Bearer admin_token_123"},
             json={"role": "author"},
         )
@@ -222,7 +222,7 @@ def test_update_user_role_invalid_role_returns_400(
         ),
     ):
         response = client.put(
-            "/users/5/role",
+            "/api/users/5/role",
             headers={"Authorization": "Bearer admin_token_123"},
             json={"role": "superadmin"},
         )
@@ -257,7 +257,7 @@ def test_update_user_role_user_not_found_returns_404(
         ),
     ):
         response = client.put(
-            "/users/999/role",
+            "/api/users/999/role",
             headers={"Authorization": "Bearer admin_token_123"},
             json={"role": "author"},
         )
@@ -268,7 +268,7 @@ def test_update_user_role_user_not_found_returns_404(
 
 def test_update_user_role_without_auth_returns_401(client):
     """PUT /users/:id/role without Authorization header should return 401."""
-    response = client.put("/users/5/role", json={"role": "author"})
+    response = client.put("/api/users/5/role", json={"role": "author"})
 
     assert response.status_code == 401
     assert "error" in response.json
@@ -301,7 +301,7 @@ def test_update_user_role_with_non_admin_returns_403(
         ),
     ):
         response = client.put(
-            "/users/5/role",
+            "/api/users/5/role",
             headers={"Authorization": "Bearer user_token_456"},
             json={"role": "author"},
         )
@@ -335,7 +335,7 @@ def test_list_users_returns_correct_json_structure(
         ),
     ):
         response = client.get(
-            "/users",
+            "/api/users",
             headers={"Authorization": "Bearer admin_token_123"},
         )
 
@@ -371,7 +371,7 @@ def test_update_user_role_missing_request_body_returns_415(
         ),
     ):
         response = client.put(
-            "/users/5/role",
+            "/api/users/5/role",
             headers={"Authorization": "Bearer admin_token_123"},
             data="",
         )
@@ -400,7 +400,7 @@ def test_update_user_role_missing_role_field_returns_400(
         ),
     ):
         response = client.put(
-            "/users/5/role",
+            "/api/users/5/role",
             headers={"Authorization": "Bearer admin_token_123"},
             json={},
         )

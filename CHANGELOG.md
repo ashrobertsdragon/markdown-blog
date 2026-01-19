@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Backend**: Corrected authentication blueprint URL prefixes to match specification
+  - Changed auth_bp registration from `/auth` to `/api/auth` in main.py
+  - Changed users_bp registration from `/users` to `/api/users` in main.py
+  - Updated all integration tests to use corrected endpoints
+  - Updated documentation examples in auth.py and users.py
+  - Endpoints now accessible at `/api/auth/me` and `/api/users` as per requirements
+  - All 22 backend integration tests pass with corrected URL prefixes
+  - Files modified: `backend/src/backend/main.py`, `backend/tests/integration/test_api_routes_auth.py`, `backend/tests/integration/test_api_routes_users.py`, `backend/src/backend/api/routes/auth.py`, `backend/src/backend/api/routes/users.py`
+
 ### Added
 
 - **Documentation**: Comprehensive authentication setup guide in README

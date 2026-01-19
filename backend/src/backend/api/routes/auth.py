@@ -15,10 +15,10 @@ Architecture:
 Usage:
     Register blueprint in Flask app:
         >>> from backend.api.routes.auth import auth_bp
-        >>> app.register_blueprint(auth_bp, url_prefix="/auth")
+        >>> app.register_blueprint(auth_bp, url_prefix="/api/auth")
 
     Access authenticated user profile:
-        >>> GET /auth/me
+        >>> GET /api/auth/me
         >>> Headers: Authorization: Bearer <jwt_token>
         >>> Response: {"id": 1, "email": "user@example.com", ...}
 """
@@ -59,7 +59,7 @@ def get_current_user() -> tuple[Response, int]:
             or token invalid (handled by @require_auth decorator)
 
     Example:
-        >>> curl -H "Authorization: Bearer <token>" http://api/auth/me
+        >>> curl -H "Authorization: Bearer <token>" http://<your-api-host>/api/auth/me
         >>> {"id": 1, "email": "user@example.com", "role": "authenticated"}
     """
     user = g.current_user

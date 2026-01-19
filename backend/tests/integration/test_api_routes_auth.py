@@ -56,7 +56,7 @@ def admin_user():
 def test_me_endpoint_with_valid_jwt_returns_user_profile(
     client, valid_jwt_payload, existing_user
 ):
-    """GET /auth/me with valid JWT should return 200 with user profile data.
+    """GET /api/auth/me with valid JWT should return 200 with user profile data.
 
     Tests successful authentication flow:
     1. Client sends Authorization: Bearer <valid_token>
@@ -81,7 +81,7 @@ def test_me_endpoint_with_valid_jwt_returns_user_profile(
         ),
     ):
         response = client.get(
-            "/auth/me",
+            "/api/auth/me",
             headers={"Authorization": "Bearer valid_token_abc123"},
         )
 
@@ -101,19 +101,19 @@ def test_me_endpoint_with_valid_jwt_returns_user_profile(
 
 
 def test_me_endpoint_without_authorization_header_returns_401(client):
-    """GET /auth/me without Authorization header should return 401.
+    """GET /api/auth/me without Authorization header should return 401.
 
     Tests that unauthenticated requests are rejected at middleware level
     before reaching the endpoint handler.
     """
-    response = client.get("/auth/me")
+    response = client.get("/api/auth/me")
 
     assert response.status_code == 401
     assert response.json["error"] == "Missing authorization header"
 
 
 def test_me_endpoint_with_invalid_jwt_returns_401(client):
-    """GET /auth/me with invalid JWT should return 401 with error message.
+    """GET /api/auth/me with invalid JWT should return 401 with error message.
 
     Tests that ClerkAuthAdapter authentication failures result in proper
     401 responses with descriptive error messages.
@@ -128,7 +128,7 @@ def test_me_endpoint_with_invalid_jwt_returns_401(client):
         return_value=mock_clerk_adapter,
     ):
         response = client.get(
-            "/auth/me",
+            "/api/auth/me",
             headers={"Authorization": "Bearer invalid_token_xyz"},
         )
 
@@ -138,13 +138,13 @@ def test_me_endpoint_with_invalid_jwt_returns_401(client):
 
 
 def test_me_endpoint_with_malformed_authorization_header_returns_401(client):
-    """GET /auth/me with malformed header should return 401.
+    """GET /api/auth/me with malformed header should return 401.
 
     Tests rejection of Authorization headers that don't follow the
     "Bearer <token>" format.
     """
     response = client.get(
-        "/auth/me",
+        "/api/auth/me",
         headers={"Authorization": "InvalidFormat token123"},
     )
 
@@ -154,7 +154,7 @@ def test_me_endpoint_with_malformed_authorization_header_returns_401(client):
 
 
 def test_me_endpoint_creates_new_user_on_first_login(client, valid_jwt_payload):
-    """GET /auth/me should create new user on first authentication.
+    """GET /api/auth/me should create new user on first authentication.
 
     Tests user creation flow when Clerk user authenticates for first time:
     1. UserRepository.find_by_clerk_user_id returns None (new user)
@@ -187,7 +187,7 @@ def test_me_endpoint_creates_new_user_on_first_login(client, valid_jwt_payload):
         ),
     ):
         response = client.get(
-            "/auth/me",
+            "/api/auth/me",
             headers={"Authorization": "Bearer valid_token_first_login"},
         )
 
@@ -210,7 +210,7 @@ def test_me_endpoint_creates_new_user_on_first_login(client, valid_jwt_payload):
 def test_me_endpoint_preserves_existing_user_role(
     client, valid_jwt_payload, admin_user
 ):
-    """GET /auth/me should preserve existing user role.
+    """GET /api/auth/me should preserve existing user role.
 
     User role should not be reset to authenticated on subsequent logins.
 
@@ -240,7 +240,7 @@ def test_me_endpoint_preserves_existing_user_role(
         ),
     ):
         response = client.get(
-            "/auth/me",
+            "/api/auth/me",
             headers={"Authorization": "Bearer admin_token_xyz"},
         )
 
@@ -257,7 +257,7 @@ def test_me_endpoint_preserves_existing_user_role(
 def test_me_endpoint_returns_json_response(
     client, valid_jwt_payload, existing_user
 ):
-    """GET /auth/me should return JSON content type.
+    """GET /api/auth/me should return JSON content type.
 
     Tests proper Content-Type header for API responses.
     """
@@ -278,7 +278,7 @@ def test_me_endpoint_returns_json_response(
         ),
     ):
         response = client.get(
-            "/auth/me",
+            "/api/auth/me",
             headers={"Authorization": "Bearer valid_token_abc123"},
         )
 
@@ -288,7 +288,7 @@ def test_me_endpoint_returns_json_response(
 def test_me_endpoint_cors_headers_present_in_dev_mode(
     client, valid_jwt_payload, existing_user
 ):
-    """GET /auth/me should include CORS headers in development/testing mode.
+    """GET /api/auth/me should include CORS headers in development/testing mode.
 
     Tests that CORS headers are present for frontend development.
     In production these would be handled by reverse proxy or Flask-CORS.
@@ -310,7 +310,7 @@ def test_me_endpoint_cors_headers_present_in_dev_mode(
         ),
     ):
         response = client.get(
-            "/auth/me",
+            "/api/auth/me",
             headers={"Authorization": "Bearer valid_token_abc123"},
         )
 
@@ -321,12 +321,12 @@ def test_me_endpoint_cors_headers_present_in_dev_mode(
 
 
 def test_me_endpoint_with_empty_bearer_token_returns_401(client):
-    """GET /auth/me with empty token should return 401.
+    """GET /api/auth/me with empty token should return 401.
 
     Tests rejection of Authorization headers with Bearer scheme but no token.
     """
     response = client.get(
-        "/auth/me",
+        "/api/auth/me",
         headers={"Authorization": "Bearer "},
     )
 
@@ -336,7 +336,7 @@ def test_me_endpoint_with_empty_bearer_token_returns_401(client):
 
 
 def test_me_endpoint_with_expired_token_returns_401(client):
-    """GET /auth/me with expired JWT should return 401.
+    """GET /api/auth/me with expired JWT should return 401.
 
     Tests that expired tokens are rejected with appropriate error message.
     """
@@ -350,7 +350,7 @@ def test_me_endpoint_with_expired_token_returns_401(client):
         return_value=mock_clerk_adapter,
     ):
         response = client.get(
-            "/auth/me",
+            "/api/auth/me",
             headers={"Authorization": "Bearer expired_token_abc"},
         )
 
