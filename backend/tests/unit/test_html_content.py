@@ -6,6 +6,7 @@ and supports usage in collections.
 """
 
 import pytest
+
 from backend.domain.value_objects.html_content import HtmlContent
 
 
