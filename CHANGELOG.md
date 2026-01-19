@@ -9,7 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: MarkdownContent value object for type-safe markdown storage
+
+  - Immutable wrapper for raw markdown text in blog post drafts
+  - Validates content is not None to prevent invalid state
+  - Preserves markdown formatting and special characters
+  - Comprehensive test coverage with 14 unit tests (100% coverage)
+  - Files created: `backend/src/backend/domain/value_objects/markdown_content.py`, `backend/tests/unit/test_markdown_content.py`
+
 - **Backend**: URL slug validation and normalization for blog posts
+
   - Implemented immutable Slug value object with automatic formatting
   - Converts uppercase to lowercase, replaces spaces with hyphens, removes special characters
   - Enforces validation: non-empty, maximum 200 characters, alphanumeric and hyphens only
