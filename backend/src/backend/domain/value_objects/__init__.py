@@ -5,7 +5,8 @@ of the domain with no conceptual identity. They are defined only by
 their attributes.
 """
 
+from backend.domain.value_objects.html_content import HtmlContent
 from backend.domain.value_objects.markdown_content import MarkdownContent
 from backend.domain.value_objects.role import Role
 
-__all__ = ["MarkdownContent", "Role"]
+__all__ = ["HtmlContent", "MarkdownContent", "Role"]

@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: HtmlContent value object for type-safe sanitized HTML storage
+
+  - Immutable wrapper for sanitized HTML content in published blog posts
+  - Validates content is not None while accepting empty strings for valid empty posts
+  - Preserves HTML formatting, whitespace, and special characters
+  - Frozen dataclass implementation preventing post-initialization mutations
+  - Value object semantics with equality based on content, proper string representation
+  - Comprehensive test coverage with 14 unit tests (100% coverage)
+  - Files created: `backend/src/backend/domain/value_objects/html_content.py`, `backend/tests/unit/test_html_content.py`
+  - Files modified: `backend/src/backend/domain/value_objects/__init__.py`
+
 - **Backend**: MarkdownContent value object for type-safe markdown storage
 
   - Immutable wrapper for raw markdown text in blog post drafts
