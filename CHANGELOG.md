@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: FileSystemDraftRepository for markdown draft persistence
+
+  - Implemented filesystem-based repository for blog post drafts with YAML front matter
+  - DraftFile class for YAML serialization/deserialization with complete metadata support
+  - YAML front matter includes: title, author, created_at, published, published_at, tags
+  - FileSystemDraftRepository with CRUD operations: save(), find_by_slug(), delete(), list_by_author()
+  - Path traversal protection using Slug value object for safe filesystem operations
+  - UTF-8 encoding support for international characters and emoji
+  - Idempotent delete operation (succeeds even if file doesn't exist)
+  - Auto-creates drafts directory on repository initialization
+  - Round-trip preservation of all metadata and content through save/load cycles
+  - Configuration support: DRAFTS_PATH, GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO settings
+  - Comprehensive test suite: 13 unit tests for DraftFile, 13 integration tests for repository (100% coverage)
+  - Files created: `backend/src/backend/infrastructure/persistence/filesystem_draft_repository.py`, `backend/tests/unit/test_draft_file.py`, `backend/tests/integration/test_filesystem_draft_repository.py`
+  - Files modified: `backend/src/backend/config.py`
+  - Dependencies added: pyyaml 6.0.3, types-pyyaml 6.0.12.20250915
+
 - **Backend**: Post aggregate root for blog post lifecycle management
 
   - Mutable aggregate implementing Domain-Driven Design patterns for post state transitions
