@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Post aggregate root for blog post lifecycle management
+
+  - Mutable aggregate implementing Domain-Driven Design patterns for post state transitions
+  - Factory method `create_draft()` for creating new draft posts with validated title and author
+  - State transition methods: `publish()` converts drafts to published posts with HTML content, `unpublish()` reverts to draft state
+  - Integration with Slug value object for URL-safe identifiers and HtmlContent for sanitized HTML storage
+  - UTC-aware timestamps: `created_at` (immutable), `updated_at` (auto-managed), `published_at` (audit trail preserved on unpublish)
+  - Input validation: title must be non-empty string, author_id must be positive integer
+  - Audit trail preservation: published_at timestamp retained when unpublishing for historical tracking
+  - Type-safe with modern Python 3.12+ type hints including datetime and UUID annotations
+  - Comprehensive test suite with 14 unit tests covering factory method, state transitions, timestamp handling, and edge cases (100% coverage)
+  - Files created: `backend/src/backend/domain/aggregates/post.py`, `backend/tests/unit/test_post.py`
+
 - **Backend**: HtmlContent value object for type-safe sanitized HTML storage
 
   - Immutable wrapper for sanitized HTML content in published blog posts
