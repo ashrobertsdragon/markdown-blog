@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: GitHubSyncService for automatic version control via GitHub API
+
+  - Implemented resilient GitHub API integration for draft version control
+  - commit_file() method creates or updates files in GitHub repository with base64 encoding
+  - delete_file() method removes files from GitHub repository
+  - Exponential backoff retry logic for HTTP 429 rate limiting (1s, 2s, 4s delays, max 3 retries)
+  - Non-blocking error handling - draft operations succeed even if GitHub API fails
+  - Comprehensive error recovery: handles timeouts, connection errors, HTTP errors (401/403/404/500)
+  - Secure token handling - never logs authentication credentials
+  - Returns commit SHA on successful operations for audit trail
+  - 5-second timeout on all network requests prevents indefinite hanging
+  - Constructor validation ensures required credentials (token, owner, repo) are provided
+  - Comprehensive test suite: 24 unit tests covering success paths, retry logic, error handling (100% coverage)
+  - Files created: `backend/src/backend/infrastructure/versioning/github_sync_service.py`, `backend/src/backend/infrastructure/versioning/__init__.py`, `backend/tests/unit/infrastructure/versioning/test_github_sync_service.py`, `backend/tests/unit/infrastructure/versioning/__init__.py`
+  - Meets all requirements: 10.1 (commit on create), 10.2 (commit on save), 10.3 (commit on delete), 10.4 (non-blocking failures), 10.5 (rate limit retry), 10.6 (graceful degradation)
+
 - **Backend**: FileSystemDraftRepository for markdown draft persistence
 
   - Implemented filesystem-based repository for blog post drafts with YAML front matter
