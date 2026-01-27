@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Production-ready markdown to HTML rendering service with syntax highlighting
+
+  - Implemented MarkdownRenderingService for converting markdown content to HTML with Pygments syntax highlighting
+  - Syntax highlighting support for 500+ programming languages including Python, JavaScript, TypeScript, C++, C#, F#, JSON
+  - Code block rendering with proper CSS class attributes for theme integration
+  - Graceful fallback for unknown programming languages using lexer auto-detection, with plain text rendering as final fallback
+  - Production-ready error handling with try-except blocks and graceful degradation on rendering failures
+  - Comprehensive logging at module level (debug, warning, error) for production observability
+  - Stateless service design enabling concurrent rendering without race conditions
+  - Dependencies added: markdown-it-py 3.0.0+ for markdown parsing, Pygments 2.17.0+ for syntax highlighting, types-Pygments for type safety
+  - Comprehensive test suite: 43 unit tests covering markdown features (headings, lists, links, images, code blocks), syntax highlighting (Python, JavaScript, TypeScript, JSON, C++, C#), edge cases (empty input, Unicode, HTML escaping), and error handling (93% coverage)
+  - Files created: `backend/src/backend/infrastructure/markdown/markdown_rendering_service.py`, `backend/src/backend/infrastructure/markdown/__init__.py`, `backend/tests/unit/infrastructure/test_markdown_rendering_service.py`
+  - Files modified: `backend/pyproject.toml`, `backend/uv.lock`
+
 - **Backend**: GitHubSyncService for automatic version control via GitHub API
 
   - Implemented resilient GitHub API integration for draft version control
