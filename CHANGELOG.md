@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: PostRepository persistence layer for Post aggregate CRUD operations
+
+  - Implemented PostRepository following repository pattern for Post aggregate persistence
+  - save() method handles INSERT (new posts) and UPDATE (existing posts) with unique slug constraint enforcement
+  - find_by_slug() provides fast indexed lookup by URL-safe slug identifier
+  - find_by_author() lists author's posts with pagination support (limit/offset, newest first)
+  - list_published() queries public posts (published=true) with pagination
+  - find_by_id() performs efficient primary key lookup via session.get()
+  - delete() removes posts by primary key with boolean success/failure return
+  - Bidirectional conversion between PostModel (SQLModel) and Post domain aggregate
+  - Field mapping: PostModel.published_html ↔ Post.html_content (HtmlContent value object)
+  - Slug value object conversion: PostModel.slug (string) ↔ Post.slug (Slug value object)
+  - Timezone-aware datetime handling with UTC normalization for created_at/updated_at
+  - IntegrityError handling for duplicate slug violations with descriptive error messages
+  - Follows UserRepository pattern: optional Session injection, dual session handling (injected vs get_db() context manager)
+  - Files created: `backend/src/backend/infrastructure/persistence/post_repository.py`
+
 - **Backend**: HTML sanitization service for XSS prevention in user-generated content
 
   - Implemented HtmlSanitizer class for comprehensive cross-site scripting (XSS) attack prevention
