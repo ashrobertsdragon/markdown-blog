@@ -13,6 +13,7 @@ Requirements tested:
 """
 
 import pytest
+
 from backend.infrastructure.rendering.html_sanitizer import HtmlSanitizer
 
 

@@ -41,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files created: `backend/src/backend/infrastructure/sanitization/html_sanitizer.py`, `backend/src/backend/infrastructure/sanitization/__init__.py`, `backend/tests/unit/infrastructure/sanitization/test_html_sanitizer.py`
   - Dependencies added: bleach 6.2.0, types-bleach 6.2.0.20241208
 
+### Fixed
+
+- **Backend**: Corrected import order in html_sanitizer test file to comply with ruff linting standards
+
 ### Security
 
 - **Backend**: Implemented comprehensive XSS prevention for blog post content
