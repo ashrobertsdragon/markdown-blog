@@ -5,6 +5,7 @@ description = "Blog platform with Flask + React"
 requires-python = "==3.13.5"
 authors = [{ name = "Ashlynn Antrobus" }]
 dependencies = [
+  "bleach>=6.0.0,<7.0.0",
   "cryptography>=46.0.3",
   "flask>=3.1.2",
   "flask-cors>=6.0.1",
@@ -28,6 +29,7 @@ dev = [
   "mypy>=1.18.2",
   "pytest>=9.0.0",
   "pytest-cov>=7.0.0",
+  "types-bleach>=6.1.0.20240331",
   "types-flask>=1.1.6",
   "types-flask-cors>=6.0.0.20250809",
   "types-pygments>=2.19.0.20251121",
@@ -49,10 +51,10 @@ warn_return_any = true
 
 [tool.pytest]
 addopts = ["--cov-fail-under=80", "--cov-report=json", "--cov=.", "-rf"]
+markers = ["external: mark a test as requiring external an external dependency"]
 minversion = "9.0"
 pythonpath = ["src"]
 testpaths = ["docs", "tests"]
-markers = ["external: mark a test as requiring external an external dependency"]
 
 [tool.ruff]
 line-length = 80

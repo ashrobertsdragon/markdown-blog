@@ -1,0 +1,171 @@
+"""HTML sanitization using Bleach allowlist-based approach.
+
+This module implements HTML sanitization to prevent XSS attacks in
+user-generated content. It uses an allowlist approach with Bleach to
+strip dangerous tags, attributes, and protocols while preserving safe
+HTML formatting.
+
+Requirements implemented:
+- 9.3: HTML sanitized with Bleach (allowlist approach)
+- 9.4: script, style, iframe, object tags removed
+- 9.5: Only allowed tags preserved
+- 9.6: External links have rel="nofollow noreferrer"
+- 9.7: Images restricted to src, alt, title attributes
+"""
+
+import re
+from collections.abc import MutableMapping
+
+import bleach
+
+
+class HtmlSanitizer:
+    """Sanitizes HTML content using allowlist-based filtering.
+
+    This class provides stateless HTML sanitization using Bleach. It removes
+    dangerous tags, attributes, and protocols while preserving safe HTML
+    formatting for blog post content.
+
+    All methods are stateless and can be called on a single instance.
+    """
+
+    ALLOWED_TAGS = [
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "a",
+        "img",
+        "ul",
+        "ol",
+        "li",
+        "code",
+        "pre",
+        "strong",
+        "em",
+        "blockquote",
+        "br",
+        "hr",
+        "table",
+        "thead",
+        "tbody",
+        "tr",
+        "th",
+        "td",
+        "span",
+        "div",
+    ]
+
+    ALLOWED_ATTRIBUTES = {
+        "a": ["href", "title", "rel"],
+        "img": ["src", "alt", "title"],
+    }
+
+    ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
+
+    def sanitize(self, html: str) -> str:
+        """Sanitize HTML using Bleach allowlist.
+
+        This method performs a three-step sanitization:
+        1. Remove script and style tags with their contents completely
+        2. Clean HTML using allowlist of tags, attributes, and protocols
+        3. Add rel="nofollow noreferrer" to external links
+
+        Args:
+            html: The HTML string to sanitize.
+
+        Returns:
+            Sanitized HTML string with dangerous content removed and
+            external links modified to include nofollow/noreferrer.
+        """
+        preprocessed = self._remove_dangerous_tags_with_content(html)
+
+        cleaned = bleach.clean(
+            preprocessed,
+            tags=self.ALLOWED_TAGS,
+            attributes=self.ALLOWED_ATTRIBUTES,
+            protocols=self.ALLOWED_PROTOCOLS,
+            strip=True,
+        )
+
+        linkified = bleach.linkify(
+            cleaned,
+            callbacks=[self._add_rel_nofollow],
+            skip_tags=["pre", "code"],
+        )
+
+        return str(linkified)
+
+    def _remove_dangerous_tags_with_content(self, html: str) -> str:
+        """Remove dangerous tags and their entire contents.
+
+        This method removes script and style tags along with everything
+        inside them, as these tags can contain executable code or styles
+        that should not be preserved even as text content.
+
+        Args:
+            html: The HTML string to preprocess.
+
+        Returns:
+            HTML string with script and style tags and their contents
+            completely removed.
+        """
+        html = re.sub(
+            r"<script[^>]*?>.*?</script>",
+            "",
+            html,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+
+        html = re.sub(
+            r"<style[^>]*?>.*?</style>",
+            "",
+            html,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
+
+        return html
+
+    def _add_rel_nofollow(
+        self,
+        attrs: MutableMapping[tuple[str | None, str], str],
+        new: bool = False,
+    ) -> MutableMapping[tuple[str | None, str], str]:
+        """Bleach linkify callback to add nofollow to external links.
+
+        This callback is used by bleach.linkify() to modify link attributes.
+        It adds rel="nofollow noreferrer" to external links (http/https)
+        while leaving relative, anchor, and mailto links unchanged.
+
+        Args:
+            attrs: Dictionary of link attributes from Bleach. Keys are
+                   tuples of (namespace, name) where namespace is optional.
+            new: Whether this is a newly created link (unused, required by
+                 Bleach callback signature).
+
+        Returns:
+            Modified attributes dictionary with rel attribute added for
+            external links.
+        """
+        href_key: tuple[str | None, str] = (None, "href")
+        rel_key: tuple[str | None, str] = (None, "rel")
+
+        href = attrs.get(href_key, "")
+
+        if isinstance(href, str) and href.startswith(("http://", "https://")):
+            rel_value = attrs.get(rel_key, "")
+
+            if isinstance(rel_value, str):
+                rel_parts = set(rel_value.split()) if rel_value else set()
+            else:
+                rel_parts = set()
+
+            rel_parts.add("nofollow")
+            rel_parts.add("noreferrer")
+
+            attrs[rel_key] = " ".join(sorted(rel_parts))
+
+        return attrs

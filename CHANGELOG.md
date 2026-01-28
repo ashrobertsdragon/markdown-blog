@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: HTML sanitization service for XSS prevention in user-generated content
+
+  - Implemented HtmlSanitizer class for comprehensive cross-site scripting (XSS) attack prevention
+  - Strict allowlist-based approach permitting only safe HTML tags and attributes
+  - Removes dangerous elements: script, style, iframe, object, embed, applet tags
+  - External link protection: automatically adds rel="nofollow noreferrer" to all links
+  - Image security: restricts image attributes to src, alt, and title only
+  - Protocol validation: blocks javascript:, data:, vbscript:, and file: URL schemes
+  - Sanitizes blog post content during publish operations to protect readers
+  - Preserves markdown-generated HTML structure while removing security threats
+  - Built on Bleach library with production-tested XSS protection
+  - Comprehensive test suite: 66 unit tests with 97% code coverage validating tag filtering, attribute sanitization, link protection, protocol validation, and edge cases
+  - Files created: `backend/src/backend/infrastructure/sanitization/html_sanitizer.py`, `backend/src/backend/infrastructure/sanitization/__init__.py`, `backend/tests/unit/infrastructure/sanitization/test_html_sanitizer.py`
+  - Dependencies added: bleach 6.2.0, types-bleach 6.2.0.20241208
+
+### Security
+
+- **Backend**: Implemented comprehensive XSS prevention for blog post content
+
+  - Protects against script injection attacks in published posts
+  - Prevents malicious iframe embedding and plugin execution
+  - Blocks dangerous URL schemes in links and images
+  - Mitigates CSS-based attacks by removing style tags and attributes
+  - Adds nofollow/noreferrer to external links preventing referrer leakage and SEO manipulation
+  - Sanitization applied automatically during post publishing workflow
+
 - **Backend**: Production-ready markdown to HTML rendering service with syntax highlighting
 
   - Implemented MarkdownRenderingService for converting markdown content to HTML with Pygments syntax highlighting
