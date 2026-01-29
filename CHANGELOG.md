@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: feat: implement draft post creation command with validation and error handling
+
+  - Implemented CreateDraftCommand dataclass with slug, title, and author_id fields for structured input validation
+  - Created create_draft_handler orchestrating complete draft creation workflow with rollback on failures
+  - Slug uniqueness validation across both database (PostRepository) and filesystem (FileSystemDraftRepository)
+  - Draft file creation with YAML front matter containing metadata (title, author, timestamps)
+  - GitHub commit integration with "drafts/" path prefix for version control backup
+  - Rollback mechanism for partial failures: deletes draft file if database persistence fails after filesystem write
+  - PostRepository type annotations replacing Any types for improved type safety
+  - Comprehensive test suite: 8 unit tests for command validation, 11 integration tests for handler workflow including rollback scenarios
+  - Files created: `backend/src/backend/application/commands/__init__.py`, `backend/src/backend/application/commands/create_draft_command.py`, `backend/src/backend/application/commands/handlers/__init__.py`, `backend/src/backend/application/commands/handlers/create_draft_handler.py`, `backend/tests/unit/test_create_draft_command.py`, `backend/tests/integration/test_create_draft_handler.py`
+
 - **Backend**: PostRepository persistence layer for Post aggregate CRUD operations
 
   - Implemented PostRepository following repository pattern for Post aggregate persistence
