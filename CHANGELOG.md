@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Draft content update with automatic corruption recovery
+
+  - SaveDraftCommand for updating existing draft content with size validation
+  - Automatic corruption recovery: fetches original content from GitHub when draft file becomes corrupted
+  - Graceful fallback: creates new draft with default front matter if GitHub recovery fails
+  - Size limits enforced: slug maximum 1000 characters, content maximum 10MB
+  - Front matter preservation: retains title, author, created_at, and tags during updates
+  - Resilient to GitHub API failures (continues with local save even if GitHub sync fails)
+  - Comprehensive test suite: 27 tests (11 unit tests for command, 10 for handler, 6 integration tests) with 100% pass rate
+  - Files created: `backend/src/backend/application/commands/save_draft_command.py`, `backend/src/backend/application/commands/handlers/save_draft_handler.py`, `backend/tests/unit/test_save_draft_command.py`, `backend/tests/unit/test_save_draft_handler.py`, `backend/tests/integration/test_save_draft_handler.py`
+  - Files modified: `backend/src/backend/infrastructure/versioning/github_sync_service.py` (added get_file_content method)
+
 - **Backend**: feat: implement draft post creation command with validation and error handling
 
   - Implemented CreateDraftCommand dataclass with slug, title, and author_id fields for structured input validation

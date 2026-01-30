@@ -261,6 +261,71 @@ class GitHubSyncService:
             logger.error(f"Data parsing error while deleting {path}: {exc}")
             return False
 
+    def get_file_content(self, path: str) -> str | None:
+        """Fetch file content from GitHub repository.
+
+        Retrieves the current content of a file from GitHub, decoding it
+        from base64. Used for corruption recovery to restore files from
+        version control.
+
+        Args:
+            path: File path in repository (e.g., "drafts/my-post.md")
+
+        Returns:
+            File content string if successful, None on failure
+
+        Example:
+            >>> content = service.get_file_content("drafts/post.md")
+            >>> if content:
+            ...     print("Recovered content from GitHub")
+        """
+        url = (
+            f"{self._base_url}/repos/{self._owner}/{self._repo}/contents/{path}"
+        )
+        headers = {
+            "Authorization": f"Bearer {self._token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+
+        try:
+            response = requests.get(url, headers=headers, timeout=self._timeout)
+
+            if response.status_code == 200:
+                encoded_content: str = response.json()["content"]
+                decoded_content = base64.b64decode(encoded_content).decode()
+                logger.info(f"Successfully fetched content for {path}")
+                return decoded_content
+
+            if response.status_code == 404:
+                logger.warning(f"File {path} not found in GitHub")
+                return None
+
+            status = response.status_code
+            logger.error(
+                f"GitHub API error {status} fetching content for {path}: "
+                f"{response.text}"
+            )
+            return None
+
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout while fetching content for {path}")
+            return None
+        except requests.exceptions.ConnectionError as exc:
+            logger.error(
+                f"Connection error while fetching content for {path}: {exc}"
+            )
+            return None
+        except requests.exceptions.RequestException as exc:
+            logger.error(
+                f"Request error while fetching content for {path}: {exc}"
+            )
+            return None
+        except (KeyError, ValueError) as exc:
+            logger.error(
+                f"Data parsing error while fetching content for {path}: {exc}"
+            )
+            return None
+
     def _get_file_sha(self, path: str) -> str | None:
         """Fetch the current SHA of a file in the repository.
 
