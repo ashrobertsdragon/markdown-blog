@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Post publishing command with markdown rendering and HTML sanitization
+
+  - PublishPostCommand dataclass for publishing draft posts to production
+  - Complete publishing workflow: draft loading, markdown rendering, HTML sanitization, database persistence, GitHub sync
+  - Integration with MarkdownRenderingService for markdown-to-HTML conversion with Pygments syntax highlighting
+  - Integration with HtmlSanitizer for XSS prevention via Bleach allowlist-based sanitization
+  - Automatic front matter updates (published: true, published_at timestamp) in draft files
+  - Best-effort GitHub commit after successful database persistence
+  - Graceful degradation: continues on filesystem or GitHub failures after database commit
+  - Domain-driven design: Post.publish() domain method encapsulates state transition logic
+  - Comprehensive error handling: validates draft exists, not already published, post in database
+  - Comprehensive test suite: 17 handler tests covering success path, error scenarios, logging, edge cases (100% pass rate)
+  - Files created: `backend/src/backend/application/commands/publish_post_command.py`, `backend/src/backend/application/commands/handlers/publish_post_handler.py`, `backend/tests/unit/application/commands/test_publish_post_command.py`, `backend/tests/unit/application/commands/handlers/test_publish_post_handler.py`
+
 - **Backend**: Draft content update with automatic corruption recovery
 
   - SaveDraftCommand for updating existing draft content with size validation
