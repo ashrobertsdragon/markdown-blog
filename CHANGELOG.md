@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Post unpublishing command with workflow automation
+
+  - UnpublishPostCommand dataclass for reverting published posts back to draft state
+  - Complete unpublishing workflow: database update (published=false), draft file front matter sync, GitHub commit
+  - Preserves post metadata and history: html_content and published_at timestamp remain in database for audit trail
+  - Automatic front matter update: published flag set to false in markdown draft file
+  - Best-effort GitHub sync: commits draft changes to version control with graceful failure handling
+  - Allows post re-editing after unpublish: draft file becomes editable again
+  - Domain-driven design: Post.unpublish() domain method encapsulates state transition logic
+  - Graceful degradation: continues on filesystem or GitHub failures after database commit completes
+  - Comprehensive error handling: validates post exists and is currently published before unpublishing
+  - Comprehensive test suite: 18 handler tests covering success path, error scenarios, and edge cases (100% pass rate)
+  - Files created: `backend/src/backend/application/commands/unpublish_post_command.py`, `backend/src/backend/application/commands/handlers/unpublish_post_handler.py`, `backend/tests/unit/application/commands/test_unpublish_post_command.py`, `backend/tests/unit/application/commands/handlers/test_unpublish_post_handler.py`
+
 - **Backend**: Post publishing command with markdown rendering and HTML sanitization
 
   - PublishPostCommand dataclass for publishing draft posts to production
