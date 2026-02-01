@@ -9,19 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Backend**: Draft deletion command with critical GitHub sync
+- **Backend**: Draft deletion command with GitHub version control sync
 
-  - DeleteDraftCommand dataclass for permanently deleting draft posts from filesystem and GitHub
-  - Critical GitHub sync: deletion failures propagate as exceptions (not best-effort like publish/unpublish)
-  - Publication guard: blocks deletion of published posts (must unpublish first via UnpublishPostCommand)
-  - Complete deletion workflow: publication status check, filesystem delete, GitHub commit (all or nothing)
-  - Idempotent filesystem operations: delete succeeds even if draft file already removed
-  - Domain-driven design: enforces business rule that published content cannot be deleted
-  - Comprehensive error handling: validates slug format, checks publication status, propagates GitHub failures
-  - Clear error messages: distinguishes between published posts, missing drafts, and GitHub sync failures
-  - Comprehensive test suite: 19 tests (5 command tests + 14 handler tests) covering validation, success path, error scenarios (100% pass rate)
-  - Files created: `backend/src/backend/application/commands/delete_draft_command.py`, `backend/src/backend/application/commands/handlers/delete_draft_handler.py`
-  - Files modified: `backend/tests/unit/application/commands/handlers/test_delete_draft_handler.py` (fixed import path for GitHubSyncService)
+  - DeleteDraftCommand for deleting draft posts with validation to prevent deletion of published posts
+  - Critical GitHub sync ensures deletion commits propagate to version control (failures raise exceptions)
 
 - **Backend**: Post unpublishing command with workflow automation
 
