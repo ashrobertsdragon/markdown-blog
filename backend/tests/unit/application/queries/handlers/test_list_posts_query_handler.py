@@ -23,6 +23,7 @@ from math import ceil
 from unittest.mock import Mock
 
 import pytest
+
 from backend.application.queries.handlers.list_posts_query_handler import (
     ListPostsResponse,
     list_posts_query_handler,
@@ -31,7 +32,6 @@ from backend.application.queries.list_posts_query import (
     ListPostsQuery,
     PostFilter,
 )
-
 from backend.domain.aggregates.post import Post
 from backend.domain.value_objects.slug import Slug
 

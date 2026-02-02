@@ -17,6 +17,7 @@ Total: 10 unit tests
 """
 
 import pytest
+
 from backend.application.queries.list_posts_query import (
     ListPostsQuery,
     PostFilter,
