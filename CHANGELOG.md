@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Post listing query with filtering and pagination
+
+  - ListPostsQuery for retrieving author's posts with flexible filtering (drafts only, published only, or all posts)
+  - PostFilter enum for type-safe filter options (DRAFTS, PUBLISHED, ALL)
+  - Pagination support with configurable page size (1-100 posts per page)
+  - Efficient database counting using SQL COUNT(\*) instead of loading all rows
+  - Sort by most recently updated posts first (updated_at DESC)
+  - Input validation: page >= 1, limit 1-100, author_id > 0
+  - Paginated response includes total count and total pages for UI pagination controls
+  - Repository method find_by_author_filtered for filtered queries with dual return (posts, count)
+  - Comprehensive test suite: 33 tests covering validation, filtering, pagination, edge cases (100% pass rate)
+  - Files created: `backend/src/backend/domain/value_objects/post_filter.py`, `backend/src/backend/application/queries/list_posts_query.py`, `backend/src/backend/application/queries/handlers/list_posts_query_handler.py`, `backend/tests/unit/application/queries/test_list_posts_query.py`, `backend/tests/unit/application/queries/handlers/test_list_posts_query_handler.py`
+  - Files modified: `backend/src/backend/infrastructure/persistence/post_repository.py`, `backend/src/backend/domain/value_objects/__init__.py`
+
 - **Backend**: Draft deletion command with GitHub version control sync
 
   - DeleteDraftCommand for deleting draft posts with validation to prevent deletion of published posts

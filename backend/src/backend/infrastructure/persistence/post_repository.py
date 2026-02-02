@@ -7,11 +7,13 @@ Handles conversion between SQLModel Post table and domain Post aggregate.
 
 from datetime import UTC
 
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
 from backend.domain.aggregates.post import Post as DomainPost
 from backend.domain.value_objects.html_content import HtmlContent
+from backend.domain.value_objects.post_filter import PostFilter
 from backend.domain.value_objects.slug import Slug
 from backend.infrastructure.persistence.database import get_db
 from backend.infrastructure.persistence.models import Post as PostModel
@@ -202,6 +204,87 @@ class PostRepository:
             return self._delete_with_session(session, post_id)
 
         raise RuntimeError("Failed to obtain database session")
+
+    def find_by_author_filtered(
+        self,
+        author_id: int,
+        filter_type: PostFilter,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[DomainPost], int]:
+        """List posts by author with publication status filter and pagination.
+
+        Returns posts filtered by publication status and ordered by
+        updated_at DESC (most recently updated first). Provides both
+        the paginated results and total count for pagination metadata.
+
+        Args:
+            author_id: User ID of post author
+            filter_type: PostFilter enum controlling publication filter
+            limit: Maximum number of posts to return
+            offset: Number of posts to skip
+
+        Returns:
+            Tuple of (posts list, total count of matching posts)
+        """
+        if self._session:
+            return self._find_by_author_filtered_with_session(
+                self._session, author_id, filter_type, limit, offset
+            )
+
+        for session in get_db():
+            return self._find_by_author_filtered_with_session(
+                session, author_id, filter_type, limit, offset
+            )
+
+        raise RuntimeError("Failed to obtain database session")
+
+    def _find_by_author_filtered_with_session(
+        self,
+        session: Session,
+        author_id: int,
+        filter_type: PostFilter,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[DomainPost], int]:
+        """Internal find by author filtered method with session handling.
+
+        Args:
+            session: SQLModel Session to use
+            author_id: User ID of post author
+            filter_type: PostFilter enum controlling publication filter
+            limit: Maximum number of posts to return
+            offset: Number of posts to skip
+
+        Returns:
+            Tuple of (posts list, total count of matching posts)
+        """
+        base_where = PostModel.author_id == author_id
+
+        if filter_type == PostFilter.DRAFTS:
+            where_clause = base_where & (PostModel.published == False)  # noqa: E712 - SQLAlchemy requires explicit boolean comparison
+        elif filter_type == PostFilter.PUBLISHED:
+            where_clause = base_where & (PostModel.published == True)  # noqa: E712 - SQLAlchemy requires explicit boolean comparison
+        else:
+            where_clause = base_where
+
+        count_statement = (
+            select(func.count()).select_from(PostModel).where(where_clause)
+        )
+        total_count = session.exec(count_statement).one()
+
+        posts_statement = (
+            select(PostModel)
+            .where(where_clause)
+            .order_by(col(PostModel.updated_at).desc())
+            .limit(limit)
+            .offset(offset)
+        )
+
+        post_models = session.exec(posts_statement).all()
+        posts = [self._to_domain(model) for model in post_models]
+
+        return posts, total_count
 
     def _delete_with_session(self, session: Session, post_id: int) -> bool:
         """Internal delete method with session handling.
