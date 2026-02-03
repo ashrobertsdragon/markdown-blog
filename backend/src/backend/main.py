@@ -8,8 +8,11 @@ import logging
 from pathlib import Path
 from urllib.parse import unquote
 
-from flask import Flask, Response, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory
+from flask.wrappers import Response
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
+from werkzeug.wrappers import Response as WerkzeugResponse
 
 from backend.api.routes.auth import auth_bp
 from backend.api.routes.health import health_bp
@@ -92,18 +95,29 @@ def create_app() -> Flask:
         return jsonify(payload), 403
 
     @app.errorhandler(Exception)
-    def handle_unexpected_error(error: Exception) -> tuple[Response, int]:
+    def handle_unexpected_error(
+        error: Exception,
+    ) -> tuple[Response, int] | WerkzeugResponse:
         """Handle unexpected exceptions with generic 500 response.
 
         Logs detailed error information for debugging while returning
         a generic message to clients to prevent information disclosure.
 
+        Flask's built-in HTTP exceptions (400, 404, 415, etc.) are
+        returned with their native response to preserve proper status codes.
+
         Args:
             error: The caught Exception instance.
 
         Returns:
-            JSON response with generic error message and 500 status code.
+            WerkzeugResponse: For HTTPException, the exception's native
+                response.
+            tuple[Response, int]: For other exceptions, JSON error
+                with 500 status.
         """
+        if isinstance(error, HTTPException):
+            return error.get_response()
+
         logger.exception(
             "Unexpected error occurred",
             exc_info=error,
