@@ -48,7 +48,7 @@ from backend.infrastructure.versioning.github_sync_service import (
     GitHubSyncService,
 )
 
-posts_bp = Blueprint("posts", __name__, url_prefix="/api")
+posts_bp = Blueprint("posts", __name__)
 
 _filesystem_settings: FileSystemSettings | None = None
 _github_settings: GitHubSettings | None = None
@@ -220,7 +220,7 @@ def _get_list_posts_query_handler() -> ListPostsQueryHandler:
     return ListPostsQueryHandler()
 
 
-@posts_bp.route("/posts", methods=["POST"])
+@posts_bp.route("", methods=["POST"])
 @require_auth
 @require_role("author")
 def create_draft() -> tuple[Response, int]:
@@ -281,7 +281,7 @@ def create_draft() -> tuple[Response, int]:
         return jsonify({"error": f"Internal server error: {e}"}), 500
 
 
-@posts_bp.route("/posts/<slug>", methods=["GET"])
+@posts_bp.route("/<slug>", methods=["GET"])
 @require_auth
 def get_draft(slug: str) -> tuple[Response, int]:
     """Get draft by slug.
@@ -325,7 +325,7 @@ def get_draft(slug: str) -> tuple[Response, int]:
         return jsonify({"error": f"Internal server error: {e}"}), 500
 
 
-@posts_bp.route("/posts/<slug>", methods=["PUT"])
+@posts_bp.route("/<slug>", methods=["PUT"])
 @require_auth
 def save_draft(slug: str) -> tuple[Response, int]:
     """Save draft content.
@@ -379,7 +379,7 @@ def save_draft(slug: str) -> tuple[Response, int]:
         return jsonify({"error": f"Internal server error: {e}"}), 500
 
 
-@posts_bp.route("/posts/<slug>", methods=["DELETE"])
+@posts_bp.route("/<slug>", methods=["DELETE"])
 @require_auth
 def delete_draft(slug: str) -> tuple[Response, int]:
     """Delete draft post.
@@ -423,7 +423,7 @@ def delete_draft(slug: str) -> tuple[Response, int]:
         return jsonify({"error": f"Internal server error: {e}"}), 500
 
 
-@posts_bp.route("/posts/<slug>/publish", methods=["POST"])
+@posts_bp.route("/<slug>/publish", methods=["POST"])
 @require_auth
 def publish_post(slug: str) -> tuple[Response, int]:
     """Publish draft post.
@@ -465,7 +465,7 @@ def publish_post(slug: str) -> tuple[Response, int]:
         return jsonify({"error": f"Internal server error: {e}"}), 500
 
 
-@posts_bp.route("/posts/<slug>/unpublish", methods=["POST"])
+@posts_bp.route("/<slug>/unpublish", methods=["POST"])
 @require_auth
 def unpublish_post(slug: str) -> tuple[Response, int]:
     """Unpublish published post.

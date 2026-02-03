@@ -1039,7 +1039,7 @@ def test_list_my_posts_returns_200_with_posts(
         ),
     ):
         response = client.get(
-            "/api/my-posts",
+            "/api/posts/my-posts",
             headers={"Authorization": "Bearer author_token"},
         )
 
@@ -1084,7 +1084,7 @@ def test_list_my_posts_with_drafts_filter_returns_only_drafts(
         ),
     ):
         response = client.get(
-            "/api/my-posts?filter=drafts",
+            "/api/posts/my-posts?filter=drafts",
             headers={"Authorization": "Bearer author_token"},
         )
 
@@ -1131,7 +1131,7 @@ def test_list_my_posts_with_published_filter_returns_only_published(
         ),
     ):
         response = client.get(
-            "/api/my-posts?filter=published",
+            "/api/posts/my-posts?filter=published",
             headers={"Authorization": "Bearer author_token"},
         )
 
@@ -1174,7 +1174,7 @@ def test_list_my_posts_with_pagination_parameters(
         ),
     ):
         response = client.get(
-            "/api/my-posts?page=2&limit=10",
+            "/api/posts/my-posts?page=2&limit=10",
             headers={"Authorization": "Bearer author_token"},
         )
 
@@ -1184,8 +1184,8 @@ def test_list_my_posts_with_pagination_parameters(
 
 
 def test_list_my_posts_without_auth_returns_401(client):
-    """GET /api/my-posts without Authorization should return 401."""
-    response = client.get("/api/my-posts")
+    """GET /api/posts/my-posts without Authorization should return 401."""
+    response = client.get("/api/posts/my-posts")
 
     assert response.status_code == 401
 
@@ -1224,7 +1224,7 @@ def test_list_my_posts_returns_empty_list_for_new_author(
         ),
     ):
         response = client.get(
-            "/api/my-posts",
+            "/api/posts/my-posts",
             headers={"Authorization": "Bearer author_token"},
         )
 

@@ -7,11 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Backend**: Posts blueprint registration and URL structure consistency
+  - Fixed posts blueprint registration to follow project architectural patterns (explicit url_prefix in Flask app factory)
+  - Updated route paths to use empty string `""` instead of `"/"` for base route, matching users_bp pattern
+  - Corrected endpoint paths: list-my-posts moved from `/api/my-posts` to `/api/posts/my-posts` for proper REST hierarchy
+  - Updated 36 integration tests to use correct endpoint paths
+  - All posts routes now consistently namespaced under `/api/posts`: POST /api/posts (create), GET /api/posts/:slug (read), PUT /api/posts/:slug (update), DELETE /api/posts/:slug (delete), POST /api/posts/:slug/publish, POST /api/posts/:slug/unpublish, GET /api/posts/my-posts (list)
+  - Files modified: `backend/src/backend/main.py` (added url_prefix="/api/posts" to blueprint registration), `backend/src/backend/api/routes/posts.py` (removed internal url_prefix, updated route decorators), `backend/tests/integration/api/test_posts_routes.py` (updated test paths)
+
 ### Added
 
 - **Backend**: Posts API routes with full CRUD operations and access control
 
-  - Implemented 7 REST endpoints for post management: create draft (POST /api/posts), get draft (GET /api/posts/:slug), save draft (PUT /api/posts/:slug), delete draft (DELETE /api/posts/:slug), publish post (POST /api/posts/:slug/publish), unpublish post (POST /api/posts/:slug/unpublish), list author posts (GET /api/my-posts)
+  - Implemented 7 REST endpoints for post management: create draft (POST /api/posts), get draft (GET /api/posts/:slug), save draft (PUT /api/posts/:slug), delete draft (DELETE /api/posts/:slug), publish post (POST /api/posts/:slug/publish), unpublish post (POST /api/posts/:slug/unpublish), list author posts (GET /api/posts/my-posts)
   - Author ownership verification: all mutating operations verify user is post author before allowing changes
   - Admin override support: admin role can edit/unpublish any post regardless of authorship
   - Authorization enforcement via @require_auth and @require_role decorators on all endpoints
