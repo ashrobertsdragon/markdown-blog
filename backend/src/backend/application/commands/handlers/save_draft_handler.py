@@ -94,7 +94,7 @@ def save_draft_handler(
 
     commit_message = f"Update draft: {draft.title}"
     commit_sha = github_service.commit_file(
-        path=f"drafts/{command.slug}.md",
+        path=f"drafts/{draft.slug}.md",
         content=draft.to_markdown(),
         message=commit_message,
     )

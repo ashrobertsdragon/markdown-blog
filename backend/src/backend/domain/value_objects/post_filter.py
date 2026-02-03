@@ -1,9 +1,9 @@
 """PostFilter enum for filtering posts by publication status."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class PostFilter(Enum):
+class PostFilter(StrEnum):
     """Filter options for listing posts by publication state.
 
     Provides filter types for queries to return drafts, published posts,

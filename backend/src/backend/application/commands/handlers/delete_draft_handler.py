@@ -73,12 +73,12 @@ def delete_draft_handler(
     logger.debug(f"Filesystem deletion completed: {command.slug}")
 
     # Step 3: Commit to GitHub (CRITICAL)
-    logger.debug(f"Committing deletion to GitHub: drafts/{command.slug}.md")
-    commit_message = f"Delete draft: {command.slug}"
+    logger.debug(f"Committing deletion to GitHub: drafts/{post.slug}.md")
+    commit_message = f"Delete draft: {post.slug}"
 
     try:
         result = github_service.delete_file(
-            path=f"drafts/{command.slug}.md",
+            path=f"drafts/{post.slug}.md",
             message=commit_message,
         )
 

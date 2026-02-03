@@ -21,16 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files created: `backend/tests/unit/test_post_repository.py`
   - Tests modified: `backend/tests/unit/test_models.py` (updated to use `html_content` field)
 
-### Fixed
-
-- **Backend**: Posts blueprint registration and URL structure consistency
-  - Fixed posts blueprint registration to follow project architectural patterns (explicit url_prefix in Flask app factory)
-  - Updated route paths to use empty string `""` instead of `"/"` for base route, matching users_bp pattern
-  - Corrected endpoint paths: list-my-posts moved from `/api/my-posts` to `/api/posts/my-posts` for proper REST hierarchy
-  - Updated 36 integration tests to use correct endpoint paths
-  - All posts routes now consistently namespaced under `/api/posts`: POST /api/posts (create), GET /api/posts/:slug (read), PUT /api/posts/:slug (update), DELETE /api/posts/:slug (delete), POST /api/posts/:slug/publish, POST /api/posts/:slug/unpublish, GET /api/posts/my-posts (list)
-  - Files modified: `backend/src/backend/main.py` (added url_prefix="/api/posts" to blueprint registration), `backend/src/backend/api/routes/posts.py` (removed internal url_prefix, updated route decorators), `backend/tests/integration/api/test_posts_routes.py` (updated test paths)
-
 ### Added
 
 - **Backend**: Posts API routes with full CRUD operations and access control
@@ -151,10 +141,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files created: `backend/src/backend/infrastructure/sanitization/html_sanitizer.py`, `backend/src/backend/infrastructure/sanitization/__init__.py`, `backend/tests/unit/infrastructure/sanitization/test_html_sanitizer.py`
   - Dependencies added: bleach 6.2.0, types-bleach 6.2.0.20241208
 
-### Fixed
-
-- **Backend**: Corrected import order in html_sanitizer test file to comply with ruff linting standards
-
 ### Security
 
 - **Backend**: Implemented comprehensive XSS prevention for blog post content
@@ -254,17 +240,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 100% test coverage with 22 unit tests
   - Files created: `backend/src/backend/domain/value_objects/slug.py`, `backend/tests/unit/test_slug.py`
 
-### Fixed
-
-- **Backend**: Corrected authentication blueprint URL prefixes to match specification
-  - Changed auth_bp registration from `/auth` to `/api/auth` in main.py
-  - Changed users_bp registration from `/users` to `/api/users` in main.py
-  - Updated all integration tests to use corrected endpoints
-  - Updated documentation examples in auth.py and users.py
-  - Endpoints now accessible at `/api/auth/me` and `/api/users` as per requirements
-  - All 22 backend integration tests pass with corrected URL prefixes
-  - Files modified: `backend/src/backend/main.py`, `backend/tests/integration/test_api_routes_auth.py`, `backend/tests/integration/test_api_routes_users.py`, `backend/src/backend/api/routes/auth.py`, `backend/src/backend/api/routes/users.py`
-
 ### Added
 
 - **Documentation**: Comprehensive authentication setup guide in README
@@ -294,17 +269,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enables role-based rendering and authentication checks across all route components
   - File modified: `frontend/src/App.tsx`
 
-### Fixed
-
-- **Frontend**: Resolved Playwright test configuration conflict with Vitest globals
-  - Fixed "Playwright Test did not expect test.describe() to be called here" error caused by TypeScript configuration
-  - Created separate tsconfig.playwright.json for Playwright tests with only @playwright/test types
-  - Excluded tests/e2e directory from main tsconfig.json to prevent vitest/globals type pollution
-  - Excluded tests/e2e directory from vitest.config.ts to prevent Vitest from running Playwright tests
-  - All 39 authentication E2E tests (117 total across 3 browsers) now load and run successfully
-  - Files modified: `frontend/tsconfig.json` (added exclude for tests/e2e), `frontend/vitest.config.ts` (added include/exclude patterns)
-  - Files created: `frontend/tsconfig.playwright.json` (dedicated TypeScript config for Playwright)
-
 ### Added
 
 - **Frontend**: Comprehensive E2E authentication flow tests with Playwright
@@ -321,15 +285,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tests use explicit waits to avoid flakiness: page.waitForURL(), page.waitForLoadState(), page.waitForFunction()
   - Playwright installed as dev dependency (@playwright/test ^1.57.0)
   - Tests run deterministically without flakiness in both local development and CI environments
-
-### Fixed
-
-- **Frontend**: Code review fixes for authentication implementation
-  - Fixed unsafe type assertion in AuthContext role extraction to use explicit validation instead of type casting
-  - Updated all useAuth mocks in test files to match AuthContextType interface (replaced userId/signOut with user object)
-  - Improved loading indicator in ProtectedRoute from plain text to animated Loader2 spinner icon from lucide-react
-  - Updated all loading state tests to check for spinner element instead of "Loading..." text
-  - All 203 tests passing with improved user experience and type safety
 
 ### Added
 
@@ -419,18 +374,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All existing tests updated and passing (3 NotFound tests, 17 Home tests)
   - No breaking changes to component behavior or user experience
   - Files modified: `frontend/src/pages/NotFound.tsx`, `frontend/src/pages/Home.tsx`, `frontend/tests/unit/NotFound.test.tsx`, `frontend/tests/unit/Home.test.tsx`
-
-### Fixed
-
-- **Backend**: Fixed CI test failures due to eager initialization of Settings in auth middleware
-  - Refactored auth_middleware.py to use lazy initialization pattern for Settings, ClerkAuthAdapter, and UserRepository
-  - Prevents ValidationError during module import when CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY environment variables are not set
-  - Implemented singleton pattern with private getter functions (\_get_settings, \_get_clerk_adapter, \_get_user_repository)
-  - Module-level variables (clerk_auth_adapter, user_repository) now default to None for test mock compatibility
-  - Adapters and repositories are instantiated only when decorators are actually invoked, not at import time
-  - All 208 unit tests pass including 17 auth middleware tests with full backward compatibility
-  - No breaking changes to decorator API or test mocking patterns
-  - File modified: `backend/src/backend/api/middleware/auth_middleware.py`
 
 ### Added
 
@@ -611,6 +554,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files removed: `scripts/tests/deploy_config_fix.bats`
 
 ### Fixed
+
+- **Backend**: Posts blueprint registration and URL structure consistency
+
+  - Fixed posts blueprint registration to follow project architectural patterns (explicit url_prefix in Flask app factory)
+  - Updated route paths to use empty string `""` instead of `"/"` for base route, matching users_bp pattern
+  - Corrected endpoint paths: list-my-posts moved from `/api/my-posts` to `/api/posts/my-posts` for proper REST hierarchy
+  - Updated 36 integration tests to use correct endpoint paths
+  - All posts routes now consistently namespaced under `/api/posts`: POST /api/posts (create), GET /api/posts/:slug (read), PUT /api/posts/:slug (update), DELETE /api/posts/:slug (delete), POST /api/posts/:slug/publish, POST /api/posts/:slug/unpublish, GET /api/posts/my-posts (list)
+  - Files modified: `backend/src/backend/main.py` (added url_prefix="/api/posts" to blueprint registration), `backend/src/backend/api/routes/posts.py` (removed internal url_prefix, updated route decorators), `backend/tests/integration/api/test_posts_routes.py` (updated test paths)
+
+- **Backend**: Corrected import order in html_sanitizer test file to comply with ruff linting standards
+
+- **Backend**: Corrected authentication blueprint URL prefixes to match specification
+
+  - Changed auth_bp registration from `/auth` to `/api/auth` in main.py
+  - Changed users_bp registration from `/users` to `/api/users` in main.py
+  - Updated all integration tests to use corrected endpoints
+  - Updated documentation examples in auth.py and users.py
+  - Endpoints now accessible at `/api/auth/me` and `/api/users` as per requirements
+  - All 22 backend integration tests pass with corrected URL prefixes
+  - Files modified: `backend/src/backend/main.py`, `backend/tests/integration/test_api_routes_auth.py`, `backend/tests/integration/test_api_routes_users.py`, `backend/src/backend/api/routes/auth.py`, `backend/src/backend/api/routes/users.py`
+
+- **Frontend**: Code review fixes for authentication implementation
+
+  - Fixed unsafe type assertion in AuthContext role extraction to use explicit validation instead of type casting
+  - Updated all useAuth mocks in test files to match AuthContextType interface (replaced userId/signOut with user object)
+  - Improved loading indicator in ProtectedRoute from plain text to animated Loader2 spinner icon from lucide-react
+  - Updated all loading state tests to check for spinner element instead of "Loading..." text
+  - All 203 tests passing with improved user experience and type safety
+
+- **Frontend**: Resolved Playwright test configuration conflict with Vitest globals
+
+  - Fixed "Playwright Test did not expect test.describe() to be called here" error caused by TypeScript configuration
+  - Created separate tsconfig.playwright.json for Playwright tests with only @playwright/test types
+  - Excluded tests/e2e directory from main tsconfig.json to prevent vitest/globals type pollution
+  - Excluded tests/e2e directory from vitest.config.ts to prevent Vitest from running Playwright tests
+  - All 39 authentication E2E tests (117 total across 3 browsers) now load and run successfully
+  - Files modified: `frontend/tsconfig.json` (added exclude for tests/e2e), `frontend/vitest.config.ts` (added include/exclude patterns)
+  - Files created: `frontend/tsconfig.playwright.json` (dedicated TypeScript config for Playwright)
+
+- **Backend**: Fixed CI test failures due to eager initialization of Settings in auth middleware
+
+  - Refactored auth_middleware.py to use lazy initialization pattern for Settings, ClerkAuthAdapter, and UserRepository
+  - Prevents ValidationError during module import when CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY environment variables are not set
+  - Implemented singleton pattern with private getter functions (\_get_settings, \_get_clerk_adapter, \_get_user_repository)
+  - Module-level variables (clerk_auth_adapter, user_repository) now default to None for test mock compatibility
+  - Adapters and repositories are instantiated only when decorators are actually invoked, not at import time
+  - All 208 unit tests pass including 17 auth middleware tests with full backward compatibility
+  - No breaking changes to decorator API or test mocking patterns
+  - File modified: `backend/src/backend/api/middleware/auth_middleware.py`
+
+- **Code Review Fixes (PR #7)**: Implemented fixes from sourcery-ai and gemini-code-assist code reviews
+
+  - **Build Script**: Enhanced shell safety flags in `scripts/build.sh`
+    - Added `set -u` to error on unset variables
+    - Added `set -o pipefail` to catch errors in pipelines
+    - Removed unnecessary `exit 0` that could hide non-zero exit codes
+    - Changed `npm install` to `npm ci` for faster, more reliable builds from lockfile
+  - **E2E Tests**: Improved test reliability and production configuration
+    - Fixed build fixture to always run build for test determinism
+    - Added `try...finally` block to ensure cleanup even if tests fail
+    - Track initial BUILD_DIR state to preserve pre-existing builds
+    - Changed FLASK_ENV from DEVELOPMENT to PRODUCTION to accurately test production stack
+    - Marked GitHub health check test with `@pytest.mark.external` to allow skipping in offline/restricted environments
+  - **BATS Tests**: Optimized build script test performance
+    - Refactored to use `setup_file()`/`teardown_file()` hooks
+    - Build script now runs once per test file instead of once per test (4x faster)
+    - Individual tests now only verify build artifacts exist
+
+- **Code Review Fixes (PR #8)**: Addressed documentation and configuration issues from gemini-code-assist code review
+
+  - **Backend Configuration**: Corrected `.env.example` to use `LOCAL_*` prefix variables matching `config.py` expectations
+    - Fixed database configuration to use `LOCAL_DB_HOST`, `LOCAL_DB_NAME`, `LOCAL_DB_USER`, `LOCAL_DB_PASSWORD`
+    - Ensures development environment variables align with `DevDBSettings` class requirements
+  - **API Documentation**: Updated health endpoint documentation in `docs/api.md` to match actual implementation
+    - Fixed `/health/db` endpoint response format (simple status object instead of detailed host/database info)
+    - Fixed `/health/github` endpoint response format (simple status object instead of detailed rate_limit info)
+  - **README Organization**: Improved build script documentation clarity
+    - Reorganized `./scripts/build.sh` command placement for better categorization
+    - Clarified frontend-specific vs. project-wide command usage
+  - **Deployment Documentation**: Added missing `PRODUCTION_DOMAIN` environment variable to deployment docs table
+    - Documented required variable for production confirmation prompt functionality
+    - Completed environment variables reference in `docs/DEPLOYMENT.md`
+
+- **Deployment**: Critical bug fix in error handling for deployment script
+
+  - Fixed `uapi_call()` function to correctly capture and propagate command exit codes
+  - Previously, `if ! command; then` pattern was causing `$?` to be 0 (success of if-test negation) instead of the actual command failure code
+  - Changed to explicitly capture exit status before testing: `command; exit_status=$?; if [[ $exit_status -ne 0 ]]; then`
+  - This ensures deployment aborts immediately when UAPI operations fail instead of continuing silently
+  - Added comprehensive error checking (`|| return 1`) to all deployment functions for fail-fast behavior
+  - Fixed tests 12, 13, and 14 which were failing assertions but not executing
+  - Test 12: Added `stat` mock for SSH key permission verification
+  - Tests 13-14: Added proper UAPI mocks that handle different operations independently
+
+- **Frontend**: Updated frontend dependencies to latest versions.
+
+- **Frontend**: Corrected Biome configuration to remove redundant include paths.
+
+- **Frontend**: Separated Vitest configuration into `vitest.config.ts` and ensured shared configuration with `vite.config.ts` using `mergeConfig`.
 
 - **Deployment**: Fixed virtual environment path to match cPanel conventions
 
@@ -813,58 +856,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Frontend**: Updated entry point from `main.jsx` to `main.tsx` in `index.html`.
 - **Frontend**: Updated tests to correctly expect `React.StrictMode` as `symbol` type (React 18 behavior).
-
-### Fixed
-
-- **Code Review Fixes (PR #7)**: Implemented fixes from sourcery-ai and gemini-code-assist code reviews
-
-  - **Build Script**: Enhanced shell safety flags in `scripts/build.sh`
-    - Added `set -u` to error on unset variables
-    - Added `set -o pipefail` to catch errors in pipelines
-    - Removed unnecessary `exit 0` that could hide non-zero exit codes
-    - Changed `npm install` to `npm ci` for faster, more reliable builds from lockfile
-  - **E2E Tests**: Improved test reliability and production configuration
-    - Fixed build fixture to always run build for test determinism
-    - Added `try...finally` block to ensure cleanup even if tests fail
-    - Track initial BUILD_DIR state to preserve pre-existing builds
-    - Changed FLASK_ENV from DEVELOPMENT to PRODUCTION to accurately test production stack
-    - Marked GitHub health check test with `@pytest.mark.external` to allow skipping in offline/restricted environments
-  - **BATS Tests**: Optimized build script test performance
-    - Refactored to use `setup_file()`/`teardown_file()` hooks
-    - Build script now runs once per test file instead of once per test (4x faster)
-    - Individual tests now only verify build artifacts exist
-
-- **Code Review Fixes (PR #8)**: Addressed documentation and configuration issues from gemini-code-assist code review
-
-  - **Backend Configuration**: Corrected `.env.example` to use `LOCAL_*` prefix variables matching `config.py` expectations
-    - Fixed database configuration to use `LOCAL_DB_HOST`, `LOCAL_DB_NAME`, `LOCAL_DB_USER`, `LOCAL_DB_PASSWORD`
-    - Ensures development environment variables align with `DevDBSettings` class requirements
-  - **API Documentation**: Updated health endpoint documentation in `docs/api.md` to match actual implementation
-    - Fixed `/health/db` endpoint response format (simple status object instead of detailed host/database info)
-    - Fixed `/health/github` endpoint response format (simple status object instead of detailed rate_limit info)
-  - **README Organization**: Improved build script documentation clarity
-    - Reorganized `./scripts/build.sh` command placement for better categorization
-    - Clarified frontend-specific vs. project-wide command usage
-  - **Deployment Documentation**: Added missing `PRODUCTION_DOMAIN` environment variable to deployment docs table
-    - Documented required variable for production confirmation prompt functionality
-    - Completed environment variables reference in `docs/DEPLOYMENT.md`
-
-- **Deployment**: Critical bug fix in error handling for deployment script
-
-  - Fixed `uapi_call()` function to correctly capture and propagate command exit codes
-  - Previously, `if ! command; then` pattern was causing `$?` to be 0 (success of if-test negation) instead of the actual command failure code
-  - Changed to explicitly capture exit status before testing: `command; exit_status=$?; if [[ $exit_status -ne 0 ]]; then`
-  - This ensures deployment aborts immediately when UAPI operations fail instead of continuing silently
-  - Added comprehensive error checking (`|| return 1`) to all deployment functions for fail-fast behavior
-  - Fixed tests 12, 13, and 14 which were failing assertions but not executing
-  - Test 12: Added `stat` mock for SSH key permission verification
-  - Tests 13-14: Added proper UAPI mocks that handle different operations independently
-
-- **Frontend**: Updated frontend dependencies to latest versions.
-
-- **Frontend**: Corrected Biome configuration to remove redundant include paths.
-
-- **Frontend**: Separated Vitest configuration into `vitest.config.ts` and ensured shared configuration with `vite.config.ts` using `mergeConfig`.
 
 ## v0.1.2 (2025-11-17)
 

@@ -122,10 +122,10 @@ def publish_post_handler(
 
     # Step 8: Commit to GitHub (best-effort)
     try:
-        logger.debug(f"Committing to GitHub: drafts/{command.slug}.md")
+        logger.debug(f"Committing to GitHub: drafts/{post.slug}.md")
         commit_message = f"Publish post: {draft.title}"
         commit_sha = github_service.commit_file(
-            path=f"drafts/{command.slug}.md",
+            path=f"drafts/{post.slug}.md",
             content=draft.to_markdown(),
             message=commit_message,
         )
