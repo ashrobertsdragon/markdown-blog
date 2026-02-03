@@ -86,6 +86,25 @@ def mock_github_service() -> Mock:
 
 
 @pytest.fixture
+def mock_post_repo() -> Mock:
+    """Mock PostRepository that returns a post owned by author_id=1.
+
+    This fixture provides a mock PostRepository for authorization checks
+    in the save_draft_handler. All test commands use author_id=1, so
+    the mock returns a matching Post aggregate.
+
+    Returns:
+        Mock: Mocked PostRepository instance
+    """
+    from backend.domain.aggregates.post import Post
+
+    mock_repo = Mock()
+    post = Post.create_draft(slug="test-post", title="Test Post", author_id=1)
+    mock_repo.find_by_slug.return_value = post
+    return mock_repo
+
+
+@pytest.fixture
 def sample_draft(draft_repo: FileSystemDraftRepository) -> DraftFile:
     """Create a sample draft file for testing.
 

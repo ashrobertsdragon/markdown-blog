@@ -378,6 +378,11 @@ def test_publish_fails_when_already_published(
     )
     mock_draft_repo.find_by_slug.return_value = published_draft
 
+    mock_post = Post.create_draft(
+        slug="already-published", title="Published Post", author_id=1
+    )
+    mock_post_repo.find_by_slug.return_value = mock_post
+
     command = PublishPostCommand(
         slug="already-published", author_id=1, user_role="author"
     )

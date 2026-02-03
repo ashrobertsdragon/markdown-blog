@@ -74,6 +74,7 @@ def published_post() -> Post:
 
 
 def test_delete_draft_when_post_does_not_exist_in_database(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -132,6 +133,7 @@ def test_delete_draft_when_post_exists_but_not_published(
 
 
 def test_delete_calls_filesystem_delete_with_correct_slug(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -142,7 +144,7 @@ def test_delete_calls_filesystem_delete_with_correct_slug(
     exact slug from the command. The filesystem delete should be called
     with just the slug parameter.
     """
-    mock_post_repo.find_by_slug.return_value = None
+    mock_post_repo.find_by_slug.return_value = draft_post
     mock_github_service.delete_file.return_value = True
 
     command = DeleteDraftCommand(
@@ -160,6 +162,7 @@ def test_delete_calls_filesystem_delete_with_correct_slug(
 
 
 def test_delete_calls_github_delete_file_with_correct_path(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -172,7 +175,7 @@ def test_delete_calls_github_delete_file_with_correct_path(
 
     The GitHub commit message should include the draft title.
     """
-    mock_post_repo.find_by_slug.return_value = None
+    mock_post_repo.find_by_slug.return_value = draft_post
     mock_github_service.delete_file.return_value = True
 
     command = DeleteDraftCommand(
@@ -195,6 +198,7 @@ def test_delete_calls_github_delete_file_with_correct_path(
 
 
 def test_delete_returns_none_on_success(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -205,7 +209,7 @@ def test_delete_returns_none_on_success(
     of both the filesystem draft and GitHub commit. The None return
     indicates a successful void operation.
     """
-    mock_post_repo.find_by_slug.return_value = None
+    mock_post_repo.find_by_slug.return_value = draft_post
     mock_github_service.delete_file.return_value = True
 
     command = DeleteDraftCommand(
@@ -281,6 +285,7 @@ def test_delete_does_not_call_operations_if_post_is_published(
 
 
 def test_delete_propagates_filesystem_errors(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -291,7 +296,7 @@ def test_delete_propagates_filesystem_errors(
     operations (e.g., draft not found). The error should bubble up to
     the caller without being caught or suppressed.
     """
-    mock_post_repo.find_by_slug.return_value = None
+    mock_post_repo.find_by_slug.return_value = draft_post
     mock_draft_repo.delete.side_effect = ValueError("Draft not found")
 
     command = DeleteDraftCommand(
@@ -310,6 +315,7 @@ def test_delete_propagates_filesystem_errors(
 
 
 def test_delete_raises_exception_when_github_delete_fails(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -321,7 +327,7 @@ def test_delete_raises_exception_when_github_delete_fails(
     the handler MUST propagate the error. This ensures draft deletions
     are properly version-controlled.
     """
-    mock_post_repo.find_by_slug.return_value = None
+    mock_post_repo.find_by_slug.return_value = draft_post
     mock_github_service.delete_file.return_value = False
 
     command = DeleteDraftCommand(
@@ -338,6 +344,7 @@ def test_delete_raises_exception_when_github_delete_fails(
 
 
 def test_delete_checks_post_repository_before_deletion(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -348,7 +355,7 @@ def test_delete_checks_post_repository_before_deletion(
     attempting any delete operations. This check is necessary to enforce
     the business rule that published posts cannot be deleted.
     """
-    mock_post_repo.find_by_slug.return_value = None
+    mock_post_repo.find_by_slug.return_value = draft_post
     mock_github_service.delete_file.return_value = True
 
     command = DeleteDraftCommand(
@@ -366,6 +373,7 @@ def test_delete_checks_post_repository_before_deletion(
 
 
 def test_delete_validates_slug_via_slug_value_object(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -379,7 +387,8 @@ def test_delete_validates_slug_via_slug_value_object(
     Note: This test assumes Slug validation occurs in the handler or
     is enforced by the command's __post_init__ method.
     """
-    mock_post_repo.find_by_slug.return_value = None
+    mock_post_repo.find_by_slug.return_value = draft_post
+    mock_github_service.delete_file.return_value = True
 
     command = DeleteDraftCommand(
         slug="valid-slug", author_id=1, user_role="author"
@@ -396,6 +405,7 @@ def test_delete_validates_slug_via_slug_value_object(
 
 
 def test_delete_handles_none_return_from_post_repo(
+    draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
@@ -404,23 +414,24 @@ def test_delete_handles_none_return_from_post_repo(
 
     This test ensures the handler correctly handles the case where
     post_repo.find_by_slug() returns None (post not in database).
-    The deletion should proceed successfully since no post record
-    means the draft is not published.
+    With authorization added, this now raises ValueError to prevent
+    unauthorized deletion.
     """
     mock_post_repo.find_by_slug.return_value = None
-    mock_github_service.delete_file.return_value = True
 
     command = DeleteDraftCommand(
         slug="test-post", author_id=1, user_role="author"
     )
 
-    delete_draft_handler(
-        command=command,
-        draft_repo=mock_draft_repo,
-        post_repo=mock_post_repo,
-        github_service=mock_github_service,
-    )
-    mock_draft_repo.delete.assert_called_once()
+    with pytest.raises(ValueError, match="not found"):
+        delete_draft_handler(
+            command=command,
+            draft_repo=mock_draft_repo,
+            post_repo=mock_post_repo,
+            github_service=mock_github_service,
+        )
+
+    mock_draft_repo.delete.assert_not_called()
 
 
 def test_delete_is_idempotent_for_nonexistent_draft(

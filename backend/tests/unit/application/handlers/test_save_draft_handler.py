@@ -52,8 +52,19 @@ def mock_github_service() -> Mock:
     return mock
 
 
+@pytest.fixture
+def mock_post_repo() -> Mock:
+    """Fixture providing mock PostRepository for authorization checks."""
+    from backend.domain.aggregates.post import Post
+
+    mock = Mock()
+    post = Post.create_draft(slug="test-post", title="Test Post", author_id=1)
+    mock.find_by_slug.return_value = post
+    return mock
+
+
 def test_save_draft_handler_success(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify handler updates content and commits to GitHub successfully.
 
@@ -76,7 +87,7 @@ def test_save_draft_handler_success(
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
@@ -98,7 +109,7 @@ def test_save_draft_handler_success(
 
 
 def test_save_draft_handler_preserves_front_matter(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify handler preserves title, author, created_at when updating.
 
@@ -127,7 +138,7 @@ def test_save_draft_handler_preserves_front_matter(
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
@@ -146,7 +157,7 @@ def test_save_draft_handler_preserves_front_matter(
 
 
 def test_save_draft_handler_draft_not_found(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify handler raises ValueError when draft doesn't exist.
 
@@ -168,7 +179,7 @@ def test_save_draft_handler_draft_not_found(
         save_draft_handler(
             command=command,
             draft_repo=mock_draft_repo,
-            post_repo=Mock(),
+            post_repo=mock_post_repo,
             github_service=mock_github_service,
         )
 
@@ -179,7 +190,10 @@ def test_save_draft_handler_draft_not_found(
 
 @patch("backend.application.commands.handlers.save_draft_handler.logger")
 def test_save_draft_handler_github_failure_continues(
-    mock_logger: Mock, mock_draft_repo: Mock, mock_github_service: Mock
+    mock_logger: Mock,
+    mock_draft_repo: Mock,
+    mock_post_repo: Mock,
+    mock_github_service: Mock,
 ) -> None:
     """Verify handler continues gracefully when GitHub commit fails.
 
@@ -203,7 +217,7 @@ def test_save_draft_handler_github_failure_continues(
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
@@ -216,7 +230,7 @@ def test_save_draft_handler_github_failure_continues(
 
 
 def test_save_draft_handler_corruption_github_success(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify handler recovers from corrupted file using GitHub.
 
@@ -272,7 +286,7 @@ Recovered content from GitHub"""
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
@@ -293,7 +307,7 @@ Recovered content from GitHub"""
 
 
 def test_save_draft_handler_corruption_github_fails(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify handler creates new draft when GitHub recovery fails.
 
@@ -339,7 +353,7 @@ def test_save_draft_handler_corruption_github_fails(
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
@@ -358,7 +372,7 @@ def test_save_draft_handler_corruption_github_fails(
 
 
 def test_save_draft_handler_corruption_github_also_corrupted(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify handler creates new draft when GitHub content is also corrupted.
 
@@ -408,7 +422,7 @@ def test_save_draft_handler_corruption_github_also_corrupted(
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
@@ -425,7 +439,7 @@ def test_save_draft_handler_corruption_github_also_corrupted(
 
 
 def test_save_draft_handler_empty_content(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify handler accepts empty content string.
 
@@ -443,7 +457,7 @@ def test_save_draft_handler_empty_content(
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
@@ -456,7 +470,7 @@ def test_save_draft_handler_empty_content(
 
 
 def test_save_draft_handler_updates_existing_draft_metadata(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify handler preserves published_at and other optional metadata.
 
@@ -485,7 +499,7 @@ def test_save_draft_handler_updates_existing_draft_metadata(
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
@@ -502,7 +516,7 @@ def test_save_draft_handler_updates_existing_draft_metadata(
 
 
 def test_save_draft_handler_github_commit_includes_full_content(
-    mock_draft_repo: Mock, mock_github_service: Mock
+    mock_draft_repo: Mock, mock_post_repo: Mock, mock_github_service: Mock
 ) -> None:
     """Verify GitHub commit includes YAML front matter and content.
 
@@ -520,7 +534,7 @@ def test_save_draft_handler_github_commit_includes_full_content(
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
-        post_repo=Mock(),
+        post_repo=mock_post_repo,
         github_service=mock_github_service,
     )
 
