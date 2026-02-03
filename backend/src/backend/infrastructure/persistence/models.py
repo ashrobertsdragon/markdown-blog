@@ -20,8 +20,9 @@ class Post(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     slug: str = Field(unique=True, index=True)
     title: str
-    published_html: str
-    published: bool = Field(default=False)
+    html_content: str
+    published: bool = Field(default=False, index=True)
+    published_at: datetime | None = Field(default=None, index=True)
     author_id: int | None = Field(
         default=None, foreign_key="user.id", index=True
     )

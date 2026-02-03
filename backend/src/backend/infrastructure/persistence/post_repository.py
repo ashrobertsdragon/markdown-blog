@@ -335,10 +335,11 @@ class PostRepository:
             existing_model.slug = post.slug.value
             existing_model.title = post.title
             existing_model.author_id = post.author_id
-            existing_model.published_html = (
+            existing_model.html_content = (
                 post.html_content.value if post.html_content else ""
             )
             existing_model.published = post.published
+            existing_model.published_at = post.published_at
             existing_model.created_at = post.created_at
             existing_model.updated_at = post.updated_at
 
@@ -375,9 +376,13 @@ class PostRepository:
         if updated_at.tzinfo is None:
             updated_at = updated_at.replace(tzinfo=UTC)
 
+        published_at = post_model.published_at
+        if published_at is not None and published_at.tzinfo is None:
+            published_at = published_at.replace(tzinfo=UTC)
+
         html_content = (
-            HtmlContent(post_model.published_html)
-            if post_model.published_html
+            HtmlContent(post_model.html_content)
+            if post_model.html_content
             else None
         )
 
@@ -388,7 +393,7 @@ class PostRepository:
             author_id=post_model.author_id or 0,
             _html_content=html_content,
             published=post_model.published,
-            published_at=None,
+            published_at=published_at,
             created_at=created_at,
             updated_at=updated_at,
         )
@@ -410,12 +415,13 @@ class PostRepository:
             id=domain_post.id,
             slug=domain_post.slug.value,
             title=domain_post.title,
-            published_html=(
+            html_content=(
                 domain_post.html_content.value
                 if domain_post.html_content
                 else ""
             ),
             published=domain_post.published,
+            published_at=domain_post.published_at,
             author_id=domain_post.author_id,
             created_at=domain_post.created_at,
             updated_at=domain_post.updated_at,

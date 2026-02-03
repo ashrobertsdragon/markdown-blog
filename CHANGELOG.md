@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Backend**: Post table schema update for improved field naming and querying
+  - Renamed `published_html` column to `html_content` for consistency with domain model
+  - Added `published_at` field (datetime | None) to track publication timestamp with database index for efficient sorting
+  - Added index to `published` field for optimized filtering queries
+  - Updated PostRepository to handle timezone-aware datetime conversion for `published_at` field
+  - Updated PostRepository field mapping: `_to_model()` and `_to_domain()` now use `html_content` field
+  - Added timezone awareness logic: converts naive datetime to UTC timezone when loading from database
+  - Comprehensive test coverage: 19 unit tests for model schema and repository field mapping with 100% pass rate
+  - Files modified: `backend/src/backend/infrastructure/persistence/models.py`, `backend/src/backend/infrastructure/persistence/post_repository.py`
+  - Files created: `backend/tests/unit/test_post_repository.py`
+  - Tests modified: `backend/tests/unit/test_models.py` (updated to use `html_content` field)
+
 ### Fixed
 
 - **Backend**: Posts blueprint registration and URL structure consistency
