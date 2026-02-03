@@ -29,15 +29,15 @@ def unpublish_post_handler(
     """Unpublish published post: update database, draft file, and GitHub.
 
     Orchestrates the unpublishing workflow:
-    1. Load Post aggregate from database
-    2. Validate post exists and is published
+    1. Load Post aggregate from database and verify ownership
+    2. Validate post is published
     3. Call post.unpublish() domain method
     4. Persist Post to database (ATOMIC - must succeed)
     5. Update draft front matter in filesystem (BEST EFFORT - log on fail)
     6. Commit updated draft to GitHub (BEST EFFORT - log on fail)
 
     Args:
-        command: UnpublishPostCommand with slug
+        command: UnpublishPostCommand with slug, author_id, and user_role
         draft_repo: FileSystemDraftRepository for draft I/O
         post_repo: PostRepository for Post persistence
         github_service: GitHubSyncService for GitHub commits
@@ -46,13 +46,20 @@ def unpublish_post_handler(
         Post: Unpublished Post aggregate with published=False
 
     Raises:
-        ValueError: If post not found or already unpublished
+        ValueError: If post not found, user unauthorized, or already unpublished
     """
-    # Step 1: Load Post aggregate from database
+    # Step 1: Load Post aggregate from database and verify ownership
     logger.debug(f"Loading Post from database: {command.slug}")
     post = post_repo.find_by_slug(command.slug)
     if post is None:
         raise ValueError(f"Post with slug '{command.slug}' not found")
+
+    if post.author_id != command.author_id and command.user_role != "admin":
+        logger.warning(
+            f"User {command.author_id} attempted to unpublish post "
+            f"'{command.slug}' owned by user {post.author_id}"
+        )
+        raise ValueError("Cannot unpublish another author's post")
 
     # Step 2: Validate post is published
     if not post.published:

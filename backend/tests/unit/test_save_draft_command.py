@@ -30,7 +30,12 @@ def test_save_draft_command_creation() -> None:
     slug = "test-post"
     content = "# Test Post\n\nThis is test content."
 
-    command = SaveDraftCommand(slug=slug, content=content)
+    command = SaveDraftCommand(
+        slug=slug,
+        content=content,
+        author_id=1,
+        user_role="author",
+    )
 
     assert command.slug == slug
     assert command.content == content
@@ -43,7 +48,12 @@ def test_save_draft_command_fields() -> None:
     fields: slug (str) and content (str). The dataclass must be properly
     defined with type hints for both fields.
     """
-    command = SaveDraftCommand(slug="my-draft", content="Draft content here")
+    command = SaveDraftCommand(
+        slug="my-draft",
+        content="Draft content here",
+        author_id=1,
+        user_role="author",
+    )
 
     assert hasattr(command, "slug")
     assert hasattr(command, "content")
@@ -59,7 +69,12 @@ def test_save_draft_command_immutable() -> None:
     an error (either AttributeError or TypeError), preventing accidental
     mutation of command objects.
     """
-    command = SaveDraftCommand(slug="frozen-post", content="Frozen content")
+    command = SaveDraftCommand(
+        slug="frozen-post",
+        content="Frozen content",
+        author_id=1,
+        user_role="author",
+    )
 
     with pytest.raises((AttributeError, TypeError)):
         command.slug = "modified-slug"  # type: ignore[misc]
@@ -79,7 +94,12 @@ def test_save_draft_command_slug_too_long() -> None:
     content = "Valid content"
 
     with pytest.raises(ValueError) as exc_info:
-        SaveDraftCommand(slug=long_slug, content=content)
+        SaveDraftCommand(
+            slug=long_slug,
+            content=content,
+            author_id=1,
+            user_role="author",
+        )
 
     assert "slug" in str(exc_info.value).lower()
     assert "1000" in str(exc_info.value)
@@ -96,7 +116,12 @@ def test_save_draft_command_content_too_long() -> None:
     large_content = "x" * 10_000_001
 
     with pytest.raises(ValueError) as exc_info:
-        SaveDraftCommand(slug=slug, content=large_content)
+        SaveDraftCommand(
+            slug=slug,
+            content=large_content,
+            author_id=1,
+            user_role="author",
+        )
 
     assert "content" in str(exc_info.value).lower()
     assert "10" in str(exc_info.value)
@@ -109,7 +134,12 @@ def test_save_draft_command_empty_slug_allowed() -> None:
     level. Domain-level validation (via Slug value object) will happen later
     in the handler. The command layer should not reject empty slugs.
     """
-    command = SaveDraftCommand(slug="", content="Some content")
+    command = SaveDraftCommand(
+        slug="",
+        content="Some content",
+        author_id=1,
+        user_role="author",
+    )
 
     assert command.slug == ""
 
@@ -121,7 +151,12 @@ def test_save_draft_command_empty_content_allowed() -> None:
     command level. Domain-level validation will happen later in the handler.
     The command layer should not reject empty content.
     """
-    command = SaveDraftCommand(slug="valid-slug", content="")
+    command = SaveDraftCommand(
+        slug="valid-slug",
+        content="",
+        author_id=1,
+        user_role="author",
+    )
 
     assert command.content == ""
 
@@ -135,7 +170,10 @@ def test_save_draft_command_repr() -> None:
     values (or truncated content if too long).
     """
     command = SaveDraftCommand(
-        slug="debug-post", content="Debug content for testing"
+        slug="debug-post",
+        content="Debug content for testing",
+        author_id=1,
+        user_role="author",
     )
 
     repr_str = repr(command)
@@ -155,7 +193,12 @@ def test_save_draft_command_slug_exactly_1000_chars() -> None:
     slug_at_limit = "a" * 1000
     content = "Valid content"
 
-    command = SaveDraftCommand(slug=slug_at_limit, content=content)
+    command = SaveDraftCommand(
+        slug=slug_at_limit,
+        content=content,
+        author_id=1,
+        user_role="author",
+    )
 
     assert len(command.slug) == 1000
 
@@ -170,7 +213,12 @@ def test_save_draft_command_content_exactly_10mb() -> None:
     slug = "boundary-test"
     content_at_limit = "x" * 10_000_000
 
-    command = SaveDraftCommand(slug=slug, content=content_at_limit)
+    command = SaveDraftCommand(
+        slug=slug,
+        content=content_at_limit,
+        author_id=1,
+        user_role="author",
+    )
 
     assert len(command.content) == 10_000_000
 
@@ -183,10 +231,23 @@ def test_save_draft_command_instances_are_comparable() -> None:
     different values should not be equal. This supports testing scenarios
     where commands need to be compared.
     """
-    command1 = SaveDraftCommand(slug="same-post", content="Same content")
-    command2 = SaveDraftCommand(slug="same-post", content="Same content")
+    command1 = SaveDraftCommand(
+        slug="same-post",
+        content="Same content",
+        author_id=1,
+        user_role="author",
+    )
+    command2 = SaveDraftCommand(
+        slug="same-post",
+        content="Same content",
+        author_id=1,
+        user_role="author",
+    )
     command3 = SaveDraftCommand(
-        slug="different-post", content="Different content"
+        slug="different-post",
+        content="Different content",
+        author_id=1,
+        user_role="author",
     )
 
     assert command1 == command2

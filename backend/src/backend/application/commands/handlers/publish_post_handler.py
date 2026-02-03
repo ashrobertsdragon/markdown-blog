@@ -33,8 +33,8 @@ def publish_post_handler(
     """Publish draft post: render, sanitize, persist, backup.
 
     Orchestrates the complete publishing workflow:
-    1. Load draft from filesystem
-    2. Load Post aggregate from database
+    1. Load Post aggregate from database and verify ownership
+    2. Load draft from filesystem
     3. Render markdown to HTML (with Pygments syntax highlighting)
     4. Sanitize HTML with Bleach
     5. Update Post with rendered HTML via domain method
@@ -43,7 +43,7 @@ def publish_post_handler(
     8. Commit updated draft to GitHub (best-effort)
 
     Args:
-        command: PublishPostCommand with slug
+        command: PublishPostCommand with slug, author_id, and user_role
         draft_repo: FileSystemDraftRepository for draft I/O
         post_repo: PostRepository for Post persistence
         markdown_service: MarkdownRenderingService for rendering
@@ -54,19 +54,10 @@ def publish_post_handler(
         Post: Published Post aggregate with html_content set
 
     Raises:
-        ValueError: If draft not found, already published, post not in DB,
-            or DB save fails
+        ValueError: If draft not found, user unauthorized, already published,
+            post not in DB, or DB save fails
     """
-    # Step 1: Load draft from filesystem
-    logger.debug(f"Loading draft: {command.slug}")
-    draft = draft_repo.find_by_slug(command.slug)
-    if draft is None:
-        raise ValueError(f"Draft with slug '{command.slug}' not found")
-
-    if draft.published:
-        raise ValueError(f"Post '{command.slug}' is already published")
-
-    # Step 2: Load Post aggregate from database
+    # Step 1: Load Post aggregate from database and verify ownership
     logger.debug(f"Loading Post from database: {command.slug}")
     post = post_repo.find_by_slug(command.slug)
     if post is None:
@@ -74,6 +65,22 @@ def publish_post_handler(
             f"Post with slug '{command.slug}' not found in database. "
             "Create draft first via CreateDraftCommand"
         )
+
+    if post.author_id != command.author_id and command.user_role != "admin":
+        logger.warning(
+            f"User {command.author_id} attempted to publish post "
+            f"'{command.slug}' owned by user {post.author_id}"
+        )
+        raise ValueError("Cannot publish another author's post")
+
+    # Step 2: Load draft from filesystem
+    logger.debug(f"Loading draft: {command.slug}")
+    draft = draft_repo.find_by_slug(command.slug)
+    if draft is None:
+        raise ValueError(f"Draft with slug '{command.slug}' not found")
+
+    if draft.published:
+        raise ValueError(f"Post '{command.slug}' is already published")
 
     # Step 3: Render markdown to HTML
     logger.info(f"Publishing post: {command.slug} - rendering markdown")

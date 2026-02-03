@@ -28,7 +28,7 @@ def test_command_creation_with_slug() -> None:
     """
     slug = "my-post"
 
-    command = DeleteDraftCommand(slug=slug)
+    command = DeleteDraftCommand(slug=slug, author_id=1, user_role="author")
 
     assert command.slug == slug
     assert isinstance(command.slug, str)
@@ -42,7 +42,9 @@ def test_command_frozen_dataclass() -> None:
     raise an error (either AttributeError or TypeError), preventing accidental
     mutation of command objects.
     """
-    command = DeleteDraftCommand(slug="frozen-post")
+    command = DeleteDraftCommand(
+        slug="frozen-post", author_id=1, user_role="author"
+    )
 
     with pytest.raises((AttributeError, TypeError)):
         command.slug = "modified-slug"  # type: ignore[misc]
@@ -56,10 +58,10 @@ def test_command_slug_type_validation() -> None:
     (None, int, etc.) raise clear ValueError or TypeError messages.
     """
     with pytest.raises((TypeError, ValueError)):
-        DeleteDraftCommand(slug=None)  # type: ignore[arg-type]
+        DeleteDraftCommand(slug=None, author_id=1, user_role="author")  # type: ignore[arg-type]
 
     with pytest.raises((TypeError, ValueError)):
-        DeleteDraftCommand(slug=123)  # type: ignore[arg-type]
+        DeleteDraftCommand(slug=123, author_id=1, user_role="author")  # type: ignore[arg-type]
 
 
 def test_command_empty_slug_validation() -> None:
@@ -70,7 +72,7 @@ def test_command_empty_slug_validation() -> None:
     fail fast with clear error messages for empty strings.
     """
     with pytest.raises(ValueError, match="slug.*empty|slug.*required"):
-        DeleteDraftCommand(slug="")
+        DeleteDraftCommand(slug="", author_id=1, user_role="author")
 
 
 def test_command_slug_max_length_validation() -> None:
@@ -83,4 +85,4 @@ def test_command_slug_max_length_validation() -> None:
     long_slug = "a" * 1001
 
     with pytest.raises(ValueError, match="slug.*long|slug.*length|1000"):
-        DeleteDraftCommand(slug=long_slug)
+        DeleteDraftCommand(slug=long_slug, author_id=1, user_role="author")

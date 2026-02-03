@@ -54,7 +54,7 @@ def published_draft_file_fixture() -> DraftFile:
 def published_post_aggregate_fixture() -> Post:
     """Fixture providing a published Post aggregate."""
     post = Post.create_draft(
-        slug="test-post", title="Test Post Title", author_id=42
+        slug="test-post", title="Test Post Title", author_id=1
     )
     post.publish(html_content="<h1>Test Content</h1>")
     return post
@@ -98,7 +98,9 @@ def test_unpublish_updates_database_published_flag(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = unpublish_post_handler(
         command=command,
@@ -132,7 +134,9 @@ def test_unpublish_preserves_html_content(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = unpublish_post_handler(
         command=command,
@@ -164,7 +168,9 @@ def test_unpublish_preserves_published_at_timestamp(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = unpublish_post_handler(
         command=command,
@@ -195,7 +201,9 @@ def test_unpublish_saves_to_database(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = unpublish_post_handler(
         command=command,
@@ -229,7 +237,9 @@ def test_unpublish_updates_draft_front_matter(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     unpublish_post_handler(
         command=command,
@@ -263,7 +273,9 @@ def test_unpublish_commits_to_github(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     unpublish_post_handler(
         command=command,
@@ -292,7 +304,9 @@ def test_unpublish_fails_when_post_not_found(
     """
     mock_post_repo.find_by_slug.return_value = None
 
-    command = UnpublishPostCommand(slug="nonexistent")
+    command = UnpublishPostCommand(
+        slug="nonexistent", author_id=1, user_role="author"
+    )
 
     with pytest.raises(ValueError, match="Post.*not found"):
         unpublish_post_handler(
@@ -318,11 +332,13 @@ def test_unpublish_fails_when_already_unpublished(
     duplicate unpublishing operations.
     """
     unpublished_post = Post.create_draft(
-        slug="already-unpublished", title="Unpublished Post", author_id=42
+        slug="already-unpublished", title="Unpublished Post", author_id=1
     )
     mock_post_repo.find_by_slug.return_value = unpublished_post
 
-    command = UnpublishPostCommand(slug="already-unpublished")
+    command = UnpublishPostCommand(
+        slug="already-unpublished", author_id=1, user_role="author"
+    )
 
     with pytest.raises(ValueError, match="not published|already unpublished"):
         unpublish_post_handler(
@@ -355,7 +371,9 @@ def test_unpublish_fails_on_database_save_failure(
         "Database error", None, Exception("Database constraint violation")
     )
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     with pytest.raises(IntegrityError):
         unpublish_post_handler(
@@ -393,7 +411,9 @@ def test_unpublish_continues_when_draft_file_not_found(
     mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = unpublish_post_handler(
         command=command,
@@ -439,7 +459,9 @@ def test_unpublish_continues_when_draft_file_write_fails(
     mock_draft_repo.save.side_effect = OSError("Disk full")
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = unpublish_post_handler(
         command=command,
@@ -483,7 +505,9 @@ def test_unpublish_continues_when_github_commit_fails(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = None
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = unpublish_post_handler(
         command=command,
@@ -522,7 +546,9 @@ def test_unpublish_logs_info_on_success(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     unpublish_post_handler(
         command=command,
@@ -557,7 +583,9 @@ def test_unpublish_logs_debug_steps(
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     unpublish_post_handler(
         command=command,
@@ -595,7 +623,9 @@ def test_unpublish_logs_warnings_on_partial_failure(
     mock_draft_repo.save.side_effect = OSError("Disk full")
     mock_github_service.commit_file.return_value = None
 
-    command = UnpublishPostCommand(slug="test-post")
+    command = UnpublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     unpublish_post_handler(
         command=command,

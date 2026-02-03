@@ -49,7 +49,7 @@ def draft_file_fixture() -> DraftFile:
 def post_aggregate_fixture() -> Post:
     """Fixture providing a Post aggregate."""
     return Post.create_draft(
-        slug="test-post", title="Test Post Title", author_id=42
+        slug="test-post", title="Test Post Title", author_id=1
     )
 
 
@@ -120,7 +120,9 @@ def test_publish_renders_markdown_and_sanitizes_html(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = publish_post_handler(
         command=command,
@@ -166,7 +168,9 @@ def test_publish_calls_post_domain_method(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = publish_post_handler(
         command=command,
@@ -205,7 +209,9 @@ def test_publish_saves_to_database(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = publish_post_handler(
         command=command,
@@ -246,7 +252,9 @@ def test_publish_updates_draft_front_matter(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     publish_post_handler(
         command=command,
@@ -288,7 +296,9 @@ def test_publish_commits_to_github(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     publish_post_handler(
         command=command,
@@ -320,8 +330,14 @@ def test_publish_fails_when_draft_not_found(
     indicating the draft was not found. No other services should be called.
     """
     mock_draft_repo.find_by_slug.return_value = None
+    # Mock post_repo to return a valid post for authorization check
+    mock_post = Mock()
+    mock_post.author_id = 1
+    mock_post_repo.find_by_slug.return_value = mock_post
 
-    command = PublishPostCommand(slug="nonexistent")
+    command = PublishPostCommand(
+        slug="nonexistent", author_id=1, user_role="author"
+    )
 
     with pytest.raises(ValueError, match="Draft.*not found"):
         publish_post_handler(
@@ -362,7 +378,9 @@ def test_publish_fails_when_already_published(
     )
     mock_draft_repo.find_by_slug.return_value = published_draft
 
-    command = PublishPostCommand(slug="already-published")
+    command = PublishPostCommand(
+        slug="already-published", author_id=1, user_role="author"
+    )
 
     with pytest.raises(ValueError, match="already published"):
         publish_post_handler(
@@ -395,7 +413,9 @@ def test_publish_fails_when_post_not_in_database(
     mock_draft_repo.find_by_slug.return_value = draft_file_fixture
     mock_post_repo.find_by_slug.return_value = None
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     with pytest.raises(ValueError, match="Post.*not found.*database"):
         publish_post_handler(
@@ -435,7 +455,9 @@ def test_publish_fails_on_database_save_failure(
         "Duplicate key", None, Exception("Duplicate key violation")
     )
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     with pytest.raises(IntegrityError):
         publish_post_handler(
@@ -482,7 +504,9 @@ def test_publish_continues_when_draft_file_write_fails(
     mock_draft_repo.save.side_effect = OSError("Disk full")
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = publish_post_handler(
         command=command,
@@ -533,7 +557,9 @@ def test_publish_continues_when_github_commit_fails(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = None
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = publish_post_handler(
         command=command,
@@ -579,7 +605,9 @@ def test_publish_logs_info_on_success(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     publish_post_handler(
         command=command,
@@ -621,7 +649,9 @@ def test_publish_logs_debug_steps(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     publish_post_handler(
         command=command,
@@ -667,7 +697,9 @@ def test_publish_logs_warnings_on_partial_failure(
     mock_draft_repo.save.side_effect = OSError("Disk full")
     mock_github_service.commit_file.return_value = None
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     publish_post_handler(
         command=command,
@@ -719,7 +751,9 @@ def test_publish_with_empty_markdown_content(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="empty-post")
+    command = PublishPostCommand(
+        slug="empty-post", author_id=1, user_role="author"
+    )
 
     result = publish_post_handler(
         command=command,
@@ -768,7 +802,9 @@ def test_publish_with_unicode_content(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="unicode-post")
+    command = PublishPostCommand(
+        slug="unicode-post", author_id=1, user_role="author"
+    )
 
     result = publish_post_handler(
         command=command,
@@ -808,7 +844,9 @@ def test_publish_html_content_value_object_created(
     mock_post_repo.save.return_value = post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = PublishPostCommand(slug="test-post")
+    command = PublishPostCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
 
     result = publish_post_handler(
         command=command,

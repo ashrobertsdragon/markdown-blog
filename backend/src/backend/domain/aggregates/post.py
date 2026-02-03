@@ -103,3 +103,25 @@ class Post:
         """Unpublish post (hide from public)."""
         self.published = False
         self.updated_at = datetime.now(UTC)
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize Post to dictionary for JSON responses.
+
+        Returns:
+            Dictionary with all post fields serialized for API responses.
+        """
+        return {
+            "id": self.id,
+            "slug": str(self.slug),
+            "title": self.title,
+            "author_id": self.author_id,
+            "html_content": str(self._html_content)
+            if self._html_content
+            else None,
+            "published": self.published,
+            "published_at": self.published_at.isoformat()
+            if self.published_at
+            else None,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }

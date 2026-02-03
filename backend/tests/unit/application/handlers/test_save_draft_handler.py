@@ -67,12 +67,16 @@ def test_save_draft_handler_success(
     All operations should succeed without errors.
     """
     command = SaveDraftCommand(
-        slug="test-post", content="Updated content with new changes"
+        slug="test-post",
+        content="Updated content with new changes",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 
@@ -114,12 +118,16 @@ def test_save_draft_handler_preserves_front_matter(
     mock_draft_repo.find_by_slug.return_value = original_draft
 
     command = SaveDraftCommand(
-        slug="preserve-test", content="Only content changed"
+        slug="preserve-test",
+        content="Only content changed",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 
@@ -149,12 +157,18 @@ def test_save_draft_handler_draft_not_found(
     """
     mock_draft_repo.find_by_slug.return_value = None
 
-    command = SaveDraftCommand(slug="nonexistent", content="New content")
+    command = SaveDraftCommand(
+        slug="nonexistent",
+        content="New content",
+        author_id=1,
+        user_role="author",
+    )
 
     with pytest.raises(ValueError, match="not found|does not exist"):
         save_draft_handler(
             command=command,
             draft_repo=mock_draft_repo,
+            post_repo=Mock(),
             github_service=mock_github_service,
         )
 
@@ -180,12 +194,16 @@ def test_save_draft_handler_github_failure_continues(
     mock_github_service.commit_file.return_value = None
 
     command = SaveDraftCommand(
-        slug="test-post", content="Content despite GitHub failure"
+        slug="test-post",
+        content="Content despite GitHub failure",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 
@@ -245,12 +263,16 @@ Recovered content from GitHub"""
     mock_draft_repo.save.side_effect = capture_save
 
     command = SaveDraftCommand(
-        slug="corrupted-post", content="New content after recovery"
+        slug="corrupted-post",
+        content="New content after recovery",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 
@@ -308,12 +330,16 @@ def test_save_draft_handler_corruption_github_fails(
     mock_draft_repo.save.side_effect = capture_save
 
     command = SaveDraftCommand(
-        slug="recovery-fallback", content="Content for new draft"
+        slug="recovery-fallback",
+        content="Content for new draft",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 
@@ -373,12 +399,16 @@ def test_save_draft_handler_corruption_github_also_corrupted(
     mock_draft_repo.save.side_effect = capture_save
 
     command = SaveDraftCommand(
-        slug="double-corruption", content="Content despite double corruption"
+        slug="double-corruption",
+        content="Content despite double corruption",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 
@@ -403,11 +433,17 @@ def test_save_draft_handler_empty_content(
     is a valid content value and should be accepted. The handler should save
     the draft with empty content and commit to GitHub normally.
     """
-    command = SaveDraftCommand(slug="test-post", content="")
+    command = SaveDraftCommand(
+        slug="test-post",
+        content="",
+        author_id=1,
+        user_role="author",
+    )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 
@@ -440,12 +476,16 @@ def test_save_draft_handler_updates_existing_draft_metadata(
     mock_draft_repo.find_by_slug.return_value = published_draft
 
     command = SaveDraftCommand(
-        slug="published-draft", content="Updated published content"
+        slug="published-draft",
+        content="Updated published content",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 
@@ -471,12 +511,16 @@ def test_save_draft_handler_github_commit_includes_full_content(
     to_markdown() with all metadata and updated content.
     """
     command = SaveDraftCommand(
-        slug="test-post", content="# New Content\n\nWith markdown formatting"
+        slug="test-post",
+        content="# New Content\n\nWith markdown formatting",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
+        post_repo=Mock(),
         github_service=mock_github_service,
     )
 

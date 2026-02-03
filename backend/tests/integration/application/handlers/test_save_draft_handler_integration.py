@@ -114,6 +114,7 @@ def sample_draft(draft_repo: FileSystemDraftRepository) -> DraftFile:
 def test_save_draft_updates_file_on_filesystem(
     draft_repo: FileSystemDraftRepository,
     mock_github_service: Mock,
+    mock_post_repo: Mock,
     sample_draft: DraftFile,
     temp_drafts_dir: Path,
 ) -> None:
@@ -129,13 +130,17 @@ def test_save_draft_updates_file_on_filesystem(
     The test verifies by reading the actual file from disk after the save.
     """
     command = SaveDraftCommand(
-        slug="test-post", content="Updated content with new changes"
+        slug="test-post",
+        content="Updated content with new changes",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=draft_repo,
         github_service=mock_github_service,
+        post_repo=mock_post_repo,
     )
 
     saved_draft = draft_repo.find_by_slug("test-post")
@@ -158,6 +163,7 @@ def test_save_draft_updates_file_on_filesystem(
 
 def test_save_draft_preserves_yaml_front_matter(
     draft_repo: FileSystemDraftRepository,
+    mock_post_repo: Mock,
     mock_github_service: Mock,
     temp_drafts_dir: Path,
 ) -> None:
@@ -180,13 +186,17 @@ def test_save_draft_preserves_yaml_front_matter(
     draft_repo.save(original_draft)
 
     command = SaveDraftCommand(
-        slug="preserve-test", content="Only content changed"
+        slug="preserve-test",
+        content="Only content changed",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=draft_repo,
         github_service=mock_github_service,
+        post_repo=mock_post_repo,
     )
 
     saved_draft = draft_repo.find_by_slug("preserve-test")
@@ -213,6 +223,7 @@ def test_save_draft_preserves_yaml_front_matter(
 
 def test_save_draft_draft_not_found_on_filesystem(
     draft_repo: FileSystemDraftRepository,
+    mock_post_repo: Mock,
     mock_github_service: Mock,
 ) -> None:
     """Verify handler raises ValueError when draft file doesn't exist.
@@ -221,12 +232,18 @@ def test_save_draft_draft_not_found_on_filesystem(
     returns None (file doesn't exist), the handler should raise ValueError
     with a clear message. No save or GitHub operations should occur.
     """
-    command = SaveDraftCommand(slug="nonexistent", content="New content")
+    command = SaveDraftCommand(
+        slug="nonexistent",
+        content="New content",
+        author_id=1,
+        user_role="author",
+    )
 
     with pytest.raises(ValueError, match="not found|does not exist"):
         save_draft_handler(
             command=command,
             draft_repo=draft_repo,
+            post_repo=mock_post_repo,
             github_service=mock_github_service,
         )
 
@@ -235,6 +252,7 @@ def test_save_draft_draft_not_found_on_filesystem(
 
 def test_save_draft_real_corruption_github_recovery(
     draft_repo: FileSystemDraftRepository,
+    mock_post_repo: Mock,
     mock_github_service: Mock,
     temp_drafts_dir: Path,
 ) -> None:
@@ -264,13 +282,17 @@ Recovered content from GitHub"""
     mock_github_service.get_file_content.return_value = github_content
 
     command = SaveDraftCommand(
-        slug="corrupted", content="New content after recovery"
+        slug="corrupted",
+        content="New content after recovery",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=draft_repo,
         github_service=mock_github_service,
+        post_repo=mock_post_repo,
     )
 
     mock_github_service.get_file_content.assert_called_once_with(
@@ -290,6 +312,7 @@ Recovered content from GitHub"""
 
 def test_save_draft_real_corruption_github_fails(
     draft_repo: FileSystemDraftRepository,
+    mock_post_repo: Mock,
     mock_github_service: Mock,
     temp_drafts_dir: Path,
 ) -> None:
@@ -305,13 +328,17 @@ def test_save_draft_real_corruption_github_fails(
     mock_github_service.get_file_content.return_value = None
 
     command = SaveDraftCommand(
-        slug="recovery-fallback", content="Content for new draft"
+        slug="recovery-fallback",
+        content="Content for new draft",
+        author_id=1,
+        user_role="author",
     )
 
     save_draft_handler(
         command=command,
         draft_repo=draft_repo,
         github_service=mock_github_service,
+        post_repo=mock_post_repo,
     )
 
     saved_draft = draft_repo.find_by_slug("recovery-fallback")
@@ -330,6 +357,7 @@ def test_save_draft_real_corruption_github_fails(
 
 def test_save_draft_large_content_within_limits(
     draft_repo: FileSystemDraftRepository,
+    mock_post_repo: Mock,
     mock_github_service: Mock,
     sample_draft: DraftFile,
     temp_drafts_dir: Path,
@@ -342,12 +370,18 @@ def test_save_draft_large_content_within_limits(
     """
     large_content = "x" * 9_500_000
 
-    command = SaveDraftCommand(slug="test-post", content=large_content)
+    command = SaveDraftCommand(
+        slug="test-post",
+        content=large_content,
+        author_id=1,
+        user_role="author",
+    )
 
     save_draft_handler(
         command=command,
         draft_repo=draft_repo,
         github_service=mock_github_service,
+        post_repo=mock_post_repo,
     )
 
     saved_draft = draft_repo.find_by_slug("test-post")

@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Posts API routes with full CRUD operations and access control
+
+  - Implemented 7 REST endpoints for post management: create draft (POST /api/posts), get draft (GET /api/posts/:slug), save draft (PUT /api/posts/:slug), delete draft (DELETE /api/posts/:slug), publish post (POST /api/posts/:slug/publish), unpublish post (POST /api/posts/:slug/unpublish), list author posts (GET /api/my-posts)
+  - Author ownership verification: all mutating operations verify user is post author before allowing changes
+  - Admin override support: admin role can edit/unpublish any post regardless of authorship
+  - Authorization enforcement via @require_auth and @require_role decorators on all endpoints
+  - My-posts endpoint with filtering: supports query params for drafts-only, published-only, or all posts
+  - Pagination support: configurable limit (1-100 posts) and offset for efficient data retrieval
+  - Comprehensive error handling: 400 for invalid input, 403 for unauthorized access, 404 for missing posts, 500 for server errors
+  - Enhanced command layer with authorization: added author_id and user_role to SaveDraftCommand, DeleteDraftCommand, PublishPostCommand, UnpublishPostCommand
+  - Domain model serialization: added Post.to_dict() for clean JSON responses
+  - Integration test suite with 36 tests covering authentication, authorization, ownership checks, admin overrides, pagination, filtering, error scenarios
+  - Files created: `backend/src/backend/api/routes/posts.py`, `backend/tests/integration/api/routes/test_posts.py`
+  - Files modified: `backend/src/backend/main.py` (registered posts blueprint), `backend/src/backend/application/commands/save_draft_command.py`, `backend/src/backend/application/commands/delete_draft_command.py`, `backend/src/backend/application/commands/publish_post_command.py`, `backend/src/backend/application/commands/unpublish_post_command.py`, `backend/src/backend/domain/aggregates/post.py`
+
 - **Backend**: Post listing query with filtering and pagination
 
   - ListPostsQuery for retrieving author's posts with flexible filtering (drafts only, published only, or all posts)

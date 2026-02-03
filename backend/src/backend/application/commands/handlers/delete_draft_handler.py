@@ -26,25 +26,39 @@ def delete_draft_handler(
     """Delete draft post with GitHub sync.
 
     Workflow:
-    1. Check if post exists and is published (block if published)
-    2. Delete from filesystem
-    3. Commit deletion to GitHub (CRITICAL - must succeed)
+    1. Load post and verify ownership (or admin role)
+    2. Check if post is published (block if published)
+    3. Delete from filesystem
+    4. Commit deletion to GitHub (CRITICAL - must succeed)
 
     Args:
-        command: DeleteDraftCommand with slug
+        command: DeleteDraftCommand with slug, author_id, and user_role
         draft_repo: Repository for filesystem operations
-        post_repo: Repository for checking publication status
+        post_repo: Repository for checking publication status and ownership
         github_service: Service for GitHub deletion
 
     Raises:
-        ValueError: If post is published or filesystem deletion fails
+        ValueError: If post not found, user unauthorized, or post is published
         RuntimeError: If GitHub deletion fails (critical)
     """
-    # Step 1: Check publication status
-    logger.debug(f"Checking publication status: {command.slug}")
+    # Step 1: Load post and verify ownership
+    logger.debug(f"Loading post for deletion: {command.slug}")
     post = post_repo.find_by_slug(command.slug)
 
-    if post is not None and post.published:
+    if post is None:
+        raise ValueError(
+            f"Post with slug '{command.slug}' not found in database"
+        )
+
+    if post.author_id != command.author_id and command.user_role != "admin":
+        logger.warning(
+            f"User {command.author_id} attempted to delete post "
+            f"'{command.slug}' owned by user {post.author_id}"
+        )
+        raise ValueError("Cannot delete another author's post")
+
+    # Step 2: Check publication status
+    if post.published:
         logger.error(
             f"Cannot delete published post '{command.slug}' - unpublish first"
         )
@@ -53,7 +67,7 @@ def delete_draft_handler(
             "Unpublish the post first via UnpublishPostCommand"
         )
 
-    # Step 2: Delete from filesystem
+    # Step 3: Delete from filesystem
     logger.info(f"Deleting draft from filesystem: {command.slug}")
     draft_repo.delete(command.slug)
     logger.debug(f"Filesystem deletion completed: {command.slug}")

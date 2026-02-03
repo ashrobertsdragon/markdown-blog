@@ -13,6 +13,7 @@ from flask_cors import CORS
 
 from backend.api.routes.auth import auth_bp
 from backend.api.routes.health import health_bp
+from backend.api.routes.posts import posts_bp
 from backend.api.routes.users import users_bp
 from backend.config import FlaskEnv, FlaskSettings
 from backend.exceptions import AuthenticationError, AuthorizationError
@@ -56,6 +57,7 @@ def create_app() -> Flask:
     app.register_blueprint(health_bp, url_prefix="")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(users_bp, url_prefix="/api/users")
+    app.register_blueprint(posts_bp)
 
     @app.errorhandler(AuthenticationError)
     def handle_authentication_error(

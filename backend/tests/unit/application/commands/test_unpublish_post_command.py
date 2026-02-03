@@ -30,7 +30,7 @@ def test_command_creation_with_slug() -> None:
     """
     slug = "published-post"
 
-    command = UnpublishPostCommand(slug=slug)
+    command = UnpublishPostCommand(slug=slug, author_id=1, user_role="author")
 
     assert command.slug == slug
     assert isinstance(command.slug, str)
@@ -44,7 +44,9 @@ def test_command_frozen_dataclass() -> None:
     raise an error (either AttributeError or TypeError), preventing accidental
     mutation of command objects.
     """
-    command = UnpublishPostCommand(slug="frozen-post")
+    command = UnpublishPostCommand(
+        slug="frozen-post", author_id=1, user_role="author"
+    )
 
     with pytest.raises((AttributeError, TypeError)):
         command.slug = "modified-slug"  # type: ignore[misc]
@@ -58,10 +60,10 @@ def test_command_slug_type_validation() -> None:
     (None, int, etc.) raise clear ValueError messages.
     """
     with pytest.raises((TypeError, ValueError)):
-        UnpublishPostCommand(slug=None)  # type: ignore[arg-type]
+        UnpublishPostCommand(slug=None, author_id=1, user_role="author")  # type: ignore[arg-type]
 
     with pytest.raises((TypeError, ValueError)):
-        UnpublishPostCommand(slug=123)  # type: ignore[arg-type]
+        UnpublishPostCommand(slug=123, author_id=1, user_role="author")  # type: ignore[arg-type]
 
 
 def test_command_repr() -> None:
@@ -71,7 +73,9 @@ def test_command_repr() -> None:
     slug value, which is useful for debugging and logging. The repr should
     clearly identify the command type and show the slug value.
     """
-    command = UnpublishPostCommand(slug="debug-post")
+    command = UnpublishPostCommand(
+        slug="debug-post", author_id=1, user_role="author"
+    )
 
     repr_str = repr(command)
 
@@ -88,7 +92,7 @@ def test_command_empty_slug_validation() -> None:
     fail fast with clear error messages for empty strings.
     """
     with pytest.raises(ValueError, match="slug.*empty|slug.*required"):
-        UnpublishPostCommand(slug="")
+        UnpublishPostCommand(slug="", author_id=1, user_role="author")
 
 
 def test_command_instances_are_comparable() -> None:
@@ -99,9 +103,15 @@ def test_command_instances_are_comparable() -> None:
     different values should not be equal. This supports testing scenarios
     where commands need to be compared.
     """
-    command1 = UnpublishPostCommand(slug="same-post")
-    command2 = UnpublishPostCommand(slug="same-post")
-    command3 = UnpublishPostCommand(slug="different-post")
+    command1 = UnpublishPostCommand(
+        slug="same-post", author_id=1, user_role="author"
+    )
+    command2 = UnpublishPostCommand(
+        slug="same-post", author_id=1, user_role="author"
+    )
+    command3 = UnpublishPostCommand(
+        slug="different-post", author_id=1, user_role="author"
+    )
 
     assert command1 == command2
     assert command1 != command3

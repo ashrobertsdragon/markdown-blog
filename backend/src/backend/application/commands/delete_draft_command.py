@@ -11,15 +11,21 @@ class DeleteDraftCommand:
 
     Attributes:
         slug: The draft post identifier (URL-safe slug).
+        author_id: ID of the user attempting to delete the draft
+        user_role: Role of the user (for admin override)
     """
 
     slug: str
+    author_id: int
+    user_role: str
 
     def __post_init__(self) -> None:
         """Validate command parameters.
 
         Raises:
             ValueError: If slug is None, empty, or exceeds 1000 chars
+            ValueError: If author_id is not positive
+            ValueError: If user_role is empty
             TypeError: If slug is not a string
         """
         if self.slug is None:
@@ -32,3 +38,7 @@ class DeleteDraftCommand:
             raise ValueError(
                 f"slug too long: {len(self.slug)} chars (max 1000)"
             )
+        if self.author_id <= 0:
+            raise ValueError("author_id must be a positive integer")
+        if not self.user_role:
+            raise ValueError("user_role cannot be empty")

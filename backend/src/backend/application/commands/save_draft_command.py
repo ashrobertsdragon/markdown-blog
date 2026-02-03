@@ -19,10 +19,14 @@ class SaveDraftCommand:
     Attributes:
         slug: Draft identifier to update
         content: New markdown content
+        author_id: ID of the user attempting to save the draft
+        user_role: Role of the user (for admin override)
     """
 
     slug: str
     content: str
+    author_id: int
+    user_role: str
 
     def __post_init__(self) -> None:
         """Validate input size constraints to prevent resource exhaustion.
@@ -34,6 +38,8 @@ class SaveDraftCommand:
         Raises:
             ValueError: If slug exceeds 1000 characters
             ValueError: If content exceeds 10MB (10,000,000 chars)
+            ValueError: If author_id is not positive
+            ValueError: If user_role is empty
         """
         if len(self.slug) > 1000:
             raise ValueError(
@@ -45,3 +51,9 @@ class SaveDraftCommand:
             raise ValueError(
                 f"Content length {len(self.content)} exceeds maximum of 10MB"
             )
+
+        if self.author_id <= 0:
+            raise ValueError("author_id must be a positive integer")
+
+        if not self.user_role:
+            raise ValueError("user_role cannot be empty")

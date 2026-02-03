@@ -134,7 +134,7 @@ def test_api_404_not_caught_by_spa(client):
     not fall through to the SPA handler. This prevents confusing errors
     where API clients receive HTML instead of JSON.
     """
-    response = client.get("/api/posts/nonexistent")
+    response = client.get("/api/nonexistent-route")
 
     assert response.status_code == 404
     assert response.content_type == "application/json" or response.is_json

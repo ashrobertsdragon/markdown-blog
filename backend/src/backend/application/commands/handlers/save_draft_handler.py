@@ -6,6 +6,7 @@ save workflow with corruption recovery support.
 
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import yaml
 
@@ -18,21 +19,28 @@ from backend.infrastructure.versioning.github_sync_service import (
     GitHubSyncService,
 )
 
+if TYPE_CHECKING:
+    from backend.infrastructure.persistence.post_repository import (
+        PostRepository,
+    )
+
 logger = logging.getLogger(__name__)
 
 
 def save_draft_handler(
     command: SaveDraftCommand,
     draft_repo: FileSystemDraftRepository,
+    post_repo: "PostRepository",
     github_service: GitHubSyncService,
 ) -> None:
     """Handle SaveDraftCommand to update draft content.
 
     Orchestrates workflow:
-    1. Find existing draft file
-    2. Update content, preserve front matter
-    3. Save to filesystem
-    4. Commit to GitHub (continues on failure)
+    1. Verify author ownership (or admin role) via Post aggregate
+    2. Find existing draft file
+    3. Update content, preserve front matter
+    4. Save to filesystem
+    5. Commit to GitHub (continues on failure)
 
     Corruption recovery:
     - If file corrupted, fetch from GitHub
@@ -40,15 +48,32 @@ def save_draft_handler(
     - Logs all recovery attempts
 
     Args:
-        command: SaveDraftCommand with slug and content
+        command: SaveDraftCommand with slug, content, author_id, and user_role
         draft_repo: FileSystemDraftRepository for file operations
+        post_repo: PostRepository for authorization check
         github_service: GitHubSyncService for version control
 
     Raises:
         ValueError: If draft not found (NotFoundError)
+        ValueError: If user not authorized (not owner and not admin)
         ValueError: If slug is invalid
         ValueError: If corruption recovery fails completely
     """
+    # Step 1: Load Post aggregate for authorization check
+    post = post_repo.find_by_slug(command.slug)
+    if post is None:
+        raise ValueError(
+            f"Post with slug '{command.slug}' not found in database"
+        )
+
+    if post.author_id != command.author_id and command.user_role != "admin":
+        logger.warning(
+            f"User {command.author_id} attempted to edit post '{command.slug}' "
+            f"owned by user {post.author_id}"
+        )
+        raise ValueError("Cannot edit another author's post")
+
+    # Step 2: Load draft file
     try:
         draft = draft_repo.find_by_slug(command.slug)
     except (ValueError, yaml.YAMLError, AttributeError) as e:
