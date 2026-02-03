@@ -8,11 +8,15 @@ import logging
 from pathlib import Path
 from urllib.parse import unquote
 
-from flask import Flask, Response, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory
+from flask.wrappers import Response
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
+from werkzeug.wrappers import Response as WerkzeugResponse
 
 from backend.api.routes.auth import auth_bp
 from backend.api.routes.health import health_bp
+from backend.api.routes.posts import posts_bp
 from backend.api.routes.users import users_bp
 from backend.config import FlaskEnv, FlaskSettings
 from backend.exceptions import AuthenticationError, AuthorizationError
@@ -56,6 +60,7 @@ def create_app() -> Flask:
     app.register_blueprint(health_bp, url_prefix="")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(users_bp, url_prefix="/api/users")
+    app.register_blueprint(posts_bp, url_prefix="/api/posts")
 
     @app.errorhandler(AuthenticationError)
     def handle_authentication_error(
@@ -88,6 +93,40 @@ def create_app() -> Flask:
         if error.required_role is not None:
             payload["required_role"] = error.required_role
         return jsonify(payload), 403
+
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(
+        error: Exception,
+    ) -> tuple[Response, int] | WerkzeugResponse:
+        """Handle unexpected exceptions with generic 500 response.
+
+        Logs detailed error information for debugging while returning
+        a generic message to clients to prevent information disclosure.
+
+        Flask's built-in HTTP exceptions (400, 404, 415, etc.) are
+        returned with their native response to preserve proper status codes.
+
+        Args:
+            error: The caught Exception instance.
+
+        Returns:
+            WerkzeugResponse: For HTTPException, the exception's native
+                response.
+            tuple[Response, int]: For other exceptions, JSON error
+                with 500 status.
+        """
+        if isinstance(error, HTTPException):
+            return error.get_response()
+
+        logger.exception(
+            "Unexpected error occurred",
+            exc_info=error,
+            extra={
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
+        return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")

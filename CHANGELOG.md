@@ -7,16 +7,238 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+### Changed
 
-- **Backend**: Corrected authentication blueprint URL prefixes to match specification
-  - Changed auth_bp registration from `/auth` to `/api/auth` in main.py
-  - Changed users_bp registration from `/users` to `/api/users` in main.py
-  - Updated all integration tests to use corrected endpoints
-  - Updated documentation examples in auth.py and users.py
-  - Endpoints now accessible at `/api/auth/me` and `/api/users` as per requirements
-  - All 22 backend integration tests pass with corrected URL prefixes
-  - Files modified: `backend/src/backend/main.py`, `backend/tests/integration/test_api_routes_auth.py`, `backend/tests/integration/test_api_routes_users.py`, `backend/src/backend/api/routes/auth.py`, `backend/src/backend/api/routes/users.py`
+- **Backend**: Post table schema update for improved field naming and querying
+  - Renamed `published_html` column to `html_content` for consistency with domain model
+  - Added `published_at` field (datetime | None) to track publication timestamp with database index for efficient sorting
+  - Added index to `published` field for optimized filtering queries
+  - Updated PostRepository to handle timezone-aware datetime conversion for `published_at` field
+  - Updated PostRepository field mapping: `_to_model()` and `_to_domain()` now use `html_content` field
+  - Added timezone awareness logic: converts naive datetime to UTC timezone when loading from database
+  - Comprehensive test coverage: 19 unit tests for model schema and repository field mapping with 100% pass rate
+  - Files modified: `backend/src/backend/infrastructure/persistence/models.py`, `backend/src/backend/infrastructure/persistence/post_repository.py`
+  - Files created: `backend/tests/unit/test_post_repository.py`
+  - Tests modified: `backend/tests/unit/test_models.py` (updated to use `html_content` field)
+
+### Added
+
+- **Backend**: Posts API routes with full CRUD operations and access control
+
+  - Implemented 7 REST endpoints for post management: create draft (POST /api/posts), get draft (GET /api/posts/:slug), save draft (PUT /api/posts/:slug), delete draft (DELETE /api/posts/:slug), publish post (POST /api/posts/:slug/publish), unpublish post (POST /api/posts/:slug/unpublish), list author posts (GET /api/posts/my-posts)
+  - Author ownership verification: all mutating operations verify user is post author before allowing changes
+  - Admin override support: admin role can edit/unpublish any post regardless of authorship
+  - Authorization enforcement via @require_auth and @require_role decorators on all endpoints
+  - My-posts endpoint with filtering: supports query params for drafts-only, published-only, or all posts
+  - Pagination support: configurable limit (1-100 posts) and offset for efficient data retrieval
+  - Comprehensive error handling: 400 for invalid input, 403 for unauthorized access, 404 for missing posts, 500 for server errors
+  - Enhanced command layer with authorization: added author_id and user_role to SaveDraftCommand, DeleteDraftCommand, PublishPostCommand, UnpublishPostCommand
+  - Domain model serialization: added Post.to_dict() for clean JSON responses
+  - Integration test suite with 36 tests covering authentication, authorization, ownership checks, admin overrides, pagination, filtering, error scenarios
+  - Files created: `backend/src/backend/api/routes/posts.py`, `backend/tests/integration/api/routes/test_posts.py`
+  - Files modified: `backend/src/backend/main.py` (registered posts blueprint), `backend/src/backend/application/commands/save_draft_command.py`, `backend/src/backend/application/commands/delete_draft_command.py`, `backend/src/backend/application/commands/publish_post_command.py`, `backend/src/backend/application/commands/unpublish_post_command.py`, `backend/src/backend/domain/aggregates/post.py`
+
+- **Backend**: Post listing query with filtering and pagination
+
+  - ListPostsQuery for retrieving author's posts with flexible filtering (drafts only, published only, or all posts)
+  - PostFilter enum for type-safe filter options (DRAFTS, PUBLISHED, ALL)
+  - Pagination support with configurable page size (1-100 posts per page)
+  - Efficient database counting using SQL COUNT(\*) instead of loading all rows
+  - Sort by most recently updated posts first (updated_at DESC)
+  - Input validation: page >= 1, limit 1-100, author_id > 0
+  - Paginated response includes total count and total pages for UI pagination controls
+  - Repository method find_by_author_filtered for filtered queries with dual return (posts, count)
+  - Comprehensive test suite: 33 tests covering validation, filtering, pagination, edge cases (100% pass rate)
+  - Files created: `backend/src/backend/domain/value_objects/post_filter.py`, `backend/src/backend/application/queries/list_posts_query.py`, `backend/src/backend/application/queries/handlers/list_posts_query_handler.py`, `backend/tests/unit/application/queries/test_list_posts_query.py`, `backend/tests/unit/application/queries/handlers/test_list_posts_query_handler.py`
+  - Files modified: `backend/src/backend/infrastructure/persistence/post_repository.py`, `backend/src/backend/domain/value_objects/__init__.py`
+
+- **Backend**: Draft deletion command with GitHub version control sync
+
+  - DeleteDraftCommand for deleting draft posts with validation to prevent deletion of published posts
+  - Critical GitHub sync ensures deletion commits propagate to version control (failures raise exceptions)
+
+- **Backend**: Post unpublishing command with workflow automation
+
+  - UnpublishPostCommand dataclass for reverting published posts back to draft state
+  - Complete unpublishing workflow: database update (published=false), draft file front matter sync, GitHub commit
+  - Preserves post metadata and history: html_content and published_at timestamp remain in database for audit trail
+  - Automatic front matter update: published flag set to false in markdown draft file
+  - Best-effort GitHub sync: commits draft changes to version control with graceful failure handling
+  - Allows post re-editing after unpublish: draft file becomes editable again
+  - Domain-driven design: Post.unpublish() domain method encapsulates state transition logic
+  - Graceful degradation: continues on filesystem or GitHub failures after database commit completes
+  - Comprehensive error handling: validates post exists and is currently published before unpublishing
+  - Comprehensive test suite: 18 handler tests covering success path, error scenarios, and edge cases (100% pass rate)
+  - Files created: `backend/src/backend/application/commands/unpublish_post_command.py`, `backend/src/backend/application/commands/handlers/unpublish_post_handler.py`, `backend/tests/unit/application/commands/test_unpublish_post_command.py`, `backend/tests/unit/application/commands/handlers/test_unpublish_post_handler.py`
+
+- **Backend**: Post publishing command with markdown rendering and HTML sanitization
+
+  - PublishPostCommand dataclass for publishing draft posts to production
+  - Complete publishing workflow: draft loading, markdown rendering, HTML sanitization, database persistence, GitHub sync
+  - Integration with MarkdownRenderingService for markdown-to-HTML conversion with Pygments syntax highlighting
+  - Integration with HtmlSanitizer for XSS prevention via Bleach allowlist-based sanitization
+  - Automatic front matter updates (published: true, published_at timestamp) in draft files
+  - Best-effort GitHub commit after successful database persistence
+  - Graceful degradation: continues on filesystem or GitHub failures after database commit
+  - Domain-driven design: Post.publish() domain method encapsulates state transition logic
+  - Comprehensive error handling: validates draft exists, not already published, post in database
+  - Comprehensive test suite: 17 handler tests covering success path, error scenarios, logging, edge cases (100% pass rate)
+  - Files created: `backend/src/backend/application/commands/publish_post_command.py`, `backend/src/backend/application/commands/handlers/publish_post_handler.py`, `backend/tests/unit/application/commands/test_publish_post_command.py`, `backend/tests/unit/application/commands/handlers/test_publish_post_handler.py`
+
+- **Backend**: Draft content update with automatic corruption recovery
+
+  - SaveDraftCommand for updating existing draft content with size validation
+  - Automatic corruption recovery: fetches original content from GitHub when draft file becomes corrupted
+  - Graceful fallback: creates new draft with default front matter if GitHub recovery fails
+  - Size limits enforced: slug maximum 1000 characters, content maximum 10MB
+  - Front matter preservation: retains title, author, created_at, and tags during updates
+  - Resilient to GitHub API failures (continues with local save even if GitHub sync fails)
+  - Comprehensive test suite: 27 tests (11 unit tests for command, 10 for handler, 6 integration tests) with 100% pass rate
+  - Files created: `backend/src/backend/application/commands/save_draft_command.py`, `backend/src/backend/application/commands/handlers/save_draft_handler.py`, `backend/tests/unit/test_save_draft_command.py`, `backend/tests/unit/test_save_draft_handler.py`, `backend/tests/integration/test_save_draft_handler.py`
+  - Files modified: `backend/src/backend/infrastructure/versioning/github_sync_service.py` (added get_file_content method)
+
+- **Backend**: feat: implement draft post creation command with validation and error handling
+
+  - Implemented CreateDraftCommand dataclass with slug, title, and author_id fields for structured input validation
+  - Created create_draft_handler orchestrating complete draft creation workflow with rollback on failures
+  - Slug uniqueness validation across both database (PostRepository) and filesystem (FileSystemDraftRepository)
+  - Draft file creation with YAML front matter containing metadata (title, author, timestamps)
+  - GitHub commit integration with "drafts/" path prefix for version control backup
+  - Rollback mechanism for partial failures: deletes draft file if database persistence fails after filesystem write
+  - PostRepository type annotations replacing Any types for improved type safety
+  - Comprehensive test suite: 8 unit tests for command validation, 11 integration tests for handler workflow including rollback scenarios
+  - Files created: `backend/src/backend/application/commands/__init__.py`, `backend/src/backend/application/commands/create_draft_command.py`, `backend/src/backend/application/commands/handlers/__init__.py`, `backend/src/backend/application/commands/handlers/create_draft_handler.py`, `backend/tests/unit/test_create_draft_command.py`, `backend/tests/integration/test_create_draft_handler.py`
+
+- **Backend**: PostRepository persistence layer for Post aggregate CRUD operations
+
+  - Implemented PostRepository following repository pattern for Post aggregate persistence
+  - save() method handles INSERT (new posts) and UPDATE (existing posts) with unique slug constraint enforcement
+  - find_by_slug() provides fast indexed lookup by URL-safe slug identifier
+  - find_by_author() lists author's posts with pagination support (limit/offset, newest first)
+  - list_published() queries public posts (published=true) with pagination
+  - find_by_id() performs efficient primary key lookup via session.get()
+  - delete() removes posts by primary key with boolean success/failure return
+  - Bidirectional conversion between PostModel (SQLModel) and Post domain aggregate
+  - Field mapping: PostModel.published_html ↔ Post.html_content (HtmlContent value object)
+  - Slug value object conversion: PostModel.slug (string) ↔ Post.slug (Slug value object)
+  - Timezone-aware datetime handling with UTC normalization for created_at/updated_at
+  - IntegrityError handling for duplicate slug violations with descriptive error messages
+  - Follows UserRepository pattern: optional Session injection, dual session handling (injected vs get_db() context manager)
+  - Files created: `backend/src/backend/infrastructure/persistence/post_repository.py`
+
+- **Backend**: HTML sanitization service for XSS prevention in user-generated content
+
+  - Implemented HtmlSanitizer class for comprehensive cross-site scripting (XSS) attack prevention
+  - Strict allowlist-based approach permitting only safe HTML tags and attributes
+  - Removes dangerous elements: script, style, iframe, object, embed, applet tags
+  - External link protection: automatically adds rel="nofollow noreferrer" to all links
+  - Image security: restricts image attributes to src, alt, and title only
+  - Protocol validation: blocks javascript:, data:, vbscript:, and file: URL schemes
+  - Sanitizes blog post content during publish operations to protect readers
+  - Preserves markdown-generated HTML structure while removing security threats
+  - Built on Bleach library with production-tested XSS protection
+  - Comprehensive test suite: 66 unit tests with 97% code coverage validating tag filtering, attribute sanitization, link protection, protocol validation, and edge cases
+  - Files created: `backend/src/backend/infrastructure/sanitization/html_sanitizer.py`, `backend/src/backend/infrastructure/sanitization/__init__.py`, `backend/tests/unit/infrastructure/sanitization/test_html_sanitizer.py`
+  - Dependencies added: bleach 6.2.0, types-bleach 6.2.0.20241208
+
+### Security
+
+- **Backend**: Implemented comprehensive XSS prevention for blog post content
+
+  - Protects against script injection attacks in published posts
+  - Prevents malicious iframe embedding and plugin execution
+  - Blocks dangerous URL schemes in links and images
+  - Mitigates CSS-based attacks by removing style tags and attributes
+  - Adds nofollow/noreferrer to external links preventing referrer leakage and SEO manipulation
+  - Sanitization applied automatically during post publishing workflow
+
+- **Backend**: Production-ready markdown to HTML rendering service with syntax highlighting
+
+  - Implemented MarkdownRenderingService for converting markdown content to HTML with Pygments syntax highlighting
+  - Syntax highlighting support for 500+ programming languages including Python, JavaScript, TypeScript, C++, C#, F#, JSON
+  - Code block rendering with proper CSS class attributes for theme integration
+  - Graceful fallback for unknown programming languages using lexer auto-detection, with plain text rendering as final fallback
+  - Production-ready error handling with try-except blocks and graceful degradation on rendering failures
+  - Comprehensive logging at module level (debug, warning, error) for production observability
+  - Stateless service design enabling concurrent rendering without race conditions
+  - Dependencies added: markdown-it-py 3.0.0+ for markdown parsing, Pygments 2.17.0+ for syntax highlighting, types-Pygments for type safety
+  - Comprehensive test suite: 43 unit tests covering markdown features (headings, lists, links, images, code blocks), syntax highlighting (Python, JavaScript, TypeScript, JSON, C++, C#), edge cases (empty input, Unicode, HTML escaping), and error handling (93% coverage)
+  - Files created: `backend/src/backend/infrastructure/markdown/markdown_rendering_service.py`, `backend/src/backend/infrastructure/markdown/__init__.py`, `backend/tests/unit/infrastructure/test_markdown_rendering_service.py`
+  - Files modified: `backend/pyproject.toml`, `backend/uv.lock`
+
+- **Backend**: GitHubSyncService for automatic version control via GitHub API
+
+  - Implemented resilient GitHub API integration for draft version control
+  - commit_file() method creates or updates files in GitHub repository with base64 encoding
+  - delete_file() method removes files from GitHub repository
+  - Exponential backoff retry logic for HTTP 429 rate limiting (1s, 2s, 4s delays, max 3 retries)
+  - Non-blocking error handling - draft operations succeed even if GitHub API fails
+  - Comprehensive error recovery: handles timeouts, connection errors, HTTP errors (401/403/404/500)
+  - Secure token handling - never logs authentication credentials
+  - Returns commit SHA on successful operations for audit trail
+  - 5-second timeout on all network requests prevents indefinite hanging
+  - Constructor validation ensures required credentials (token, owner, repo) are provided
+  - Comprehensive test suite: 24 unit tests covering success paths, retry logic, error handling (100% coverage)
+  - Files created: `backend/src/backend/infrastructure/versioning/github_sync_service.py`, `backend/src/backend/infrastructure/versioning/__init__.py`, `backend/tests/unit/infrastructure/versioning/test_github_sync_service.py`, `backend/tests/unit/infrastructure/versioning/__init__.py`
+  - Meets all requirements: 10.1 (commit on create), 10.2 (commit on save), 10.3 (commit on delete), 10.4 (non-blocking failures), 10.5 (rate limit retry), 10.6 (graceful degradation)
+
+- **Backend**: FileSystemDraftRepository for markdown draft persistence
+
+  - Implemented filesystem-based repository for blog post drafts with YAML front matter
+  - DraftFile class for YAML serialization/deserialization with complete metadata support
+  - YAML front matter includes: title, author, created_at, published, published_at, tags
+  - FileSystemDraftRepository with CRUD operations: save(), find_by_slug(), delete(), list_by_author()
+  - Path traversal protection using Slug value object for safe filesystem operations
+  - UTF-8 encoding support for international characters and emoji
+  - Idempotent delete operation (succeeds even if file doesn't exist)
+  - Auto-creates drafts directory on repository initialization
+  - Round-trip preservation of all metadata and content through save/load cycles
+  - Configuration support: DRAFTS_PATH, GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO settings
+  - Comprehensive test suite: 13 unit tests for DraftFile, 13 integration tests for repository (100% coverage)
+  - Files created: `backend/src/backend/infrastructure/persistence/filesystem_draft_repository.py`, `backend/tests/unit/test_draft_file.py`, `backend/tests/integration/test_filesystem_draft_repository.py`
+  - Files modified: `backend/src/backend/config.py`
+  - Dependencies added: pyyaml 6.0.3, types-pyyaml 6.0.12.20250915
+
+- **Backend**: Post aggregate root for blog post lifecycle management
+
+  - Mutable aggregate implementing Domain-Driven Design patterns for post state transitions
+  - Factory method `create_draft()` for creating new draft posts with validated title and author
+  - State transition methods: `publish()` converts drafts to published posts with HTML content, `unpublish()` reverts to draft state
+  - Integration with Slug value object for URL-safe identifiers and HtmlContent for sanitized HTML storage
+  - UTC-aware timestamps: `created_at` (immutable), `updated_at` (auto-managed), `published_at` (audit trail preserved on unpublish)
+  - Input validation: title must be non-empty string, author_id must be positive integer
+  - Audit trail preservation: published_at timestamp retained when unpublishing for historical tracking
+  - Type-safe with modern Python 3.12+ type hints including datetime and UUID annotations
+  - Comprehensive test suite with 14 unit tests covering factory method, state transitions, timestamp handling, and edge cases (100% coverage)
+  - Files created: `backend/src/backend/domain/aggregates/post.py`, `backend/tests/unit/test_post.py`
+
+- **Backend**: HtmlContent value object for type-safe sanitized HTML storage
+
+  - Immutable wrapper for sanitized HTML content in published blog posts
+  - Validates content is not None while accepting empty strings for valid empty posts
+  - Preserves HTML formatting, whitespace, and special characters
+  - Frozen dataclass implementation preventing post-initialization mutations
+  - Value object semantics with equality based on content, proper string representation
+  - Comprehensive test coverage with 14 unit tests (100% coverage)
+  - Files created: `backend/src/backend/domain/value_objects/html_content.py`, `backend/tests/unit/test_html_content.py`
+  - Files modified: `backend/src/backend/domain/value_objects/__init__.py`
+
+- **Backend**: MarkdownContent value object for type-safe markdown storage
+
+  - Immutable wrapper for raw markdown text in blog post drafts
+  - Validates content is not None to prevent invalid state
+  - Preserves markdown formatting and special characters
+  - Comprehensive test coverage with 14 unit tests (100% coverage)
+  - Files created: `backend/src/backend/domain/value_objects/markdown_content.py`, `backend/tests/unit/test_markdown_content.py`
+
+- **Backend**: URL slug validation and normalization for blog posts
+
+  - Implemented immutable Slug value object with automatic formatting
+  - Converts uppercase to lowercase, replaces spaces with hyphens, removes special characters
+  - Enforces validation: non-empty, maximum 200 characters, alphanumeric and hyphens only
+  - Secure against path traversal attacks with comprehensive input sanitization
+  - 100% test coverage with 22 unit tests
+  - Files created: `backend/src/backend/domain/value_objects/slug.py`, `backend/tests/unit/test_slug.py`
 
 ### Added
 
@@ -47,17 +269,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enables role-based rendering and authentication checks across all route components
   - File modified: `frontend/src/App.tsx`
 
-### Fixed
-
-- **Frontend**: Resolved Playwright test configuration conflict with Vitest globals
-  - Fixed "Playwright Test did not expect test.describe() to be called here" error caused by TypeScript configuration
-  - Created separate tsconfig.playwright.json for Playwright tests with only @playwright/test types
-  - Excluded tests/e2e directory from main tsconfig.json to prevent vitest/globals type pollution
-  - Excluded tests/e2e directory from vitest.config.ts to prevent Vitest from running Playwright tests
-  - All 39 authentication E2E tests (117 total across 3 browsers) now load and run successfully
-  - Files modified: `frontend/tsconfig.json` (added exclude for tests/e2e), `frontend/vitest.config.ts` (added include/exclude patterns)
-  - Files created: `frontend/tsconfig.playwright.json` (dedicated TypeScript config for Playwright)
-
 ### Added
 
 - **Frontend**: Comprehensive E2E authentication flow tests with Playwright
@@ -74,15 +285,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tests use explicit waits to avoid flakiness: page.waitForURL(), page.waitForLoadState(), page.waitForFunction()
   - Playwright installed as dev dependency (@playwright/test ^1.57.0)
   - Tests run deterministically without flakiness in both local development and CI environments
-
-### Fixed
-
-- **Frontend**: Code review fixes for authentication implementation
-  - Fixed unsafe type assertion in AuthContext role extraction to use explicit validation instead of type casting
-  - Updated all useAuth mocks in test files to match AuthContextType interface (replaced userId/signOut with user object)
-  - Improved loading indicator in ProtectedRoute from plain text to animated Loader2 spinner icon from lucide-react
-  - Updated all loading state tests to check for spinner element instead of "Loading..." text
-  - All 203 tests passing with improved user experience and type safety
 
 ### Added
 
@@ -172,18 +374,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All existing tests updated and passing (3 NotFound tests, 17 Home tests)
   - No breaking changes to component behavior or user experience
   - Files modified: `frontend/src/pages/NotFound.tsx`, `frontend/src/pages/Home.tsx`, `frontend/tests/unit/NotFound.test.tsx`, `frontend/tests/unit/Home.test.tsx`
-
-### Fixed
-
-- **Backend**: Fixed CI test failures due to eager initialization of Settings in auth middleware
-  - Refactored auth_middleware.py to use lazy initialization pattern for Settings, ClerkAuthAdapter, and UserRepository
-  - Prevents ValidationError during module import when CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY environment variables are not set
-  - Implemented singleton pattern with private getter functions (\_get_settings, \_get_clerk_adapter, \_get_user_repository)
-  - Module-level variables (clerk_auth_adapter, user_repository) now default to None for test mock compatibility
-  - Adapters and repositories are instantiated only when decorators are actually invoked, not at import time
-  - All 208 unit tests pass including 17 auth middleware tests with full backward compatibility
-  - No breaking changes to decorator API or test mocking patterns
-  - File modified: `backend/src/backend/api/middleware/auth_middleware.py`
 
 ### Added
 
@@ -364,6 +554,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files removed: `scripts/tests/deploy_config_fix.bats`
 
 ### Fixed
+
+- **Backend**: Posts blueprint registration and URL structure consistency
+
+  - Fixed posts blueprint registration to follow project architectural patterns (explicit url_prefix in Flask app factory)
+  - Updated route paths to use empty string `""` instead of `"/"` for base route, matching users_bp pattern
+  - Corrected endpoint paths: list-my-posts moved from `/api/my-posts` to `/api/posts/my-posts` for proper REST hierarchy
+  - Updated 36 integration tests to use correct endpoint paths
+  - All posts routes now consistently namespaced under `/api/posts`: POST /api/posts (create), GET /api/posts/:slug (read), PUT /api/posts/:slug (update), DELETE /api/posts/:slug (delete), POST /api/posts/:slug/publish, POST /api/posts/:slug/unpublish, GET /api/posts/my-posts (list)
+  - Files modified: `backend/src/backend/main.py` (added url_prefix="/api/posts" to blueprint registration), `backend/src/backend/api/routes/posts.py` (removed internal url_prefix, updated route decorators), `backend/tests/integration/api/test_posts_routes.py` (updated test paths)
+
+- **Backend**: Corrected import order in html_sanitizer test file to comply with ruff linting standards
+
+- **Backend**: Corrected authentication blueprint URL prefixes to match specification
+
+  - Changed auth_bp registration from `/auth` to `/api/auth` in main.py
+  - Changed users_bp registration from `/users` to `/api/users` in main.py
+  - Updated all integration tests to use corrected endpoints
+  - Updated documentation examples in auth.py and users.py
+  - Endpoints now accessible at `/api/auth/me` and `/api/users` as per requirements
+  - All 22 backend integration tests pass with corrected URL prefixes
+  - Files modified: `backend/src/backend/main.py`, `backend/tests/integration/test_api_routes_auth.py`, `backend/tests/integration/test_api_routes_users.py`, `backend/src/backend/api/routes/auth.py`, `backend/src/backend/api/routes/users.py`
+
+- **Frontend**: Code review fixes for authentication implementation
+
+  - Fixed unsafe type assertion in AuthContext role extraction to use explicit validation instead of type casting
+  - Updated all useAuth mocks in test files to match AuthContextType interface (replaced userId/signOut with user object)
+  - Improved loading indicator in ProtectedRoute from plain text to animated Loader2 spinner icon from lucide-react
+  - Updated all loading state tests to check for spinner element instead of "Loading..." text
+  - All 203 tests passing with improved user experience and type safety
+
+- **Frontend**: Resolved Playwright test configuration conflict with Vitest globals
+
+  - Fixed "Playwright Test did not expect test.describe() to be called here" error caused by TypeScript configuration
+  - Created separate tsconfig.playwright.json for Playwright tests with only @playwright/test types
+  - Excluded tests/e2e directory from main tsconfig.json to prevent vitest/globals type pollution
+  - Excluded tests/e2e directory from vitest.config.ts to prevent Vitest from running Playwright tests
+  - All 39 authentication E2E tests (117 total across 3 browsers) now load and run successfully
+  - Files modified: `frontend/tsconfig.json` (added exclude for tests/e2e), `frontend/vitest.config.ts` (added include/exclude patterns)
+  - Files created: `frontend/tsconfig.playwright.json` (dedicated TypeScript config for Playwright)
+
+- **Backend**: Fixed CI test failures due to eager initialization of Settings in auth middleware
+
+  - Refactored auth_middleware.py to use lazy initialization pattern for Settings, ClerkAuthAdapter, and UserRepository
+  - Prevents ValidationError during module import when CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY environment variables are not set
+  - Implemented singleton pattern with private getter functions (\_get_settings, \_get_clerk_adapter, \_get_user_repository)
+  - Module-level variables (clerk_auth_adapter, user_repository) now default to None for test mock compatibility
+  - Adapters and repositories are instantiated only when decorators are actually invoked, not at import time
+  - All 208 unit tests pass including 17 auth middleware tests with full backward compatibility
+  - No breaking changes to decorator API or test mocking patterns
+  - File modified: `backend/src/backend/api/middleware/auth_middleware.py`
+
+- **Code Review Fixes (PR #7)**: Implemented fixes from sourcery-ai and gemini-code-assist code reviews
+
+  - **Build Script**: Enhanced shell safety flags in `scripts/build.sh`
+    - Added `set -u` to error on unset variables
+    - Added `set -o pipefail` to catch errors in pipelines
+    - Removed unnecessary `exit 0` that could hide non-zero exit codes
+    - Changed `npm install` to `npm ci` for faster, more reliable builds from lockfile
+  - **E2E Tests**: Improved test reliability and production configuration
+    - Fixed build fixture to always run build for test determinism
+    - Added `try...finally` block to ensure cleanup even if tests fail
+    - Track initial BUILD_DIR state to preserve pre-existing builds
+    - Changed FLASK_ENV from DEVELOPMENT to PRODUCTION to accurately test production stack
+    - Marked GitHub health check test with `@pytest.mark.external` to allow skipping in offline/restricted environments
+  - **BATS Tests**: Optimized build script test performance
+    - Refactored to use `setup_file()`/`teardown_file()` hooks
+    - Build script now runs once per test file instead of once per test (4x faster)
+    - Individual tests now only verify build artifacts exist
+
+- **Code Review Fixes (PR #8)**: Addressed documentation and configuration issues from gemini-code-assist code review
+
+  - **Backend Configuration**: Corrected `.env.example` to use `LOCAL_*` prefix variables matching `config.py` expectations
+    - Fixed database configuration to use `LOCAL_DB_HOST`, `LOCAL_DB_NAME`, `LOCAL_DB_USER`, `LOCAL_DB_PASSWORD`
+    - Ensures development environment variables align with `DevDBSettings` class requirements
+  - **API Documentation**: Updated health endpoint documentation in `docs/api.md` to match actual implementation
+    - Fixed `/health/db` endpoint response format (simple status object instead of detailed host/database info)
+    - Fixed `/health/github` endpoint response format (simple status object instead of detailed rate_limit info)
+  - **README Organization**: Improved build script documentation clarity
+    - Reorganized `./scripts/build.sh` command placement for better categorization
+    - Clarified frontend-specific vs. project-wide command usage
+  - **Deployment Documentation**: Added missing `PRODUCTION_DOMAIN` environment variable to deployment docs table
+    - Documented required variable for production confirmation prompt functionality
+    - Completed environment variables reference in `docs/DEPLOYMENT.md`
+
+- **Deployment**: Critical bug fix in error handling for deployment script
+
+  - Fixed `uapi_call()` function to correctly capture and propagate command exit codes
+  - Previously, `if ! command; then` pattern was causing `$?` to be 0 (success of if-test negation) instead of the actual command failure code
+  - Changed to explicitly capture exit status before testing: `command; exit_status=$?; if [[ $exit_status -ne 0 ]]; then`
+  - This ensures deployment aborts immediately when UAPI operations fail instead of continuing silently
+  - Added comprehensive error checking (`|| return 1`) to all deployment functions for fail-fast behavior
+  - Fixed tests 12, 13, and 14 which were failing assertions but not executing
+  - Test 12: Added `stat` mock for SSH key permission verification
+  - Tests 13-14: Added proper UAPI mocks that handle different operations independently
+
+- **Frontend**: Updated frontend dependencies to latest versions.
+
+- **Frontend**: Corrected Biome configuration to remove redundant include paths.
+
+- **Frontend**: Separated Vitest configuration into `vitest.config.ts` and ensured shared configuration with `vite.config.ts` using `mergeConfig`.
 
 - **Deployment**: Fixed virtual environment path to match cPanel conventions
 
@@ -566,58 +856,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Frontend**: Updated entry point from `main.jsx` to `main.tsx` in `index.html`.
 - **Frontend**: Updated tests to correctly expect `React.StrictMode` as `symbol` type (React 18 behavior).
-
-### Fixed
-
-- **Code Review Fixes (PR #7)**: Implemented fixes from sourcery-ai and gemini-code-assist code reviews
-
-  - **Build Script**: Enhanced shell safety flags in `scripts/build.sh`
-    - Added `set -u` to error on unset variables
-    - Added `set -o pipefail` to catch errors in pipelines
-    - Removed unnecessary `exit 0` that could hide non-zero exit codes
-    - Changed `npm install` to `npm ci` for faster, more reliable builds from lockfile
-  - **E2E Tests**: Improved test reliability and production configuration
-    - Fixed build fixture to always run build for test determinism
-    - Added `try...finally` block to ensure cleanup even if tests fail
-    - Track initial BUILD_DIR state to preserve pre-existing builds
-    - Changed FLASK_ENV from DEVELOPMENT to PRODUCTION to accurately test production stack
-    - Marked GitHub health check test with `@pytest.mark.external` to allow skipping in offline/restricted environments
-  - **BATS Tests**: Optimized build script test performance
-    - Refactored to use `setup_file()`/`teardown_file()` hooks
-    - Build script now runs once per test file instead of once per test (4x faster)
-    - Individual tests now only verify build artifacts exist
-
-- **Code Review Fixes (PR #8)**: Addressed documentation and configuration issues from gemini-code-assist code review
-
-  - **Backend Configuration**: Corrected `.env.example` to use `LOCAL_*` prefix variables matching `config.py` expectations
-    - Fixed database configuration to use `LOCAL_DB_HOST`, `LOCAL_DB_NAME`, `LOCAL_DB_USER`, `LOCAL_DB_PASSWORD`
-    - Ensures development environment variables align with `DevDBSettings` class requirements
-  - **API Documentation**: Updated health endpoint documentation in `docs/api.md` to match actual implementation
-    - Fixed `/health/db` endpoint response format (simple status object instead of detailed host/database info)
-    - Fixed `/health/github` endpoint response format (simple status object instead of detailed rate_limit info)
-  - **README Organization**: Improved build script documentation clarity
-    - Reorganized `./scripts/build.sh` command placement for better categorization
-    - Clarified frontend-specific vs. project-wide command usage
-  - **Deployment Documentation**: Added missing `PRODUCTION_DOMAIN` environment variable to deployment docs table
-    - Documented required variable for production confirmation prompt functionality
-    - Completed environment variables reference in `docs/DEPLOYMENT.md`
-
-- **Deployment**: Critical bug fix in error handling for deployment script
-
-  - Fixed `uapi_call()` function to correctly capture and propagate command exit codes
-  - Previously, `if ! command; then` pattern was causing `$?` to be 0 (success of if-test negation) instead of the actual command failure code
-  - Changed to explicitly capture exit status before testing: `command; exit_status=$?; if [[ $exit_status -ne 0 ]]; then`
-  - This ensures deployment aborts immediately when UAPI operations fail instead of continuing silently
-  - Added comprehensive error checking (`|| return 1`) to all deployment functions for fail-fast behavior
-  - Fixed tests 12, 13, and 14 which were failing assertions but not executing
-  - Test 12: Added `stat` mock for SSH key permission verification
-  - Tests 13-14: Added proper UAPI mocks that handle different operations independently
-
-- **Frontend**: Updated frontend dependencies to latest versions.
-
-- **Frontend**: Corrected Biome configuration to remove redundant include paths.
-
-- **Frontend**: Separated Vitest configuration into `vitest.config.ts` and ensured shared configuration with `vite.config.ts` using `mergeConfig`.
 
 ## v0.1.2 (2025-11-17)
 

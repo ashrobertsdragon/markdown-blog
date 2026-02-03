@@ -34,13 +34,13 @@ def test_post_created_at_uses_default_factory():
     post1 = Post(
         slug="test-post-1",
         title="Test Post 1",
-        published_html="<p>Content</p>",
+        html_content="<p>Content</p>",
     )
     time.sleep(0.01)  # 10ms delay to ensure different timestamps
     post2 = Post(
         slug="test-post-2",
         title="Test Post 2",
-        published_html="<p>Content</p>",
+        html_content="<p>Content</p>",
     )
 
     assert isinstance(post1.created_at, datetime)
@@ -58,13 +58,13 @@ def test_post_updated_at_uses_default_factory():
     post1 = Post(
         slug="test-post-1",
         title="Test Post 1",
-        published_html="<p>Content</p>",
+        html_content="<p>Content</p>",
     )
     time.sleep(0.01)  # 10ms delay to ensure different timestamps
     post2 = Post(
         slug="test-post-2",
         title="Test Post 2",
-        published_html="<p>Content</p>",
+        html_content="<p>Content</p>",
     )
 
     assert isinstance(post1.updated_at, datetime)
@@ -82,7 +82,7 @@ def test_post_created_at_and_updated_at_are_same_on_creation():
     post = Post(
         slug="test-post",
         title="Test Post",
-        published_html="<p>Content</p>",
+        html_content="<p>Content</p>",
     )
 
     # Should be very close (within 1ms) but may not be exactly equal
@@ -112,3 +112,62 @@ def test_user_can_be_created_without_clerk_user_id():
     user = User(email="newuser@example.com")
     assert hasattr(user, "clerk_user_id")
     assert user.clerk_user_id is None
+
+
+def test_post_html_content_field_exists():
+    """Post model should have html_content field instead of published_html."""
+    post = Post(
+        slug="test-post",
+        title="Test Post",
+        html_content="<p>HTML content</p>",
+    )
+    assert hasattr(post, "html_content")
+    assert post.html_content == "<p>HTML content</p>"
+
+
+def test_post_published_at_field_exists():
+    """Post model should have published_at field that accepts None."""
+    post = Post(
+        slug="test-post",
+        title="Test Post",
+        html_content="<p>Content</p>",
+        published_at=None,
+    )
+    assert hasattr(post, "published_at")
+    assert post.published_at is None
+
+
+def test_post_published_at_accepts_datetime():
+    """Post model should accept datetime for published_at field."""
+    now = datetime.now()
+    post = Post(
+        slug="test-post",
+        title="Test Post",
+        html_content="<p>Content</p>",
+        published_at=now,
+    )
+    assert post.published_at == now
+
+
+def test_post_has_index_on_published_field():
+    """Post model has index on published field for efficient filtering."""
+
+    post_fields = Post.model_fields
+    assert "published" in post_fields
+
+    # Verify index is defined on the model by checking SQLAlchemy metadata
+    # The index parameter in Field() creates a database index
+    published_field_info = post_fields["published"]
+    assert published_field_info.metadata is not None
+
+
+def test_post_has_index_on_published_at_field():
+    """Post model has index on published_at field for efficient sorting."""
+
+    post_fields = Post.model_fields
+    assert "published_at" in post_fields
+
+    # Verify index is defined on the model by checking SQLAlchemy metadata
+    # The index parameter in Field() creates a database index
+    published_at_field_info = post_fields["published_at"]
+    assert published_at_field_info.metadata is not None

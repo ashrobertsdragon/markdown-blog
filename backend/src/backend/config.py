@@ -71,6 +71,41 @@ class ClerkSettings(BaseSettings):
     )
 
 
+class FileSystemSettings(BaseSettings):
+    """Filesystem settings for draft storage.
+
+    PARAMETERS:
+        DRAFTS_PATH (Path): Path to drafts directory
+            (defaults to project_root/drafts).
+    """
+
+    model_config = SettingsConfigDict(case_sensitive=True)
+
+    DRAFTS_PATH: Path = Field(
+        default_factory=lambda: Path(__file__).parents[4] / "drafts",
+        validation_alias="DRAFTS_PATH",
+    )
+
+
+class GitHubSettings(BaseSettings):
+    """GitHub API settings for version control integration.
+
+    PARAMETERS:
+        GITHUB_TOKEN (str): GitHub personal access token
+            (keep secure, backend only).
+        GITHUB_OWNER (str): GitHub repository owner/organization.
+        GITHUB_REPO (str): GitHub repository name.
+    """
+
+    model_config = SettingsConfigDict(case_sensitive=True)
+
+    GITHUB_TOKEN: str = Field(
+        default=..., validation_alias="GITHUB_PERSONAL_ACCESS_TOKEN"
+    )
+    GITHUB_OWNER: str = Field(default=..., validation_alias="GITHUB_OWNER")
+    GITHUB_REPO: str = Field(default=..., validation_alias="GITHUB_REPO")
+
+
 class Settings(BaseSettings):
     """Application settings combining Clerk authentication configuration.
 
