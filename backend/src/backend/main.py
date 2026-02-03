@@ -91,6 +91,29 @@ def create_app() -> Flask:
             payload["required_role"] = error.required_role
         return jsonify(payload), 403
 
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(error: Exception) -> tuple[Response, int]:
+        """Handle unexpected exceptions with generic 500 response.
+
+        Logs detailed error information for debugging while returning
+        a generic message to clients to prevent information disclosure.
+
+        Args:
+            error: The caught Exception instance.
+
+        Returns:
+            JSON response with generic error message and 500 status code.
+        """
+        logger.exception(
+            "Unexpected error occurred",
+            exc_info=error,
+            extra={
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+            },
+        )
+        return jsonify({"error": "Internal server error"}), 500
+
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve_spa(path: str) -> Response | tuple[Response, int]:

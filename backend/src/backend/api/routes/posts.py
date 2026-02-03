@@ -1,5 +1,7 @@
 """Posts API routes blueprint for post management operations."""
 
+import logging
+
 from flask import Blueprint, Response, g, jsonify, request
 
 from backend.api.middleware.auth_middleware import require_auth, require_role
@@ -49,6 +51,7 @@ from backend.infrastructure.versioning.github_sync_service import (
 )
 
 posts_bp = Blueprint("posts", __name__)
+logger = logging.getLogger(__name__)
 
 _filesystem_settings: FileSystemSettings | None = None
 _github_settings: GitHubSettings | None = None
@@ -278,7 +281,16 @@ def create_draft() -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 403
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {e}"}), 500
+        logger.exception(
+            "Unexpected error in create_draft",
+            exc_info=e,
+            extra={
+                "slug": slug,
+                "title": title,
+                "author_id": g.current_user.id,
+            },
+        )
+        raise
 
 
 @posts_bp.route("/<slug>", methods=["GET"])
@@ -322,7 +334,12 @@ def get_draft(slug: str) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 404
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {e}"}), 500
+        logger.exception(
+            "Unexpected error in get_draft",
+            exc_info=e,
+            extra={"slug": slug, "user_id": g.current_user.id},
+        )
+        raise
 
 
 @posts_bp.route("/<slug>", methods=["PUT"])
@@ -376,7 +393,16 @@ def save_draft(slug: str) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 403
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {e}"}), 500
+        logger.exception(
+            "Unexpected error in save_draft",
+            exc_info=e,
+            extra={
+                "slug": slug,
+                "author_id": g.current_user.id,
+                "content_length": len(content),
+            },
+        )
+        raise
 
 
 @posts_bp.route("/<slug>", methods=["DELETE"])
@@ -418,9 +444,19 @@ def delete_draft(slug: str) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 403
         return jsonify({"error": str(e)}), 400
     except RuntimeError as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception(
+            "Runtime error in delete_draft",
+            exc_info=e,
+            extra={"slug": slug, "author_id": g.current_user.id},
+        )
+        raise
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {e}"}), 500
+        logger.exception(
+            "Unexpected error in delete_draft",
+            exc_info=e,
+            extra={"slug": slug, "author_id": g.current_user.id},
+        )
+        raise
 
 
 @posts_bp.route("/<slug>/publish", methods=["POST"])
@@ -462,7 +498,12 @@ def publish_post(slug: str) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 400
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {e}"}), 500
+        logger.exception(
+            "Unexpected error in publish_post",
+            exc_info=e,
+            extra={"slug": slug, "author_id": g.current_user.id},
+        )
+        raise
 
 
 @posts_bp.route("/<slug>/unpublish", methods=["POST"])
@@ -502,7 +543,12 @@ def unpublish_post(slug: str) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 403
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {e}"}), 500
+        logger.exception(
+            "Unexpected error in unpublish_post",
+            exc_info=e,
+            extra={"slug": slug, "author_id": g.current_user.id},
+        )
+        raise
 
 
 @posts_bp.route("/my-posts", methods=["GET"])
@@ -567,4 +613,14 @@ def list_my_posts() -> tuple[Response, int]:
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        return jsonify({"error": f"Internal server error: {e}"}), 500
+        logger.exception(
+            "Unexpected error in list_my_posts",
+            exc_info=e,
+            extra={
+                "author_id": g.current_user.id,
+                "filter": filter_param,
+                "page": page,
+                "limit": limit,
+            },
+        )
+        raise
