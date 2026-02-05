@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AuthProvider } from "@/context/AuthContext";
@@ -7,6 +8,17 @@ import Forbidden from "@/pages/Forbidden";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
+
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: 5 * 60 * 1000,
+			gcTime: 10 * 60 * 1000,
+			retry: 3,
+			refetchOnWindowFocus: false,
+		},
+	},
+});
 
 /**
  * Application routes component
@@ -58,10 +70,12 @@ export function AppRoutes() {
  */
 export default function App() {
 	return (
-		<BrowserRouter>
-			<AuthProvider>
-				<AppRoutes />
-			</AuthProvider>
-		</BrowserRouter>
+		<QueryClientProvider client={queryClient}>
+			<BrowserRouter>
+				<AuthProvider>
+					<AppRoutes />
+				</AuthProvider>
+			</BrowserRouter>
+		</QueryClientProvider>
 	);
 }

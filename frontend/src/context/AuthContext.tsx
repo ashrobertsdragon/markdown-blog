@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/clerk-react";
+import { useAuth as useClerkAuth, useUser } from "@clerk/clerk-react";
 import type { UserResource } from "@clerk/shared/types";
 import type { ReactNode } from "react";
 import { createContext, useContext } from "react";
@@ -10,6 +10,7 @@ export interface AuthContextType {
 	isLoaded: boolean;
 	isSignedIn: boolean | undefined;
 	role: "authenticated" | "author" | "admin";
+	getToken: (options?: { template?: string }) => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +21,7 @@ export interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
 	const { user, isLoaded, isSignedIn } = useUser();
+	const { getToken } = useClerkAuth();
 
 	const roleValue = user?.publicMetadata?.role;
 	const role: AuthContextType["role"] =
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		isLoaded,
 		isSignedIn,
 		role,
+		getToken,
 	};
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
