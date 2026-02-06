@@ -1,45 +1,45 @@
-import { Loader2 } from "lucide-react";
-import type { ReactNode } from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { Loader2 } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 
 export interface ProtectedRouteProps {
-	children: ReactNode;
-	requireRole?: "authenticated" | "author" | "admin";
+  children: ReactNode
+  requireRole?: 'authenticated' | 'author' | 'admin'
 }
 
 const canUserAccessRole = (
-	userRole: "authenticated" | "author" | "admin",
-	requiredRole: "authenticated" | "author" | "admin",
+  userRole: 'authenticated' | 'author' | 'admin',
+  requiredRole: 'authenticated' | 'author' | 'admin'
 ): boolean => {
-	const roleHierarchy = {
-		authenticated: 1,
-		author: 2,
-		admin: 3,
-	};
+  const roleHierarchy = {
+    authenticated: 1,
+    author: 2,
+    admin: 3,
+  }
 
-	return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
-};
+  return roleHierarchy[userRole] >= roleHierarchy[requiredRole]
+}
 
 export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
-	const { isLoaded, isSignedIn, role } = useAuth();
-	const location = useLocation();
+  const { isLoaded, isSignedIn, role } = useAuth()
+  const location = useLocation()
 
-	if (!isLoaded) {
-		return (
-			<div className="flex h-screen items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin" />
-			</div>
-		);
-	}
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
 
-	if (!isSignedIn) {
-		return <Navigate to="/login" state={{ from: location }} replace />;
-	}
+  if (!isSignedIn) {
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
 
-	if (requireRole && !canUserAccessRole(role, requireRole)) {
-		return <Navigate to="/forbidden" replace />;
-	}
+  if (requireRole && !canUserAccessRole(role, requireRole)) {
+    return <Navigate to="/forbidden" replace />
+  }
 
-	return <>{children}</>;
+  return <>{children}</>
 }

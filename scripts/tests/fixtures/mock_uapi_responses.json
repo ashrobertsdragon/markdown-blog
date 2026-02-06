@@ -1,163 +1,160 @@
 {
-  "database_create_success": {
-    "status": 1,
-    "errors": null,
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "create_database",
-      "reason": "OK",
-      "result": 1,
-      "transformed": 1
-    },
-    "data": "cpaneluser_blogdb"
-  },
-  "database_create_failure": {
-    "status": 0,
-    "errors": ["A database with that name already exists"],
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "create_database",
-      "reason": "Database creation failed",
-      "result": 0,
-      "transformed": 1
-    },
-    "data": null
-  },
-  "database_list_empty": {
-    "status": 1,
-    "errors": null,
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "list_databases",
-      "reason": "OK",
-      "result": 1,
-      "transformed": 1
-    },
-    "data": []
-  },
-  "database_list_with_blogdb": {
-    "status": 1,
-    "errors": null,
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "list_databases",
-      "reason": "OK",
-      "result": 1,
-      "transformed": 1
-    },
-    "data": [
-      {
-        "database": "cpaneluser_blogdb",
-        "disk_usage": "5242880"
-      }
-    ]
-  },
-  "user_create_success": {
-    "status": 1,
-    "errors": null,
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "create_user",
-      "reason": "OK",
-      "result": 1,
-      "transformed": 1
-    },
-    "data": "cpaneluser_pguser"
-  },
-  "user_create_failure": {
-    "status": 0,
-    "errors": ["A user with that name already exists"],
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "create_user",
-      "reason": "User creation failed",
-      "result": 0,
-      "transformed": 1
-    },
-    "data": null
-  },
-  "user_list_empty": {
-    "status": 1,
-    "errors": null,
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "list_users",
-      "reason": "OK",
-      "result": 1,
-      "transformed": 1
-    },
-    "data": []
-  },
-  "user_list_with_pguser": {
-    "status": 1,
-    "errors": null,
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "list_users",
-      "reason": "OK",
-      "result": 1,
-      "transformed": 1
-    },
-    "data": [
-      {
-        "user": "cpaneluser_pguser"
-      }
-    ]
-  },
-  "grant_privileges_success": {
-    "status": 1,
-    "errors": null,
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "set_privileges_on_database",
-      "reason": "OK",
-      "result": 1,
-      "transformed": 1
-    },
-    "data": "Privileges granted successfully"
-  },
-  "grant_privileges_failure": {
-    "status": 0,
-    "errors": ["Failed to grant privileges"],
-    "messages": null,
-    "metadata": {
-      "version": 1,
-      "command": "set_privileges_on_database",
-      "reason": "Grant privileges failed",
-      "result": 0,
-      "transformed": 1
-    },
-    "data": null
-  },
-  "health_check_success": {
-    "status": "healthy",
-    "timestamp": "2025-12-14T12:00:00Z",
-    "services": {
-      "database": "ok",
-      "filesystem": "ok",
-      "github": "ok"
-    }
-  },
-  "health_check_failure": {
-    "status": "unhealthy",
-    "timestamp": "2025-12-14T12:00:00Z",
-    "services": {
-      "database": "error",
-      "filesystem": "ok",
-      "github": "timeout"
-    },
-    "errors": [
-      "Database connection failed",
-      "GitHub API unreachable"
-    ]
-  }
+	"database_create_success": {
+		"status": 1,
+		"errors": null,
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "create_database",
+			"reason": "OK",
+			"result": 1,
+			"transformed": 1
+		},
+		"data": "cpaneluser_blogdb"
+	},
+	"database_create_failure": {
+		"status": 0,
+		"errors": ["A database with that name already exists"],
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "create_database",
+			"reason": "Database creation failed",
+			"result": 0,
+			"transformed": 1
+		},
+		"data": null
+	},
+	"database_list_empty": {
+		"status": 1,
+		"errors": null,
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "list_databases",
+			"reason": "OK",
+			"result": 1,
+			"transformed": 1
+		},
+		"data": []
+	},
+	"database_list_with_blogdb": {
+		"status": 1,
+		"errors": null,
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "list_databases",
+			"reason": "OK",
+			"result": 1,
+			"transformed": 1
+		},
+		"data": [
+			{
+				"database": "cpaneluser_blogdb",
+				"disk_usage": "5242880"
+			}
+		]
+	},
+	"user_create_success": {
+		"status": 1,
+		"errors": null,
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "create_user",
+			"reason": "OK",
+			"result": 1,
+			"transformed": 1
+		},
+		"data": "cpaneluser_pguser"
+	},
+	"user_create_failure": {
+		"status": 0,
+		"errors": ["A user with that name already exists"],
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "create_user",
+			"reason": "User creation failed",
+			"result": 0,
+			"transformed": 1
+		},
+		"data": null
+	},
+	"user_list_empty": {
+		"status": 1,
+		"errors": null,
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "list_users",
+			"reason": "OK",
+			"result": 1,
+			"transformed": 1
+		},
+		"data": []
+	},
+	"user_list_with_pguser": {
+		"status": 1,
+		"errors": null,
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "list_users",
+			"reason": "OK",
+			"result": 1,
+			"transformed": 1
+		},
+		"data": [
+			{
+				"user": "cpaneluser_pguser"
+			}
+		]
+	},
+	"grant_privileges_success": {
+		"status": 1,
+		"errors": null,
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "set_privileges_on_database",
+			"reason": "OK",
+			"result": 1,
+			"transformed": 1
+		},
+		"data": "Privileges granted successfully"
+	},
+	"grant_privileges_failure": {
+		"status": 0,
+		"errors": ["Failed to grant privileges"],
+		"messages": null,
+		"metadata": {
+			"version": 1,
+			"command": "set_privileges_on_database",
+			"reason": "Grant privileges failed",
+			"result": 0,
+			"transformed": 1
+		},
+		"data": null
+	},
+	"health_check_success": {
+		"status": "healthy",
+		"timestamp": "2025-12-14T12:00:00Z",
+		"services": {
+			"database": "ok",
+			"filesystem": "ok",
+			"github": "ok"
+		}
+	},
+	"health_check_failure": {
+		"status": "unhealthy",
+		"timestamp": "2025-12-14T12:00:00Z",
+		"services": {
+			"database": "error",
+			"filesystem": "ok",
+			"github": "timeout"
+		},
+		"errors": ["Database connection failed", "GitHub API unreachable"]
+	}
 }

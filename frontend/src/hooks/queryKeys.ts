@@ -1,4 +1,4 @@
-import type { PostFilter } from "@/services/postsApi";
+import type { PostFilter } from '@/services/postsApi'
 
 /**
  * Query key factory for React Query cache management
@@ -7,14 +7,14 @@ import type { PostFilter } from "@/services/postsApi";
  * and simplify cache invalidation across the application.
  */
 export const queryKeys = {
-	/**
-	 * Query key for fetching a single draft by slug
-	 */
-	draft: (slug: string) => ["draft", slug] as const,
+  /**
+   * Query key for fetching a single draft by slug
+   */
+  draft: (slug: string) => ['draft', slug] as const,
 
-	/**
-	 * Query key for listing authenticated user's posts with optional filtering
-	 */
-	myPosts: (params?: { filter?: PostFilter; page?: number; limit?: number }) =>
-		["myPosts", params ?? {}] as const,
-};
+  /**
+   * Query key for listing authenticated user's posts with optional filtering
+   */
+  myPosts: (params?: { filter?: PostFilter; page?: number; limit?: number }) =>
+    ['myPosts', params ?? {}] as const,
+}
