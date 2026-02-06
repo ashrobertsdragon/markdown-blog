@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   - Installed @uiw/react-md-editor (v4.0.11) for markdown editing UI
   - Installed react-syntax-highlighter (v16.1.0) for code block highlighting
-  - Both packages React 19 compatible with no peer conflicts
+  - Both packages are React 19 compatible with no peer conflicts
 
 ### Changed
 

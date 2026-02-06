@@ -1,11 +1,28 @@
 import axios, { type AxiosError } from "axios";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { postsApi } from "@/services/postsApi";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+/**
+ * Hoist the mock instance so it's available to the vi.mock factory
+ */
+const { mockAxiosInstance } = vi.hoisted(() => ({
+	mockAxiosInstance: {
+		get: vi.fn(),
+		post: vi.fn(),
+		put: vi.fn(),
+		delete: vi.fn(),
+	},
+}));
 
 /**
  * Mock axios module for isolated unit testing
  */
-vi.mock("axios");
+vi.mock("axios", () => ({
+	default: {
+		create: vi.fn(() => mockAxiosInstance),
+	},
+}));
+
+import { postsApi } from "@/services/postsApi";
 
 /**
  * Test suite for posts API client service
@@ -18,18 +35,6 @@ vi.mock("axios");
  * - Error handling and propagation
  */
 describe("postsApi", () => {
-	const mockAxiosCreate = vi.mocked(axios.create);
-	const mockAxiosInstance = {
-		get: vi.fn(),
-		post: vi.fn(),
-		put: vi.fn(),
-		delete: vi.fn(),
-	};
-
-	beforeEach(() => {
-		mockAxiosCreate.mockReturnValue(mockAxiosInstance as never);
-	});
-
 	afterEach(() => {
 		vi.clearAllMocks();
 	});
@@ -232,15 +237,8 @@ describe("postsApi", () => {
 		it("should call PUT /api/posts/:slug with markdown content and Authorization header", async () => {
 			const mockResponse = {
 				data: {
-					id: 1,
+					message: "Draft saved successfully",
 					slug: "test-post",
-					title: "Test Post",
-					author_id: 42,
-					html_content: "<p>Updated content</p>",
-					published: false,
-					published_at: null,
-					created_at: "2026-02-03T10:00:00Z",
-					updated_at: "2026-02-03T10:30:00Z",
 				},
 			};
 
@@ -551,10 +549,10 @@ describe("postsApi", () => {
 
 	/**
 	 * Tests for listMyPosts()
-	 * GET /api/my-posts
+	 * GET /api/posts/my-posts
 	 */
 	describe("listMyPosts", () => {
-		it("should call GET /api/my-posts with default pagination and Authorization header", async () => {
+		it("should call GET /api/posts/my-posts with default pagination and Authorization header", async () => {
 			const mockResponse = {
 				data: {
 					posts: [
@@ -591,13 +589,13 @@ describe("postsApi", () => {
 			mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
 			const result = await postsApi.listMyPosts(
+				"mock-jwt-token",
 				undefined,
 				1,
 				20,
-				"mock-jwt-token",
 			);
 
-			expect(mockAxiosInstance.get).toHaveBeenCalledWith("/my-posts", {
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith("/posts/my-posts", {
 				params: { page: 1, limit: 20 },
 				headers: { Authorization: "Bearer mock-jwt-token" },
 			});
@@ -606,7 +604,7 @@ describe("postsApi", () => {
 			expect(result.posts).toHaveLength(2);
 		});
 
-		it("should call GET /api/my-posts with filter parameter (published)", async () => {
+		it("should call GET /api/posts/my-posts with filter parameter (published)", async () => {
 			const mockResponse = {
 				data: {
 					posts: [
@@ -632,13 +630,13 @@ describe("postsApi", () => {
 			mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
 			const result = await postsApi.listMyPosts(
+				"mock-jwt-token",
 				"published",
 				1,
 				20,
-				"mock-jwt-token",
 			);
 
-			expect(mockAxiosInstance.get).toHaveBeenCalledWith("/my-posts", {
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith("/posts/my-posts", {
 				params: { filter: "published", page: 1, limit: 20 },
 				headers: { Authorization: "Bearer mock-jwt-token" },
 			});
@@ -647,7 +645,7 @@ describe("postsApi", () => {
 			expect(result.posts.every((p) => p.published)).toBe(true);
 		});
 
-		it("should call GET /api/my-posts with filter parameter (drafts)", async () => {
+		it("should call GET /api/posts/my-posts with filter parameter (drafts)", async () => {
 			const mockResponse = {
 				data: {
 					posts: [
@@ -673,13 +671,13 @@ describe("postsApi", () => {
 			mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
 			const result = await postsApi.listMyPosts(
+				"mock-jwt-token",
 				"drafts",
 				1,
 				20,
-				"mock-jwt-token",
 			);
 
-			expect(mockAxiosInstance.get).toHaveBeenCalledWith("/my-posts", {
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith("/posts/my-posts", {
 				params: { filter: "drafts", page: 1, limit: 20 },
 				headers: { Authorization: "Bearer mock-jwt-token" },
 			});
@@ -688,7 +686,7 @@ describe("postsApi", () => {
 			expect(result.posts.every((p) => !p.published)).toBe(true);
 		});
 
-		it("should call GET /api/my-posts with custom pagination parameters", async () => {
+		it("should call GET /api/posts/my-posts with custom pagination parameters", async () => {
 			const mockResponse = {
 				data: {
 					posts: [],
@@ -701,14 +699,9 @@ describe("postsApi", () => {
 
 			mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
-			const result = await postsApi.listMyPosts(
-				undefined,
-				3,
-				10,
-				"mock-jwt-token",
-			);
+			const result = await postsApi.listMyPosts("mock-jwt-token", undefined, 3, 10);
 
-			expect(mockAxiosInstance.get).toHaveBeenCalledWith("/my-posts", {
+			expect(mockAxiosInstance.get).toHaveBeenCalledWith("/posts/my-posts", {
 				params: { page: 3, limit: 10 },
 				headers: { Authorization: "Bearer mock-jwt-token" },
 			});
@@ -735,7 +728,7 @@ describe("postsApi", () => {
 			mockAxiosInstance.get.mockRejectedValueOnce(mockError);
 
 			await expect(
-				postsApi.listMyPosts(undefined, 1, 20, "invalid-token"),
+				postsApi.listMyPosts("invalid-token", undefined, 1, 20),
 			).rejects.toMatchObject({
 				isAxiosError: true,
 				response: { status: 401 },
@@ -756,29 +749,14 @@ describe("postsApi", () => {
 			mockAxiosInstance.get.mockResolvedValueOnce(mockResponse);
 
 			const result = await postsApi.listMyPosts(
+				"mock-jwt-token",
 				undefined,
 				1,
 				20,
-				"mock-jwt-token",
 			);
 
 			expect(result.posts).toEqual([]);
 			expect(result.total_count).toBe(0);
-		});
-	});
-
-	/**
-	 * Integration test verifying axios instance configuration
-	 *
-	 * NOTE: Skipped because vi.clearAllMocks() in afterEach clears the call history
-	 * from module initialization. The actual baseURL configuration is validated
-	 * indirectly by all 25 functional tests that verify requests go to correct endpoints.
-	 */
-	describe.skip("axios instance configuration", () => {
-		it("should create axios instance with correct baseURL from env", () => {
-			expect(mockAxiosCreate).toHaveBeenCalledWith({
-				baseURL: expect.any(String),
-			});
 		});
 	});
 });

@@ -41,26 +41,19 @@ export type PostFilter = "all" | "drafts" | "published";
 
 /**
  * API client instance
- *
- * Attempts eager initialization. In test environment with auto-mocking,
- * the initial call may return undefined, so we use lazy initialization
- * as fallback via getApiClient().
  */
-let apiClientInstance = axios.create({
-	baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+
+export const apiClient = axios.create({
+	baseURL: API_BASE_URL,
 });
 
 /**
- * Get API client instance, creating it lazily if eager init returned undefined
+ * Helper to create authorization header config
  */
-const getApiClient = () => {
-	if (!apiClientInstance) {
-		apiClientInstance = axios.create({
-			baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
-		});
-	}
-	return apiClientInstance;
-};
+const getAuthHeaders = (token: string) => ({
+	headers: { Authorization: `Bearer ${token}` },
+});
 
 /**
  * Posts API service object
@@ -80,12 +73,10 @@ export const postsApi = {
 		title: string,
 		token: string,
 	): Promise<PostResponse> {
-		const response = await getApiClient().post<PostResponse>(
+		const response = await apiClient.post<PostResponse>(
 			"/posts",
 			{ slug, title },
-			{
-				headers: { Authorization: `Bearer ${token}` },
-			},
+			getAuthHeaders(token),
 		);
 		return response.data;
 	},
@@ -99,9 +90,10 @@ export const postsApi = {
 	 * @throws AxiosError on not found (404) or forbidden access (403)
 	 */
 	async getDraft(slug: string, token: string): Promise<PostResponse> {
-		const response = await getApiClient().get<PostResponse>(`/posts/${slug}`, {
-			headers: { Authorization: `Bearer ${token}` },
-		});
+		const response = await apiClient.get<PostResponse>(
+			`/posts/${slug}`,
+			getAuthHeaders(token),
+		);
 		return response.data;
 	},
 
@@ -111,20 +103,18 @@ export const postsApi = {
 	 * @param slug - Post slug identifier
 	 * @param content - Markdown content to save
 	 * @param token - JWT authentication token
-	 * @returns Updated post data
+	 * @returns Success message and slug
 	 * @throws AxiosError on validation errors (422), not found (404), or forbidden (403)
 	 */
 	async saveDraft(
 		slug: string,
 		content: string,
 		token: string,
-	): Promise<PostResponse> {
-		const response = await getApiClient().put<PostResponse>(
+	): Promise<SaveDraftResponse> {
+		const response = await apiClient.put<SaveDraftResponse>(
 			`/posts/${slug}`,
 			{ content },
-			{
-				headers: { Authorization: `Bearer ${token}` },
-			},
+			getAuthHeaders(token),
 		);
 		return response.data;
 	},
@@ -137,9 +127,7 @@ export const postsApi = {
 	 * @throws AxiosError on not found (404) or forbidden access (403)
 	 */
 	async deleteDraft(slug: string, token: string): Promise<void> {
-		await getApiClient().delete(`/posts/${slug}`, {
-			headers: { Authorization: `Bearer ${token}` },
-		});
+		await apiClient.delete(`/posts/${slug}`, getAuthHeaders(token));
 	},
 
 	/**
@@ -151,12 +139,10 @@ export const postsApi = {
 	 * @throws AxiosError on not found (404) or already published (409)
 	 */
 	async publishPost(slug: string, token: string): Promise<PostResponse> {
-		const response = await getApiClient().post<PostResponse>(
+		const response = await apiClient.post<PostResponse>(
 			`/posts/${slug}/publish`,
 			{},
-			{
-				headers: { Authorization: `Bearer ${token}` },
-			},
+			getAuthHeaders(token),
 		);
 		return response.data;
 	},
@@ -170,12 +156,10 @@ export const postsApi = {
 	 * @throws AxiosError on not found (404) or not published (409)
 	 */
 	async unpublishPost(slug: string, token: string): Promise<PostResponse> {
-		const response = await getApiClient().post<PostResponse>(
+		const response = await apiClient.post<PostResponse>(
 			`/posts/${slug}/unpublish`,
 			{},
-			{
-				headers: { Authorization: `Bearer ${token}` },
-			},
+			getAuthHeaders(token),
 		);
 		return response.data;
 	},
@@ -183,18 +167,18 @@ export const postsApi = {
 	/**
 	 * List posts belonging to the authenticated user
 	 *
+	 * @param token - JWT authentication token
 	 * @param filter - Optional filter: 'all', 'drafts', or 'published'
 	 * @param page - Page number (defaults to 1)
 	 * @param limit - Results per page (defaults to 20)
-	 * @param token - JWT authentication token
 	 * @returns Paginated list of posts with metadata
 	 * @throws AxiosError on unauthorized (401)
 	 */
 	async listMyPosts(
+		token: string,
 		filter?: PostFilter,
 		page?: number,
 		limit?: number,
-		token?: string,
 	): Promise<ListPostsResponse> {
 		const params: Record<string, string | number> = {
 			page: page ?? 1,
@@ -205,9 +189,9 @@ export const postsApi = {
 			params.filter = filter;
 		}
 
-		const response = await getApiClient().get<ListPostsResponse>("/my-posts", {
+		const response = await apiClient.get<ListPostsResponse>("/posts/my-posts", {
 			params,
-			headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+			...getAuthHeaders(token),
 		});
 		return response.data;
 	},
