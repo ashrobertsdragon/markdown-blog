@@ -1,425 +1,406 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from '@playwright/test'
 import {
-	getAuthToken,
-	verifyBearerTokenFormat,
-	verifyRedirectToLogin,
-	waitForAuthToLoad,
-} from "./fixtures/helpers";
-
-test.describe("Authentication Flow", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/");
-		await waitForAuthToLoad(page);
-	});
-
-	test("unauthenticated user redirected to /login when accessing /admin", async ({
-		page,
-	}) => {
-		await page.goto("/admin");
-		await expect(page).toHaveURL("/login");
-		await expect(page.locator("text=Sign In to Your Account")).toBeVisible();
-	});
-
-	test("unauthenticated user redirected to /login when accessing /author", async ({
-		page,
-	}) => {
-		await page.goto("/author");
-		await expect(page).toHaveURL("/login");
-		await expect(page.locator("text=Sign In to Your Account")).toBeVisible();
-	});
-
-	test("protected route login redirect includes location state", async ({
-		page,
-	}) => {
-		await page.goto("/admin");
-		await page.waitForURL("/login", { timeout: 5000 });
-
-		await expect(page).toHaveURL(/\/login/);
-
-		const url = new URL(page.url());
-		expect(url.pathname).toBe("/login");
-	});
-
-	test("public routes accessible without authentication", async ({ page }) => {
-		await page.goto("/");
-		await expect(page).toHaveURL("/");
-		await expect(page.locator("h1")).toBeVisible();
-	});
-
-	test("forbidden page accessible to all users", async ({ page }) => {
-		await page.goto("/forbidden");
-		await expect(page).toHaveURL("/forbidden");
-		await expect(page.locator("h1")).toBeVisible();
-	});
-
-	test("404 page displayed for invalid routes", async ({ page }) => {
-		await page.goto("/nonexistent-route-12345");
-		await expect(page).toHaveURL("/nonexistent-route-12345");
-		await expect(page.locator("text=404")).toBeVisible();
-	});
-
-	test("login page displays sign-in form", async ({ page }) => {
-		await page.goto("/login");
-		await page.waitForLoadState("networkidle");
-
-		const signInForm = page.locator('[class*="SignIn"]');
-		expect(signInForm).toBeDefined();
-	});
-
-	test("JWT token structure validation", async ({ page }) => {
-		const token = await getAuthToken(page);
-
-		if (token) {
-			verifyBearerTokenFormat(token);
-		}
-	});
-
-	test("home page accessible after authentication state loads", async ({
-		page,
-	}) => {
-		await page.goto("/");
-
-		const loadingSpinner = page.locator(".animate-spin");
-		const isVisible = await loadingSpinner.isVisible().catch(() => false);
-
-		if (isVisible) {
-			await loadingSpinner.waitFor({ state: "hidden", timeout: 10000 });
-		}
-
-		await expect(page).toHaveURL("/");
-		expect(page.url()).toBe("http://localhost:3000/");
-	});
-
-	test("multiple navigation redirects handled correctly", async ({ page }) => {
-		await page.goto("/admin");
-		await expect(page).toHaveURL("/login");
-
-		await page.goto("/author");
-		await expect(page).toHaveURL(/\/(?:login|author)/);
-
-		await page.goto("/");
-		await expect(page).toHaveURL("/");
-	});
-
-	test("page refresh maintains authentication state", async ({ page }) => {
-		await page.goto("/");
-		await waitForAuthToLoad(page);
+  getAuthToken,
+  verifyBearerTokenFormat,
+  verifyRedirectToLogin,
+  waitForAuthToLoad,
+} from './fixtures/helpers'
+
+test.describe('Authentication Flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await waitForAuthToLoad(page)
+  })
+
+  test('unauthenticated user redirected to /login when accessing /admin', async ({ page }) => {
+    await page.goto('/admin')
+    await expect(page).toHaveURL('/login')
+    await expect(page.locator('text=Sign In to Your Account')).toBeVisible()
+  })
+
+  test('unauthenticated user redirected to /login when accessing /author', async ({ page }) => {
+    await page.goto('/author')
+    await expect(page).toHaveURL('/login')
+    await expect(page.locator('text=Sign In to Your Account')).toBeVisible()
+  })
+
+  test('protected route login redirect includes location state', async ({ page }) => {
+    await page.goto('/admin')
+    await page.waitForURL('/login', { timeout: 5000 })
+
+    await expect(page).toHaveURL(/\/login/)
+
+    const url = new URL(page.url())
+    expect(url.pathname).toBe('/login')
+  })
+
+  test('public routes accessible without authentication', async ({ page }) => {
+    await page.goto('/')
+    await expect(page).toHaveURL('/')
+    await expect(page.locator('h1')).toBeVisible()
+  })
 
-		const initialUrl = page.url();
+  test('forbidden page accessible to all users', async ({ page }) => {
+    await page.goto('/forbidden')
+    await expect(page).toHaveURL('/forbidden')
+    await expect(page.locator('h1')).toBeVisible()
+  })
 
-		await page.reload();
-		await waitForAuthToLoad(page);
+  test('404 page displayed for invalid routes', async ({ page }) => {
+    await page.goto('/nonexistent-route-12345')
+    await expect(page).toHaveURL('/nonexistent-route-12345')
+    await expect(page.locator('text=404')).toBeVisible()
+  })
 
-		expect(page.url()).toBe(initialUrl);
-	});
+  test('login page displays sign-in form', async ({ page }) => {
+    await page.goto('/login')
+    await page.waitForLoadState('networkidle')
 
-	test("network error during auth loading shows graceful fallback", async ({
-		page,
-	}) => {
-		await page.goto("/");
+    const signInForm = page.locator('[class*="SignIn"]')
+    expect(signInForm).toBeDefined()
+  })
 
-		await page.waitForLoadState("networkidle");
-		const content = await page.content();
+  test('JWT token structure validation', async ({ page }) => {
+    const token = await getAuthToken(page)
 
-		expect(content).toBeTruthy();
-		expect(content.length).toBeGreaterThan(0);
-	});
+    if (token) {
+      verifyBearerTokenFormat(token)
+    }
+  })
 
-	test("auth context provides user state", async ({ page }) => {
-		await page.goto("/");
+  test('home page accessible after authentication state loads', async ({ page }) => {
+    await page.goto('/')
+
+    const loadingSpinner = page.locator('.animate-spin')
+    const isVisible = await loadingSpinner.isVisible().catch(() => false)
+
+    if (isVisible) {
+      await loadingSpinner.waitFor({ state: 'hidden', timeout: 10000 })
+    }
+
+    await expect(page).toHaveURL('/')
+    expect(page.url()).toBe('http://localhost:3000/')
+  })
+
+  test('multiple navigation redirects handled correctly', async ({ page }) => {
+    await page.goto('/admin')
+    await expect(page).toHaveURL('/login')
+
+    await page.goto('/author')
+    await expect(page).toHaveURL(/\/(?:login|author)/)
+
+    await page.goto('/')
+    await expect(page).toHaveURL('/')
+  })
+
+  test('page refresh maintains authentication state', async ({ page }) => {
+    await page.goto('/')
+    await waitForAuthToLoad(page)
+
+    const initialUrl = page.url()
+
+    await page.reload()
+    await waitForAuthToLoad(page)
 
-		const authStateExists = await page.evaluate(() => {
-			return document.body.innerHTML.length > 0;
-		});
+    expect(page.url()).toBe(initialUrl)
+  })
 
-		expect(authStateExists).toBeTruthy();
-	});
+  test('network error during auth loading shows graceful fallback', async ({ page }) => {
+    await page.goto('/')
 
-	test("protected route shows loading spinner while auth loads", async () => {
-		test.skip(true, "Requires complex interceptor setup");
-	});
+    await page.waitForLoadState('networkidle')
+    const content = await page.content()
 
-	test("session persistence across page navigations", async ({ page }) => {
-		await page.goto("/");
-		await waitForAuthToLoad(page);
+    expect(content).toBeTruthy()
+    expect(content.length).toBeGreaterThan(0)
+  })
 
-		const initialUrl = page.url();
+  test('auth context provides user state', async ({ page }) => {
+    await page.goto('/')
 
-		await page.goto("/login");
-		await page.goBack();
+    const authStateExists = await page.evaluate(() => {
+      return document.body.innerHTML.length > 0
+    })
 
-		expect(page.url()).toBe(initialUrl);
-	});
+    expect(authStateExists).toBeTruthy()
+  })
 
-	test("rapid navigation between protected routes handled", async ({
-		page,
-	}) => {
-		const navigationPromise1 = page.goto("/admin");
-		const navigationPromise2 = page.goto("/author");
+  test('protected route shows loading spinner while auth loads', async () => {
+    test.skip(true, 'Requires complex interceptor setup')
+  })
 
-		await navigationPromise1;
-		await navigationPromise2;
+  test('session persistence across page navigations', async ({ page }) => {
+    await page.goto('/')
+    await waitForAuthToLoad(page)
 
-		await expect(page).toHaveURL(/\/(login|author|admin)/);
-	});
+    const initialUrl = page.url()
 
-	test("API health check endpoint returns 200", async ({ page }) => {
-		const response = await page.request.get("/health");
-		expect(response.ok()).toBeTruthy();
-		expect(response.status()).toBe(200);
+    await page.goto('/login')
+    await page.goBack()
 
-		const data = await response.json();
-		expect(data).toHaveProperty("status");
-		expect(data.status).toBe("healthy");
-	});
+    expect(page.url()).toBe(initialUrl)
+  })
 
-	test("API database health endpoint accessible", async ({ page }) => {
-		const response = await page.request.get("/health/db");
-		expect(response.ok()).toBeTruthy();
-		expect(response.status()).toBe(200);
-	});
+  test('rapid navigation between protected routes handled', async ({ page }) => {
+    const navigationPromise1 = page.goto('/admin')
+    const navigationPromise2 = page.goto('/author')
 
-	test("API GitHub health endpoint accessible", async ({ page }) => {
-		const response = await page.request.get("/health/github");
-		expect([200, 503]).toContain(response.status());
-	});
+    await navigationPromise1
+    await navigationPromise2
 
-	test("unauthenticated /auth/me request returns 401", async ({ page }) => {
-		const response = await page.request.get("/api/auth/me", {
-			headers: {
-				Accept: "application/json",
-			},
-		});
+    await expect(page).toHaveURL(/\/(login|author|admin)/)
+  })
 
-		expect(response.status()).toBe(401);
-	});
+  test('API health check endpoint returns 200', async ({ page }) => {
+    const response = await page.request.get('/health')
+    expect(response.ok()).toBeTruthy()
+    expect(response.status()).toBe(200)
 
-	test("login page redirects authenticated users", async ({ page }) => {
-		const token = await getAuthToken(page);
+    const data = await response.json()
+    expect(data).toHaveProperty('status')
+    expect(data.status).toBe('healthy')
+  })
 
-		if (token) {
-			test.skip(true, "User is already authenticated");
-		}
+  test('API database health endpoint accessible', async ({ page }) => {
+    const response = await page.request.get('/health/db')
+    expect(response.ok()).toBeTruthy()
+    expect(response.status()).toBe(200)
+  })
 
-		await page.goto("/login");
-		await expect(page).toHaveURL("/login");
-	});
+  test('API GitHub health endpoint accessible', async ({ page }) => {
+    const response = await page.request.get('/health/github')
+    expect([200, 503]).toContain(response.status())
+  })
 
-	test("invalid auth tokens are rejected", async ({ page }) => {
-		const response = await page.request.get("/api/auth/me", {
-			headers: {
-				Authorization: "Bearer invalid.token.here",
-			},
-		});
+  test('unauthenticated /auth/me request returns 401', async ({ page }) => {
+    const response = await page.request.get('/api/auth/me', {
+      headers: {
+        Accept: 'application/json',
+      },
+    })
 
-		expect(response.status()).toBe(401);
-	});
+    expect(response.status()).toBe(401)
+  })
 
-	test("authorization header format validation", async ({ page }) => {
-		const responses: number[] = [];
+  test('login page redirects authenticated users', async ({ page }) => {
+    const token = await getAuthToken(page)
 
-		page.on("response", (response) => {
-			if (response.url().includes("/api/")) {
-				responses.push(response.status());
-			}
-		});
+    if (token) {
+      test.skip(true, 'User is already authenticated')
+    }
 
-		await page.goto("/");
+    await page.goto('/login')
+    await expect(page).toHaveURL('/login')
+  })
 
-		expect(responses.length).toBeGreaterThanOrEqual(0);
-	});
+  test('invalid auth tokens are rejected', async ({ page }) => {
+    const response = await page.request.get('/api/auth/me', {
+      headers: {
+        Authorization: 'Bearer invalid.token.here',
+      },
+    })
 
-	test("clerk SDK loads successfully", async ({ page }) => {
-		await page.goto("/login");
-		await page.waitForLoadState("networkidle");
+    expect(response.status()).toBe(401)
+  })
 
-		const clerkLoaded = await page.evaluate(() => {
-			return typeof window !== "undefined" && window.Clerk !== undefined;
-		});
+  test('authorization header format validation', async ({ page }) => {
+    const responses: number[] = []
 
-		expect(clerkLoaded || true).toBeTruthy();
-	});
+    page.on('response', response => {
+      if (response.url().includes('/api/')) {
+        responses.push(response.status())
+      }
+    })
 
-	test("react router configured correctly", async ({ page }) => {
-		await page.goto("/");
+    await page.goto('/')
 
-		const body = await page.locator("body");
-		expect(body).toBeTruthy();
+    expect(responses.length).toBeGreaterThanOrEqual(0)
+  })
 
-		const routes = ["/", "/login", "/admin", "/author", "/forbidden"];
+  test('clerk SDK loads successfully', async ({ page }) => {
+    await page.goto('/login')
+    await page.waitForLoadState('networkidle')
 
-		for (const route of routes) {
-			await page.goto(route);
-			expect(page.url()).toContain(route);
-		}
-	});
-
-	test("app initializes without errors", async ({ page }) => {
-		const consoleErrors: string[] = [];
+    const clerkLoaded = await page.evaluate(() => {
+      return typeof window !== 'undefined' && window.Clerk !== undefined
+    })
 
-		page.on("console", (msg) => {
-			if (msg.type() === "error") {
-				consoleErrors.push(msg.text());
-			}
-		});
+    expect(clerkLoaded || true).toBeTruthy()
+  })
 
-		await page.goto("/");
-		await waitForAuthToLoad(page);
+  test('react router configured correctly', async ({ page }) => {
+    await page.goto('/')
 
-		expect(consoleErrors).toEqual([]);
-	});
+    const body = await page.locator('body')
+    expect(body).toBeTruthy()
 
-	test("navigation state preserved during auth loading", async ({ page }) => {
-		await page.goto("/");
-		await waitForAuthToLoad(page);
+    const routes = ['/', '/login', '/admin', '/author', '/forbidden']
 
-		const currentUrl = page.url();
+    for (const route of routes) {
+      await page.goto(route)
+      expect(page.url()).toContain(route)
+    }
+  })
 
-		await page.goto("/login");
-		await page.goBack();
+  test('app initializes without errors', async ({ page }) => {
+    const consoleErrors: string[] = []
 
-		expect(page.url()).toBe(currentUrl);
-	});
-});
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text())
+      }
+    })
 
-test.describe("Role-Based Access Control", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/");
-		await waitForAuthToLoad(page);
-	});
+    await page.goto('/')
+    await waitForAuthToLoad(page)
 
-	test("unauthenticated user cannot access admin route", async ({ page }) => {
-		await verifyRedirectToLogin(page, "/admin");
-	});
+    expect(consoleErrors).toEqual([])
+  })
 
-	test("unauthenticated user cannot access author route", async ({ page }) => {
-		await verifyRedirectToLogin(page, "/author");
-	});
+  test('navigation state preserved during auth loading', async ({ page }) => {
+    await page.goto('/')
+    await waitForAuthToLoad(page)
 
-	test("role hierarchy enforced in frontend routing", async ({ page }) => {
-		await page.goto("/admin");
+    const currentUrl = page.url()
 
-		if (page.url().includes("/login")) {
-			await expect(page).toHaveURL("/login");
-		} else if (page.url().includes("/admin")) {
-			const adminElement = page.locator("text=Admin");
-			expect(adminElement).toBeDefined();
-		}
-	});
+    await page.goto('/login')
+    await page.goBack()
 
-	test("protected routes require authentication", async ({ page }) => {
-		const protectedRoutes = ["/admin", "/author"];
+    expect(page.url()).toBe(currentUrl)
+  })
+})
 
-		for (const route of protectedRoutes) {
-			await page.goto(route);
+test.describe('Role-Based Access Control', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await waitForAuthToLoad(page)
+  })
 
-			const currentUrl = page.url();
-			expect(
-				currentUrl.includes("/login") ||
-					currentUrl.includes(route) ||
-					currentUrl.includes("/forbidden"),
-			).toBeTruthy();
-		}
-	});
-});
+  test('unauthenticated user cannot access admin route', async ({ page }) => {
+    await verifyRedirectToLogin(page, '/admin')
+  })
 
-test.describe("Browser Compatibility", () => {
-	test("login page renders in all browsers", async ({ page, browserName }) => {
-		await page.goto("/login");
+  test('unauthenticated user cannot access author route', async ({ page }) => {
+    await verifyRedirectToLogin(page, '/author')
+  })
 
-		const signInText = page.locator("text=Sign In");
-		await expect(signInText).toBeVisible();
+  test('role hierarchy enforced in frontend routing', async ({ page }) => {
+    await page.goto('/admin')
 
-		expect(browserName).toMatch(/chromium|firefox|webkit/);
-	});
+    if (page.url().includes('/login')) {
+      await expect(page).toHaveURL('/login')
+    } else if (page.url().includes('/admin')) {
+      const adminElement = page.locator('text=Admin')
+      expect(adminElement).toBeDefined()
+    }
+  })
 
-	test("protected route redirects work in all browsers", async ({
-		page,
-		browserName,
-	}) => {
-		await page.goto("/admin");
+  test('protected routes require authentication', async ({ page }) => {
+    const protectedRoutes = ['/admin', '/author']
 
-		const isLogin = page.url().includes("/login");
-		const isAdmin = page.url().includes("/admin");
-		const isForbidden = page.url().includes("/forbidden");
+    for (const route of protectedRoutes) {
+      await page.goto(route)
 
-		expect(isLogin || isAdmin || isForbidden).toBeTruthy();
-		expect(browserName).toMatch(/chromium|firefox|webkit/);
-	});
+      const currentUrl = page.url()
+      expect(
+        currentUrl.includes('/login') ||
+          currentUrl.includes(route) ||
+          currentUrl.includes('/forbidden')
+      ).toBeTruthy()
+    }
+  })
+})
 
-	test("page navigation works correctly in all browsers", async ({
-		page,
-		browserName,
-	}) => {
-		await page.goto("/");
-		expect(page.url()).toContain("/");
+test.describe('Browser Compatibility', () => {
+  test('login page renders in all browsers', async ({ page, browserName }) => {
+    await page.goto('/login')
 
-		await page.goto("/login");
-		expect(page.url()).toContain("/login");
+    const signInText = page.locator('text=Sign In')
+    await expect(signInText).toBeVisible()
 
-		await page.goBack();
-		expect(page.url()).toContain("/");
+    expect(browserName).toMatch(/chromium|firefox|webkit/)
+  })
 
-		expect(browserName).toMatch(/chromium|firefox|webkit/);
-	});
-});
+  test('protected route redirects work in all browsers', async ({ page, browserName }) => {
+    await page.goto('/admin')
 
-test.describe("Performance and Reliability", () => {
-	test("initial page load completes within timeout", async ({ page }) => {
-		const startTime = Date.now();
+    const isLogin = page.url().includes('/login')
+    const isAdmin = page.url().includes('/admin')
+    const isForbidden = page.url().includes('/forbidden')
 
-		await page.goto("/", { waitUntil: "networkidle" });
+    expect(isLogin || isAdmin || isForbidden).toBeTruthy()
+    expect(browserName).toMatch(/chromium|firefox|webkit/)
+  })
 
-		const loadTime = Date.now() - startTime;
-		expect(loadTime).toBeLessThan(10000);
-	});
+  test('page navigation works correctly in all browsers', async ({ page, browserName }) => {
+    await page.goto('/')
+    expect(page.url()).toContain('/')
 
-	test("protected route redirect completes quickly", async ({ page }) => {
-		const startTime = Date.now();
+    await page.goto('/login')
+    expect(page.url()).toContain('/login')
 
-		await page.goto("/admin");
-		await page.waitForURL(/\/(login|admin|forbidden)/, { timeout: 5000 });
+    await page.goBack()
+    expect(page.url()).toContain('/')
 
-		const redirectTime = Date.now() - startTime;
-		expect(redirectTime).toBeLessThan(5000);
-	});
+    expect(browserName).toMatch(/chromium|firefox|webkit/)
+  })
+})
 
-	test("multiple rapid requests handled without errors", async ({ page }) => {
-		const requests = [];
+test.describe('Performance and Reliability', () => {
+  test('initial page load completes within timeout', async ({ page }) => {
+    const startTime = Date.now()
 
-		for (let i = 0; i < 5; i++) {
-			requests.push(page.request.get("/health"));
-		}
+    await page.goto('/', { waitUntil: 'networkidle' })
 
-		const responses = await Promise.all(requests);
+    const loadTime = Date.now() - startTime
+    expect(loadTime).toBeLessThan(10000)
+  })
 
-		for (const response of responses) {
-			expect(response.ok()).toBeTruthy();
-		}
-	});
+  test('protected route redirect completes quickly', async ({ page }) => {
+    const startTime = Date.now()
 
-	test("page memory usage reasonable after navigation", async ({ page }) => {
-		await page.goto("/");
+    await page.goto('/admin')
+    await page.waitForURL(/\/(login|admin|forbidden)/, { timeout: 5000 })
 
-		const metrics = await page.metrics();
+    const redirectTime = Date.now() - startTime
+    expect(redirectTime).toBeLessThan(5000)
+  })
 
-		expect(metrics.JSHeapUsedSize).toBeLessThan(100000000);
-		expect(metrics.JSHeapTotalSize).toBeLessThan(200000000);
-	});
+  test('multiple rapid requests handled without errors', async ({ page }) => {
+    const requests = []
 
-	test("no memory leaks during repeated navigation", async ({ page }) => {
-		const initialMetrics = await page.metrics();
+    for (let i = 0; i < 5; i++) {
+      requests.push(page.request.get('/health'))
+    }
 
-		for (let i = 0; i < 3; i++) {
-			await page.goto("/");
-			await page.goto("/login");
-			await page.goto("/admin");
-		}
+    const responses = await Promise.all(requests)
 
-		const finalMetrics = await page.metrics();
+    for (const response of responses) {
+      expect(response.ok()).toBeTruthy()
+    }
+  })
 
-		const heapGrowth =
-			finalMetrics.JSHeapUsedSize - initialMetrics.JSHeapUsedSize;
-		expect(Math.abs(heapGrowth)).toBeLessThan(10000000);
-	});
-});
+  test('page memory usage reasonable after navigation', async ({ page }) => {
+    await page.goto('/')
+
+    const metrics = await page.metrics()
+
+    expect(metrics.JSHeapUsedSize).toBeLessThan(100000000)
+    expect(metrics.JSHeapTotalSize).toBeLessThan(200000000)
+  })
+
+  test('no memory leaks during repeated navigation', async ({ page }) => {
+    const initialMetrics = await page.metrics()
+
+    for (let i = 0; i < 3; i++) {
+      await page.goto('/')
+      await page.goto('/login')
+      await page.goto('/admin')
+    }
+
+    const finalMetrics = await page.metrics()
+
+    const heapGrowth = finalMetrics.JSHeapUsedSize - initialMetrics.JSHeapUsedSize
+    expect(Math.abs(heapGrowth)).toBeLessThan(10000000)
+  })
+})

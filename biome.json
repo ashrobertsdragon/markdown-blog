@@ -1,5 +1,5 @@
 {
-  "root": false,
+  "root": true,
   "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
   "vcs": {
     "enabled": true,
@@ -8,7 +8,16 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["frontend/**/*.{js,jsx,ts,tsx}"]
+    "includes": [
+      "**/*.{js,jsx,ts,tsx}",
+      "!!backend",
+      "!!scripts",
+      "!!**/node_modules",
+      "!!**/coverage",
+      "!!**/dist",
+      "!!**/*.json",
+      "!!**/*.html"
+    ]
   },
   "assist": {
     "actions": {

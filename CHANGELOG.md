@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Frontend**: React Query hooks for post management with type-safe cache invalidation
+
+  - Implemented data fetching hooks: useDraft (retrieve single draft), useMyPosts (list author's posts with filtering)
+  - Implemented mutation hooks: useCreateDraft, useSaveDraft, usePublishPost, useUnpublishPost, useDeleteDraft
+  - Optimistic updates and automatic cache invalidation on successful mutations
+  - QueryClientProvider configuration with React Query DevTools for development debugging
+  - Query key factory pattern for consistent cache management across components
+  - Type-safe integration with backend API endpoints ensuring compile-time validation
+
+- **Frontend**: Markdown editor dependencies for post management
+
+  - Installed @uiw/react-md-editor (v4.0.11) for markdown editing UI
+  - Installed react-syntax-highlighter (v16.1.0) for code block highlighting
+  - Both packages are React 19 compatible with no peer conflicts
+
 ### Changed
 
 - **Backend**: Post table schema update for improved field naming and querying
