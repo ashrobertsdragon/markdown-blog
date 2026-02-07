@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: Markdown editor component with XSS protection and keyboard shortcuts
+
+  - Implemented MarkdownEditor component as controlled React component with TypeScript strict typing
+  - Live markdown preview with syntax highlighting powered by @uiw/react-md-editor
+  - XSS attack prevention using rehype-sanitize plugin to sanitize HTML in preview
+  - Ctrl+S (Cmd+S on macOS) keyboard shortcut for saving drafts
+  - Custom className support via cn() utility for Tailwind CSS composition
+  - Comprehensive test suite with 8 unit tests covering all functionality
+  - Async error handling with graceful degradation for failed save operations
+
 - **Frontend**: React Query hooks for post management with type-safe cache invalidation
 
   - Implemented data fetching hooks: useDraft (retrieve single draft), useMyPosts (list author's posts with filtering)
@@ -22,7 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   - Installed @uiw/react-md-editor (v4.0.11) for markdown editing UI
   - Installed react-syntax-highlighter (v16.1.0) for code block highlighting
-  - Both packages are React 19 compatible with no peer conflicts
+  - Installed rehype-sanitize (v6.0.0) for XSS prevention in markdown preview
+  - All packages are React 19 compatible with no peer conflicts
 
 ### Changed
 
