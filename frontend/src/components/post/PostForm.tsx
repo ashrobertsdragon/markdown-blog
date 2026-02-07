@@ -47,7 +47,7 @@ function baseNormalizeSlug(input: string): string {
 /**
  * Normalizes a slug according to requirement 8.1 and enforces max 200 character limit.
  */
-function normalizeSlug(input: string): string {
+function _normalizeSlug(input: string): string {
   return baseNormalizeSlug(input).slice(0, 200)
 }
 
