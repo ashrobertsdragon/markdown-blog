@@ -35,6 +35,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Installed rehype-sanitize (v6.0.0) for XSS prevention in markdown preview
   - All packages are React 19 compatible with no peer conflicts
 
+
+- **Frontend**: PostForm component
+
+  - Form for creating new blog posts with slug and title inputs
+  - Real-time slug normalization: lowercase conversion, spaces to hyphens, special character removal
+  - Client-side validation with inline error messages
+  - Slug validation rules: required, max 200 characters, URL-safe characters only
+  - Title validation: required, no whitespace-only input
+  - Submit button disabled until form is valid
+  - Accessible form controls with proper ARIA attributes (aria-invalid, aria-describedby, role="alert")
+  - TypeScript with comprehensive type safety
+  - Support for initial values and onChange callback
+  - Tailwind CSS styling consistent with project design
+
+- **Frontend**: PreviewPane component
+
+  - Client-side markdown rendering with `marked` library
+  - Syntax highlighting for code blocks via `react-syntax-highlighter` (dracula theme)
+  - XSS prevention via `rehype-sanitize` integration
+  - Support for all common markdown elements: headings, paragraphs, links, images, code blocks
+  - Error handling with user-friendly error messages
+  - Loading state indicator
+  - Graceful handling of invalid/malformed markdown
+  - Memoized parsing to prevent unnecessary re-renders
+  - Responsive to markdown prop changes
+
 ### Changed
 
 - **Backend**: Post table schema update for improved field naming and querying
