@@ -511,7 +511,10 @@ describe('usePosts hooks', () => {
       expect(invalidateSpy).toHaveBeenCalledWith({
         queryKey: ['draft', 'test-post'],
       })
-      expect(invalidateSpy).toHaveBeenCalledTimes(1)
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['myPosts', {}],
+      })
+      expect(invalidateSpy).toHaveBeenCalledTimes(2)
     })
 
     it('should perform optimistic update', async () => {

@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: Markdown editor component with XSS protection and keyboard shortcuts
+
+  - Implemented MarkdownEditor component as controlled React component with TypeScript strict typing
+  - Live markdown preview with syntax highlighting powered by @uiw/react-md-editor
+  - XSS attack prevention using rehype-sanitize plugin to sanitize HTML in preview
+  - Ctrl+S (Cmd+S on macOS) keyboard shortcut for saving drafts
+  - Custom className support via cn() utility for Tailwind CSS composition
+  - Comprehensive test suite with 8 unit tests covering all functionality
+  - Async error handling with graceful degradation for failed save operations
+
 - **Frontend**: React Query hooks for post management with type-safe cache invalidation
 
   - Implemented data fetching hooks: useDraft (retrieve single draft), useMyPosts (list author's posts with filtering)
@@ -22,7 +32,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   - Installed @uiw/react-md-editor (v4.0.11) for markdown editing UI
   - Installed react-syntax-highlighter (v16.1.0) for code block highlighting
-  - Both packages are React 19 compatible with no peer conflicts
+  - Installed rehype-sanitize (v6.0.0) for XSS prevention in markdown preview
+  - All packages are React 19 compatible with no peer conflicts
+
+- **Frontend**: PostForm component
+
+  - Form for creating new blog posts with slug and title inputs
+  - Real-time slug normalization: lowercase conversion, spaces to hyphens, special character removal
+  - Client-side validation with inline error messages
+  - Slug validation rules: required, max 200 characters, URL-safe characters only
+  - Title validation: required, no whitespace-only input
+  - Submit button disabled until form is valid
+  - Accessible form controls with proper ARIA attributes (aria-invalid, aria-describedby, role="alert")
+  - TypeScript with comprehensive type safety
+  - Support for initial values and onChange callback
+  - Tailwind CSS styling consistent with project design
+
+- **Frontend**: PreviewPane component
+
+  - Client-side markdown rendering with `marked` library
+  - Syntax highlighting for code blocks via `react-syntax-highlighter` (dracula theme)
+  - XSS prevention via `rehype-sanitize` integration
+  - Support for all common markdown elements: headings, paragraphs, links, images, code blocks
+  - Error handling with user-friendly error messages
+  - Loading state indicator
+  - Graceful handling of invalid/malformed markdown
+  - Memoized parsing to prevent unnecessary re-renders
+  - Responsive to markdown prop changes
 
 ### Changed
 
@@ -60,7 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ListPostsQuery for retrieving author's posts with flexible filtering (drafts only, published only, or all posts)
   - PostFilter enum for type-safe filter options (DRAFTS, PUBLISHED, ALL)
   - Pagination support with configurable page size (1-100 posts per page)
-  - Efficient database counting using SQL COUNT(\*) instead of loading all rows
+  - Efficient database counting using SQL COUNT(*) instead of loading all rows
   - Sort by most recently updated posts first (updated_at DESC)
   - Input validation: page >= 1, limit 1-100, author_id > 0
   - Paginated response includes total count and total pages for UI pagination controls
@@ -311,7 +347,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved comments for all Clerk authentication variables explaining purpose and security considerations
   - Backend .env.example now documents three Clerk variables: CLERK_SECRET_KEY (JWT verification), CLERK_PUBLISHABLE_KEY (frontend integration), CLERK_WEBHOOK_SECRET_KEY (webhook validation)
   - Frontend .env.example enhanced with detailed comments explaining VITE_CLERK_PUBLISHABLE_KEY usage and relationship to backend configuration
-  - All placeholder values use consistent "your_clerk\_\*" pattern
+  - All placeholder values use consistent "your_clerk_*" pattern
   - Files modified: `backend/.env.example`, `frontend/.env.example`
 
 - **Frontend**: Protected routes implementation with role-based access control
@@ -615,7 +651,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   - Refactored auth_middleware.py to use lazy initialization pattern for Settings, ClerkAuthAdapter, and UserRepository
   - Prevents ValidationError during module import when CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY environment variables are not set
-  - Implemented singleton pattern with private getter functions (\_get_settings, \_get_clerk_adapter, \_get_user_repository)
+  - Implemented singleton pattern with private getter functions (_get_settings, _get_clerk_adapter, _get_user_repository)
   - Module-level variables (clerk_auth_adapter, user_repository) now default to None for test mock compatibility
   - Adapters and repositories are instantiated only when decorators are actually invoked, not at import time
   - All 208 unit tests pass including 17 auth middleware tests with full backward compatibility
@@ -700,7 +736,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed local scripts source path from `monorepo/backend/scripts/` to `monorepo/backend/src/scripts/`
   - Updated deployment tests to expect `seeash/src/backend/` instead of `seeash/backend/`
   - Updated test helper to create `monorepo/backend/src/scripts/` directory structure
-  - Fixes uv package installation error: "Expected a Python module at: src/backend/**init**.py"
+  - Fixes uv package installation error: "Expected a Python module at: src/backend/__init__.py"
   - Fixes schema creation error: "ModuleNotFoundError: No module named 'scripts'"
   - Files modified: `scripts/deploy.sh`, `scripts/tests/deploy.bats`, `scripts/tests/test_helper.bash`, `backend/src/scripts/__init__.py` (created)
 
@@ -783,7 +819,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   - API base URL configuration (VITE_API_BASE_URL) for backend communication
   - Clerk authentication public key (VITE_CLERK_PUBLISHABLE_KEY) for frontend integration
-  - Vite-specific environment variable naming convention (VITE\_ prefix)
+  - Vite-specific environment variable naming convention (VITE_ prefix)
   - Documentation comments explaining variable usage and security practices
 
 - **Deployment**: Automated deployment script for cPanel hosting
@@ -819,7 +855,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Changed from frontend/dist to build/ to match vite.config.ts outDir
   - Vite outputs to ../build from frontend directory (monorepo/build/)
   - Updated unit tests to expect build/ instead of frontend/dist
-  - Updated tests to use Path(**file**).parents[3] instead of repeated .parent
+  - Updated tests to use Path(__file__).parents[3] instead of repeated .parent
 
 - **CI**: Fixed backend CI workflow to create minimal frontend build structure
 
@@ -933,7 +969,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enabled lint rules: A (builtins), ANN (annotations), D (docstrings), DOC (docstrings), E (pycodestyle errors), F (pyflakes), I (isort), N (pep8-naming), UP (pyupgrade), W (pycodestyle warnings)
   - Configured flake8-annotations with allow-star-arg-any and mypy-init-return
   - Set pydocstyle convention to Google style with ignore-decorators for typing.overload
-  - Added per-file-ignores for tests/docs/tools and **init**.py files
+  - Added per-file-ignores for tests/docs/tools and __init__.py files
   - Verified uvx ruff check and uvx ruff format commands work correctly
 - **Task 6**: Configured mypy for type checking
   - Added [tool.mypy] configuration to backend/pyproject.toml
@@ -978,7 +1014,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verified production build outputs correctly to ../build/ directory
   - Set package.json homepage to "." for relative asset paths
 - **Task 10**: Configured Tailwind CSS
-  - Created frontend/tailwind.config.js with content paths for ./index.html and ./src/\*\*/\*.{js,jsx}
+  - Created frontend/tailwind.config.js with content paths for ./index.html and ./src/**/*.{js,jsx}
   - Configured theme.extend as empty object (using default Tailwind theme)
   - Created frontend/postcss.config.js with tailwindcss and autoprefixer plugins
   - Created src/index.css with Tailwind directives (@tailwind base, @tailwind components, @tailwind utilities)
@@ -997,8 +1033,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created backend/src/config.py implementing Pydantic BaseSettings
   - Defined DBSettings base class with DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, FLASK_ENV fields
   - DB_HOST defaults to localhost (cPanel requirement)
-  - Created DevDBSettings with LOCAL\_ prefix for development environment
-  - Created ProductionDBSettings with CPANEL\_ prefix for production environment
+  - Created DevDBSettings with LOCAL_ prefix for development environment
+  - Created ProductionDBSettings with CPANEL_ prefix for production environment
   - Implemented get_db_settings() factory function with caching
   - Added environment-based settings class selection
   - Fail-fast validation on missing required environment variables
@@ -1026,7 +1062,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created backend/src/api/routes/health.py with Flask blueprint
   - Implemented GET /health endpoint for basic uptime check (returns 200 with {"status": "healthy"})
   - Implemented GET /health/db endpoint for database connectivity test (executes SELECT 1 query, returns 200/503)
-  - Implemented GET /health/github endpoint for GitHub API reachability test (calls <https://api.github.com/rate_limit>, returns 200/503)
+  - Implemented GET /health/github endpoint for GitHub API reachability test (calls https://api.github.com/rate_limit>, returns 200/503)
   - All endpoints return JSON responses with appropriate status codes
   - Added Flask and requests dependencies to pyproject.toml
   - Health endpoints handle exceptions gracefully, returning 503 on failure with error details
