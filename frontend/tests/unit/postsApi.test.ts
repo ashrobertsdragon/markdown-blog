@@ -1,4 +1,4 @@
-import axios, { type AxiosError } from 'axios'
+import type { AxiosError } from 'axios'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 /**
