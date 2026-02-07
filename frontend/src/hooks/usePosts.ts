@@ -115,6 +115,7 @@ export function useSaveDraft(): UseMutationResult<
     },
     onSuccess: (_data, { slug }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.draft(slug) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.myPosts() })
     },
   })
 }

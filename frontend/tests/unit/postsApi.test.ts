@@ -552,7 +552,7 @@ describe('postsApi', () => {
 
       mockAxiosInstance.get.mockResolvedValueOnce(mockResponse)
 
-      const result = await postsApi.listMyPosts('mock-jwt-token', undefined, 1, 20)
+      const result = await postsApi.listMyPosts(undefined, 1, 20, 'mock-jwt-token')
 
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/posts/my-posts', {
         params: { page: 1, limit: 20 },
@@ -588,7 +588,7 @@ describe('postsApi', () => {
 
       mockAxiosInstance.get.mockResolvedValueOnce(mockResponse)
 
-      const result = await postsApi.listMyPosts('mock-jwt-token', 'published', 1, 20)
+      const result = await postsApi.listMyPosts('published', 1, 20, 'mock-jwt-token')
 
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/posts/my-posts', {
         params: { filter: 'published', page: 1, limit: 20 },
@@ -624,7 +624,7 @@ describe('postsApi', () => {
 
       mockAxiosInstance.get.mockResolvedValueOnce(mockResponse)
 
-      const result = await postsApi.listMyPosts('mock-jwt-token', 'drafts', 1, 20)
+      const result = await postsApi.listMyPosts('drafts', 1, 20, 'mock-jwt-token')
 
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/posts/my-posts', {
         params: { filter: 'drafts', page: 1, limit: 20 },
@@ -648,7 +648,7 @@ describe('postsApi', () => {
 
       mockAxiosInstance.get.mockResolvedValueOnce(mockResponse)
 
-      const result = await postsApi.listMyPosts('mock-jwt-token', undefined, 3, 10)
+      const result = await postsApi.listMyPosts(undefined, 3, 10, 'mock-jwt-token')
 
       expect(mockAxiosInstance.get).toHaveBeenCalledWith('/posts/my-posts', {
         params: { page: 3, limit: 10 },
@@ -676,7 +676,7 @@ describe('postsApi', () => {
 
       mockAxiosInstance.get.mockRejectedValueOnce(mockError)
 
-      await expect(postsApi.listMyPosts('invalid-token', undefined, 1, 20)).rejects.toMatchObject({
+      await expect(postsApi.listMyPosts(undefined, 1, 20, 'invalid-token')).rejects.toMatchObject({
         isAxiosError: true,
         response: { status: 401 },
       })
@@ -695,7 +695,7 @@ describe('postsApi', () => {
 
       mockAxiosInstance.get.mockResolvedValueOnce(mockResponse)
 
-      const result = await postsApi.listMyPosts('mock-jwt-token', undefined, 1, 20)
+      const result = await postsApi.listMyPosts(undefined, 1, 20, 'mock-jwt-token')
 
       expect(result.posts).toEqual([])
       expect(result.total_count).toBe(0)

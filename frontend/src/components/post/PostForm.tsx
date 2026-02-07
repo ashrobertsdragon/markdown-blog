@@ -27,24 +27,28 @@ interface ValidationErrors {
 }
 
 /**
- * Normalizes a slug according to requirement 8.1:
+ * Base normalization for a slug:
  * - Converts to lowercase
  * - Replaces spaces with hyphens
  * - Removes special characters (keeps only alphanumeric and hyphens)
  * - Collapses consecutive hyphens
  * - Trims leading/trailing hyphens
- * - Enforces max 200 character limit
  */
-function normalizeSlug(input: string): string {
-  const normalized = input
+function baseNormalizeSlug(input: string): string {
+  return input
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
+}
 
-  return normalized.slice(0, 200)
+/**
+ * Normalizes a slug according to requirement 8.1 and enforces max 200 character limit.
+ */
+function normalizeSlug(input: string): string {
+  return baseNormalizeSlug(input).slice(0, 200)
 }
 
 /**
@@ -94,21 +98,15 @@ export function PostForm({ onSubmit, initialValues, onChange, className }: PostF
   const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const handleSlugChange = (value: string) => {
-    const beforeNormalization = value
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '')
+    const baseNormalized = baseNormalizeSlug(value)
+    const normalized = baseNormalized.slice(0, 200)
 
-    const normalized = normalizeSlug(value)
     setSlug(normalized)
     setTouched(prev => ({ ...prev, slug: true }))
 
     const validationErrors = validateForm(normalized, title)
 
-    if (beforeNormalization.length > 200) {
+    if (baseNormalized.length > 200) {
       validationErrors.slug = 'Slug must not exceed 200 characters'
     }
 

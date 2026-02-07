@@ -156,18 +156,18 @@ export const postsApi = {
   /**
    * List posts belonging to the authenticated user
    *
-   * @param token - JWT authentication token
    * @param filter - Optional filter: 'all', 'drafts', or 'published'
    * @param page - Page number (defaults to 1)
    * @param limit - Results per page (defaults to 20)
+   * @param token - JWT authentication token
    * @returns Paginated list of posts with metadata
    * @throws AxiosError on unauthorized (401)
    */
   async listMyPosts(
-    token: string,
-    filter?: PostFilter,
-    page?: number,
-    limit?: number
+    filter: PostFilter | undefined,
+    page: number | undefined,
+    limit: number | undefined,
+    token: string
   ): Promise<ListPostsResponse> {
     const params: Record<string, string | number> = {
       page: page ?? 1,
