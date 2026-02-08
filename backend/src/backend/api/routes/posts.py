@@ -364,16 +364,21 @@ def get_public_post(slug: str) -> tuple[Response, int]:
         if post is None or not post.published:
             return jsonify({"error": "Post not found"}), 404
 
-        return jsonify(post.to_dict()), 200
+        return jsonify(post.to_public_dict()), 200
     except ValueError as e:
-        return jsonify({"error": str(e)}), 404
+        logger.warning(
+            "ValueError in get_public_post",
+            exc_info=e,
+            extra={"slug": slug},
+        )
+        return jsonify({"error": "Post not found"}), 404
     except Exception as e:
         logger.exception(
             "Unexpected error in get_public_post",
             exc_info=e,
             extra={"slug": slug},
         )
-        raise
+        return jsonify({"error": "An error occurred"}), 500
 
 
 @posts_bp.route("/<slug>", methods=["PUT"])

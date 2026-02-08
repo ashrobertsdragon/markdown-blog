@@ -13,10 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   - Implemented GET /api/posts/:slug/public endpoint for unauthenticated access to published posts
   - Returns 404 for unpublished or non-existent posts (protects draft content)
-  - Uses existing PostRepository infrastructure following single responsibility principle
-  - No auth middleware required - public access only
-  - Comprehensive test suite with 3 integration tests validating public access, draft protection, and 404 handling
-  - Files modified: `backend/src/backend/api/routes/posts.py`, `backend/tests/integration/api/test_posts_routes.py`
+  - Uses to_public_dict() to exclude internal fields (author_id) from public responses
+  - Comprehensive test suite with 4 integration tests validating public access, draft protection, field leakage prevention, and authenticated endpoint protection
+  - Files modified: backend/src/backend/domain/aggregates/post.py, backend/src/backend/api/routes/posts.py, backend/tests/integration/api/test_posts_routes.py
 
 - **Frontend**: Markdown editor component with XSS protection and keyboard shortcuts
 

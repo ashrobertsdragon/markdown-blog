@@ -473,7 +473,9 @@ def test_get_published_post_without_auth_returns_200(client, published_post):
     assert response.status_code == 200
     assert response.json["slug"] == "published-article"
     assert response.json["title"] == "Published Article"
-    assert response.json["published"] is True
+    assert response.json["html_content"] is not None
+    assert "author_id" not in response.json
+    assert "published" not in response.json
 
 
 def test_get_unpublished_post_without_auth_returns_404(client, draft_post):
@@ -492,6 +494,20 @@ def test_get_unpublished_post_without_auth_returns_404(client, draft_post):
 
     assert response.status_code == 404
     assert "error" in response.json
+    assert "slug" not in response.json
+    assert "title" not in response.json
+    assert "html_content" not in response.json
+    assert "author_id" not in response.json
+
+
+def test_get_draft_without_auth_returns_401(client):
+    """GET /api/posts/:slug without Authorization should return 401.
+
+    Ensures authenticated endpoint still requires auth.
+    """
+    response = client.get("/api/posts/my-first-post")
+
+    assert response.status_code == 401
 
 
 def test_get_nonexistent_post_without_auth_returns_404(client):
