@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: PublicPost page for displaying published blog posts
+
+  - Implemented public-facing page component at /posts/:slug for viewing published posts without authentication
+  - Integrated with backend GET /posts/:slug/public endpoint via new postsApi.getPublicPost() method
+  - React Query hook usePublicPost() for data fetching with caching and loading states
+  - Displays post title, author, published date metadata, and sanitized HTML content via dangerouslySetInnerHTML
+  - Error handling: 404 state for unpublished/missing posts, error alert for API failures
+  - Semantic HTML structure using article element with accessibility attributes
+  - "Back to Home" navigation link for user convenience
+  - Comprehensive test suite with 32 unit tests covering loading, success, error, and 404 states
+  - Files created: frontend/src/pages/PublicPost.tsx
+  - Files modified: frontend/src/App.tsx (routing), frontend/src/services/postsApi.ts (API client), frontend/src/hooks/usePosts.ts (React Query hook), frontend/src/hooks/queryKeys.ts (cache keys)
+
+- **Backend**: Public endpoint for published posts without authentication
+
+  - Implemented GET /api/posts/:slug/public endpoint for unauthenticated access to published posts
+  - Returns 404 for unpublished or non-existent posts (protects draft content)
+  - Uses to_public_dict() to exclude internal fields (author_id) from public responses
+  - Comprehensive test suite with 4 integration tests validating public access, draft protection, field leakage prevention, and authenticated endpoint protection
+  - Files modified: backend/src/backend/domain/aggregates/post.py, backend/src/backend/api/routes/posts.py, backend/tests/integration/api/test_posts_routes.py
+
 - **Frontend**: Markdown editor component with XSS protection and keyboard shortcuts
 
   - Implemented MarkdownEditor component as controlled React component with TypeScript strict typing
@@ -34,7 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Installed react-syntax-highlighter (v16.1.0) for code block highlighting
   - Installed rehype-sanitize (v6.0.0) for XSS prevention in markdown preview
   - All packages are React 19 compatible with no peer conflicts
-
 
 - **Frontend**: PostForm component
 

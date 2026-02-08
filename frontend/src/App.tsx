@@ -8,6 +8,7 @@ import Forbidden from '@/pages/Forbidden'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
 import NotFound from '@/pages/NotFound'
+import PublicPost from '@/pages/PublicPost'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route path="/posts/:slug" element={<PublicPost />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   )
@@ -64,6 +66,7 @@ export function AppRoutes() {
  * - "/forbidden" - Forbidden page for unauthorized access
  * - "/admin" - Admin dashboard (protected, requires admin role)
  * - "/author" - Author dashboard (protected, requires author role)
+ * - "/posts/:slug" - Public post view page
  * - "*" - 404 Not Found page for unmatched routes
  *
  * @returns Root application component with routing configuration

@@ -17,4 +17,9 @@ export const queryKeys = {
    */
   myPosts: (params?: { filter?: PostFilter; page?: number; limit?: number }) =>
     ['myPosts', params ?? {}] as const,
+
+  /**
+   * Query key for fetching a single published post by slug (public)
+   */
+  publicPost: (slug: string) => ['publicPost', slug] as const,
 }

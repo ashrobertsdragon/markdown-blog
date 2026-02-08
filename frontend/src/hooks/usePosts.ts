@@ -10,6 +10,7 @@ import {
   type ListPostsResponse,
   type PostFilter,
   type PostResponse,
+  type PublicPostResponse,
   postsApi,
 } from '@/services/postsApi'
 import { queryKeys } from './queryKeys'
@@ -177,5 +178,16 @@ export function useDeleteDraft(): UseMutationResult<void, Error, string> {
       queryClient.removeQueries({ queryKey: queryKeys.draft(slug) })
       queryClient.invalidateQueries({ queryKey: queryKeys.myPosts() })
     },
+  })
+}
+
+/**
+ * Hook for fetching a single published post by slug (public, no auth required)
+ */
+export function usePublicPost(slug: string): UseQueryResult<PublicPostResponse, Error> {
+  return useQuery({
+    queryKey: queryKeys.publicPost(slug),
+    queryFn: () => postsApi.getPublicPost(slug),
+    enabled: Boolean(slug),
   })
 }

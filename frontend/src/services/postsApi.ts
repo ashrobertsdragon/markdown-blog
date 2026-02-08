@@ -35,6 +35,17 @@ export interface ListPostsResponse {
 }
 
 /**
+ * Public post response from backend API
+ */
+export interface PublicPostResponse {
+  slug: string
+  title: string
+  author: string
+  html_content: string
+  published_at: string
+}
+
+/**
  * Filter type for listing posts
  */
 export type PostFilter = 'all' | 'drafts' | 'published'
@@ -182,6 +193,18 @@ export const postsApi = {
       params,
       ...getAuthHeaders(token),
     })
+    return response.data
+  },
+
+  /**
+   * Retrieve a published post by slug (public endpoint, no auth required)
+   *
+   * @param slug - Post slug identifier
+   * @returns Public post data with rendered HTML content
+   * @throws AxiosError on not found (404) or not published (403)
+   */
+  async getPublicPost(slug: string): Promise<PublicPostResponse> {
+    const response = await apiClient.get<PublicPostResponse>(`/posts/${slug}/public`)
     return response.data
   },
 }
