@@ -98,7 +98,7 @@ export function PostForm({ onSubmit, initialValues, onChange, className }: PostF
   const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const handleSlugChange = (value: string) => {
-    const normalized = normalizeSlug(value)
+    const normalized = _normalizeSlug(value)
 
     setSlug(normalized)
     setTouched(prev => ({ ...prev, slug: true }))
