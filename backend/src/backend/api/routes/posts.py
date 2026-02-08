@@ -342,6 +342,40 @@ def get_draft(slug: str) -> tuple[Response, int]:
         raise
 
 
+@posts_bp.route("/<slug>/public", methods=["GET"])
+def get_public_post(slug: str) -> tuple[Response, int]:
+    """Get published post by slug (public access, no auth required).
+
+    Returns published posts only. Unpublished posts return 404.
+
+    Args:
+        slug: Post slug identifier.
+
+    Returns:
+        JSON response with published post data and 200 status.
+
+    Raises:
+        404: Post not found or not published.
+    """
+    try:
+        handler = _get_get_post_query_handler()
+        post = handler.handle(slug)
+
+        if post is None or not post.published:
+            return jsonify({"error": "Post not found"}), 404
+
+        return jsonify(post.to_dict()), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        logger.exception(
+            "Unexpected error in get_public_post",
+            exc_info=e,
+            extra={"slug": slug},
+        )
+        raise
+
+
 @posts_bp.route("/<slug>", methods=["PUT"])
 @require_auth
 def save_draft(slug: str) -> tuple[Response, int]:
