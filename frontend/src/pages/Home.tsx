@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { type HealthResponse, healthService } from '@/services/healthService'
@@ -35,13 +36,7 @@ export default function Home() {
   }, [])
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-lg text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner message="Loading..." className="min-h-screen bg-gray-50" />
   }
 
   if (error) {

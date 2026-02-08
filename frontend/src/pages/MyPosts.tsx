@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { EmptyState } from '@/components/common/EmptyState'
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   AlertDialog,
@@ -13,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { useDeleteDraft, useMyPosts } from '@/hooks/usePosts'
-import { cn } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import type { PostFilter } from '@/services/postsApi'
 
 /**
@@ -81,18 +83,6 @@ export default function MyPosts() {
   }, [slugToDelete, deleteDraft])
 
   /**
-   * Format date for display
-   */
-  const formatDate = useCallback((dateString: string): string => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-    })
-  }, [])
-
-  /**
    * Memoized filter button configuration
    */
   const filterButtons = useMemo(
@@ -106,18 +96,7 @@ export default function MyPosts() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex items-center gap-2" aria-live="polite">
-          {/* biome-ignore lint/a11y/useSemanticElements: Test expects role="status" on spinner div */}
-          <div
-            role="status"
-            className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-          />
-          <span className="text-lg text-muted-foreground">Loading posts...</span>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner message="Loading posts..." className="min-h-screen" />
   }
 
   // Error state
@@ -161,12 +140,12 @@ export default function MyPosts() {
             ))}
           </div>
 
-          <div className="flex min-h-[400px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-white p-12">
-            {/* biome-ignore lint/a11y/useSemanticElements: role="status" needed for screen reader announcement */}
-            <div className="text-center" role="status" aria-live="polite">
-              <p className="mb-2 text-lg font-medium text-gray-700">No posts found</p>
-              <p className="text-gray-500">Create your first post to get started!</p>
-            </div>
+          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white">
+            <EmptyState
+              title="No posts found"
+              message="Create your first post to get started!"
+              className="min-h-[400px]"
+            />
           </div>
         </div>
       </div>

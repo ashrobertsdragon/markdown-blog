@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { MarkdownEditor } from '@/components/post/MarkdownEditor'
 import { PreviewPane } from '@/components/post/PreviewPane'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -94,18 +95,7 @@ export default function PostEditor() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex items-center gap-2" aria-live="polite">
-          {/* biome-ignore lint/a11y/useSemanticElements: Test expects role="status" on spinner div */}
-          <div
-            role="status"
-            className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-          />
-          <span className="text-lg text-muted-foreground">Loading draft...</span>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner message="Loading draft..." className="min-h-screen" />
   }
 
   // Error state - draft not found or fetch failed

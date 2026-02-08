@@ -124,8 +124,9 @@ describe('MyPosts Component', () => {
     renderMyPosts()
 
     expect(screen.getByText(/loading posts/i)).toBeInTheDocument()
-    const spinner = screen.getByRole('status', { hidden: true })
-    expect(spinner).toBeInTheDocument()
+    const loadingContainer = screen.getByRole('status', { hidden: true })
+    expect(loadingContainer).toBeInTheDocument()
+    const spinner = screen.getByRole('img', { name: /loading/i })
     expect(spinner).toHaveClass('animate-spin')
   })
 

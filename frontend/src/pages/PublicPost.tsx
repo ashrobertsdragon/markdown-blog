@@ -1,7 +1,9 @@
 import { Link, useParams } from 'react-router-dom'
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { usePublicPost } from '@/hooks/usePosts'
+import { formatDate } from '@/lib/utils'
 
 /**
  * PublicPost page component
@@ -18,11 +20,7 @@ export default function PublicPost() {
   const { data: post, isLoading, isError } = usePublicPost(slug || '')
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-lg text-gray-600">Loading...</p>
-      </div>
-    )
+    return <LoadingSpinner message="Loading..." className="min-h-screen" />
   }
 
   if (isError || !post) {
@@ -40,11 +38,7 @@ export default function PublicPost() {
     )
   }
 
-  const formattedDate = new Date(post.published_at).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  const formattedDate = formatDate(post.published_at)
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
