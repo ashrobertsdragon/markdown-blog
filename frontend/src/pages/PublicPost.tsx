@@ -17,17 +17,22 @@ import { formatDate } from '@/lib/utils'
  */
 export default function PublicPost() {
   const { slug } = useParams<{ slug: string }>()
-  const { data: post, isLoading, isError } = usePublicPost(slug || '')
+  const { data: post, isLoading, isError, error } = usePublicPost(slug || '')
 
   if (isLoading) {
     return <LoadingSpinner message="Loading..." className="min-h-screen" />
   }
 
   if (isError || !post) {
+    const is404 = error && 'response' in error && error.response?.status === 404
+    const errorMessage = is404
+      ? 'Post not found. It may have been deleted or is not yet published.'
+      : 'Failed to load post. Please try again later.'
+
     return (
       <div className="container mx-auto max-w-4xl px-4 py-8">
         <Alert variant="destructive" role="alert">
-          <AlertDescription data-testid="error-message">Post not found</AlertDescription>
+          <AlertDescription data-testid="error-message">{errorMessage}</AlertDescription>
         </Alert>
         <div className="mt-6">
           <Link to="/" data-testid="back-to-home">
@@ -56,6 +61,7 @@ export default function PublicPost() {
           </div>
         </header>
 
+        {/* Note: html_content is sanitized by the backend using Bleach before storage */}
         <div
           className="prose prose-lg max-w-none"
           data-testid="post-content"

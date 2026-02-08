@@ -52,13 +52,6 @@ export default function MyPosts() {
   }, [])
 
   /**
-   * Handle page navigation
-   */
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage)
-  }, [])
-
-  /**
    * Open delete confirmation dialog
    */
   const handleDeleteClick = useCallback((slug: string) => {
@@ -271,16 +264,16 @@ export default function MyPosts() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => handlePageChange(page - 1)}
-                disabled={page <= 1}
+                onClick={() => setPage(prev => prev - 1)}
+                disabled={data.page <= 1}
                 aria-label="Go to previous page"
               >
                 Previous
               </Button>
               <Button
                 variant="outline"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page >= data.total_pages}
+                onClick={() => setPage(prev => prev + 1)}
+                disabled={data.page >= data.total_pages}
                 aria-label="Go to next page"
               >
                 Next

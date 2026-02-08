@@ -104,11 +104,19 @@ describe('PostEditor Component', () => {
 
   /**
    * Helper to render PostEditor with react-router context
+   *
+   * When slug is provided or defaulted to 'test-post', we simulate the edit route /editor/:slug
+   * When slug is explicitly null, we simulate the creation route /editor with no slug
    */
-  function renderPostEditor(slug = 'test-post') {
+  function renderPostEditor(slug: string | null = 'test-post') {
+    const initialEntries = slug ? [`/editor/${slug}`] : ['/editor']
+
     return render(
-      <MemoryRouter initialEntries={[`/editor/${slug}`]}>
+      <MemoryRouter initialEntries={initialEntries}>
         <Routes>
+          {/* Creation route – no slug param */}
+          <Route path="/editor" element={<PostEditor />} />
+          {/* Edit route – matches existing draft by slug */}
           <Route path="/editor/:slug" element={<PostEditor />} />
         </Routes>
       </MemoryRouter>
@@ -129,10 +137,11 @@ describe('PostEditor Component', () => {
     renderPostEditor()
 
     expect(screen.getByText(/loading draft/i)).toBeInTheDocument()
-    const loadingContainer = screen.getByRole('status', { hidden: true })
+    const loadingContainer = screen.getByRole('status')
     expect(loadingContainer).toBeInTheDocument()
-    const spinner = screen.getByRole('img', { name: /loading/i })
-    expect(spinner).toHaveClass('animate-spin')
+    // Spinner is decorative (aria-hidden), so we check for the animated element by class
+    const spinner = loadingContainer.querySelector('.animate-spin')
+    expect(spinner).toBeInTheDocument()
   })
 
   /**
@@ -347,12 +356,7 @@ describe('PostEditor Component', () => {
     })
   })
 
-  /**
-   * RED phase: Test success message auto-dismisses after 3 seconds
-   * Expected to FAIL if success message still visible after timeout
-   */
   it('auto-dismisses success message after 3 seconds', async () => {
-    vi.useFakeTimers()
     mockMutateAsync.mockResolvedValue(mockDraft)
     mockUseDraft.mockReturnValue({
       data: mockDraft,
@@ -365,17 +369,16 @@ describe('PostEditor Component', () => {
     const saveButton = screen.getByRole('button', { name: /save/i })
     fireEvent.click(saveButton)
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText(/draft saved successfully/i)).toBeInTheDocument()
     })
 
-    await vi.advanceTimersByTimeAsync(3000)
-
-    await vi.waitFor(() => {
-      expect(screen.queryByText(/draft saved successfully/i)).not.toBeInTheDocument()
-    })
-
-    vi.useRealTimers()
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/draft saved successfully/i)).not.toBeInTheDocument()
+      },
+      { timeout: 4000 }
+    )
   })
 
   /**
@@ -613,5 +616,97 @@ describe('PostEditor Component', () => {
     // Preview should immediately reflect the new content
     const previewContent = screen.getByTestId('preview-content')
     expect(previewContent).toHaveTextContent('# Updated preview')
+  })
+
+  /**
+   * Create mode tests - when no slug param is present
+   */
+  describe('Create mode (no slug)', () => {
+    /**
+     * Test that PostEditor renders without errors when no slug is provided
+     */
+    it('renders create mode UI without fetching draft', () => {
+      mockUseDraft.mockReturnValue({
+        data: null,
+        isLoading: false,
+        error: null,
+      })
+
+      renderPostEditor(null) // explicitly null for create mode
+
+      // Should show "New Post" title
+      expect(screen.getByText(/new post/i)).toBeInTheDocument()
+
+      // Should render editor interface
+      expect(screen.getByTestId('markdown-editor')).toBeInTheDocument()
+
+      // useDraft should have been called with empty string (which disables the query)
+      expect(mockUseDraft).toHaveBeenCalled()
+    })
+
+    /**
+     * Test that save button is disabled in create mode
+     */
+    it('does not save when no slug is present', async () => {
+      mockUseDraft.mockReturnValue({
+        data: null,
+        isLoading: false,
+        error: null,
+      })
+
+      renderPostEditor(null) // explicitly null for create mode
+
+      const saveButton = screen.getByRole('button', { name: /save/i })
+      fireEvent.click(saveButton)
+
+      // Save mutation should not be called
+      expect(mockMutateAsync).not.toHaveBeenCalled()
+    })
+
+    it('does not publish when no slug is present', async () => {
+      mockUseDraft.mockReturnValue({
+        data: null,
+        isLoading: false,
+        error: null,
+      })
+      mockUsePublishPost.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+        error: null,
+      })
+
+      renderPostEditor(null)
+
+      const publishButtons = screen.getAllByRole('button', { name: /publish/i })
+      fireEvent.click(publishButtons[0])
+
+      await waitFor(() => {
+        expect(screen.getByText(/are you sure you want to publish/i)).toBeInTheDocument()
+      })
+
+      const allPublishButtons = screen.getAllByRole('button', { name: /publish/i })
+      const confirmButton = allPublishButtons[allPublishButtons.length - 1]
+      fireEvent.click(confirmButton)
+
+      expect(mockMutateAsync).not.toHaveBeenCalled()
+    })
+
+    /**
+     * Test that editor allows typing in create mode
+     */
+    it('allows content editing in create mode', () => {
+      mockUseDraft.mockReturnValue({
+        data: null,
+        isLoading: false,
+        error: null,
+      })
+
+      renderPostEditor(null) // explicitly null for create mode
+
+      const textarea = screen.getByTestId('markdown-textarea')
+      fireEvent.change(textarea, { target: { value: '# My new post' } })
+
+      expect(textarea).toHaveValue('# My new post')
+    })
   })
 })

@@ -26,8 +26,12 @@ export function LoadingSpinner({ message, className, size = 'md' }: LoadingSpinn
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: role="status" is appropriate for loading indicators
-    <div className={cn('flex flex-col items-center justify-center gap-2', className)} role="status">
-      <Loader2 className={cn('animate-spin', sizeClasses[size])} role="img" aria-label="Loading" />
+    <div
+      className={cn('flex flex-col items-center justify-center gap-2', className)}
+      role="status"
+      aria-live="polite"
+    >
+      <Loader2 className={cn('animate-spin', sizeClasses[size])} aria-hidden="true" />
       {message && <p className="text-lg text-gray-600">{message}</p>}
     </div>
   )

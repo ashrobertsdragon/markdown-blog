@@ -527,25 +527,25 @@ describe('App Routes - Loading States', () => {
     it('should show loading spinner for protected /new-post route', () => {
       renderRoute('/new-post')
 
-      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument()
+      expect(screen.getByRole('status')).toBeInTheDocument()
     })
 
     it('should show loading spinner for protected /edit/:slug route', () => {
       renderRoute('/edit/test-slug')
 
-      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument()
+      expect(screen.getByRole('status')).toBeInTheDocument()
     })
 
     it('should show loading spinner for protected /my-posts route', () => {
       renderRoute('/my-posts')
 
-      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument()
+      expect(screen.getByRole('status')).toBeInTheDocument()
     })
 
     it('should not show loading spinner for public /posts/:slug route', () => {
       renderRoute('/posts/test-slug')
 
-      expect(screen.queryByRole('img', { hidden: true })).not.toBeInTheDocument()
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
       expect(screen.getByTestId('public-post-component')).toBeInTheDocument()
     })
   })

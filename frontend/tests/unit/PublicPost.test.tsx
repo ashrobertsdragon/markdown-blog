@@ -333,7 +333,8 @@ describe('PublicPost', () => {
       const { useParams } = await import('react-router-dom')
       const { usePublicPost } = await import('@/hooks/usePosts')
 
-      const mockError = new Error('Post not found')
+      const mockError = new Error('Post not found') as Error & { response?: { status: number } }
+      mockError.response = { status: 404 }
 
       vi.mocked(useParams).mockReturnValue({ slug: 'nonexistent-post' })
       vi.mocked(usePublicPost).mockReturnValue({
@@ -359,7 +360,8 @@ describe('PublicPost', () => {
       const { useParams } = await import('react-router-dom')
       const { usePublicPost } = await import('@/hooks/usePosts')
 
-      const mockError = new Error('Post not published')
+      const mockError = new Error('Post not published') as Error & { response?: { status: number } }
+      mockError.response = { status: 404 }
 
       vi.mocked(useParams).mockReturnValue({ slug: 'draft-post' })
       vi.mocked(usePublicPost).mockReturnValue({
@@ -411,7 +413,8 @@ describe('PublicPost', () => {
       const { useParams } = await import('react-router-dom')
       const { usePublicPost } = await import('@/hooks/usePosts')
 
-      const mockError = new Error('Post not found')
+      const mockError = new Error('Post not found') as Error & { response?: { status: number } }
+      mockError.response = { status: 404 }
 
       vi.mocked(useParams).mockReturnValue({ slug: 'missing-post' })
       vi.mocked(usePublicPost).mockReturnValue({
