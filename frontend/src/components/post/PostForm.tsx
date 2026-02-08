@@ -47,7 +47,7 @@ function baseNormalizeSlug(input: string): string {
 /**
  * Normalizes a slug according to requirement 8.1 and enforces max 200 character limit.
  */
-function normalizeSlug(input: string): string {
+function _normalizeSlug(input: string): string {
   return baseNormalizeSlug(input).slice(0, 200)
 }
 
@@ -98,7 +98,7 @@ export function PostForm({ onSubmit, initialValues, onChange, className }: PostF
   const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const handleSlugChange = (value: string) => {
-    const normalized = normalizeSlug(value)
+    const normalized = _normalizeSlug(value)
 
     setSlug(normalized)
     setTouched(prev => ({ ...prev, slug: true }))

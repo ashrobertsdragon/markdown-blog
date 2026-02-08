@@ -7,7 +7,10 @@ import Author from '@/pages/Author'
 import Forbidden from '@/pages/Forbidden'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
+import MyPosts from '@/pages/MyPosts'
 import NotFound from '@/pages/NotFound'
+import PostEditor from '@/pages/PostEditor'
+import PublicPost from '@/pages/PublicPost'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,14 +25,28 @@ const queryClient = new QueryClient({
 
 /**
  * Application routes component
- * Exported separately to allow testing with different router types
+ *
+ * Defines all application routes with role-based access control.
+ * Routes are organized by access level: public, admin-only, author-only.
+ * Exported separately to allow testing with different router types.
+ *
+ * Route ordering:
+ * 1. Public routes (no authentication required)
+ * 2. Admin routes (requireRole="admin")
+ * 3. Author routes (requireRole="author")
+ * 4. Parameterized routes (specific before generic)
+ * 5. Catch-all routes (404)
  */
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Public routes - no authentication required */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forbidden" element={<Forbidden />} />
+      <Route path="/posts/:slug" element={<PublicPost />} />
+
+      {/* Admin routes - require admin role */}
       <Route
         path="/admin"
         element={
@@ -38,6 +55,8 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* Author routes - require author role */}
       <Route
         path="/author"
         element={
@@ -46,6 +65,32 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/my-posts"
+        element={
+          <ProtectedRoute requireRole="author">
+            <MyPosts />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/new-post"
+        element={
+          <ProtectedRoute requireRole="author">
+            <PostEditor />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/edit/:slug"
+        element={
+          <ProtectedRoute requireRole="author">
+            <PostEditor />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch-all route - 404 Not Found */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   )
@@ -64,6 +109,10 @@ export function AppRoutes() {
  * - "/forbidden" - Forbidden page for unauthorized access
  * - "/admin" - Admin dashboard (protected, requires admin role)
  * - "/author" - Author dashboard (protected, requires author role)
+ * - "/new-post" - Post editor for creating new posts (protected, requires author role)
+ * - "/edit/:slug" - Post editor for editing existing posts (protected, requires author role)
+ * - "/my-posts" - Author's post management page (protected, requires author role)
+ * - "/posts/:slug" - Public post view page
  * - "*" - 404 Not Found page for unmatched routes
  *
  * @returns Root application component with routing configuration

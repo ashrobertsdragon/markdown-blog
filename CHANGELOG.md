@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: Post management routes with role-based access control
+
+  - Added three protected author routes: /new-post for creating posts, /edit/:slug for editing drafts, and /my-posts for managing all posts
+  - Integrated ProtectedRoute component with requireRole="author" for author-only access enforcement
+  - Organized routes by access level (public → admin → author → catch-all) for clear security model
+  - Added comprehensive routing documentation with JSDoc explaining organizational strategy
+  - Improved ProtectedRoute loading spinner accessibility with role="img" and aria-label attributes
+  - 33 route tests passing covering authentication, authorization, role hierarchy, and navigation flows
+  - Files modified: frontend/src/App.tsx, frontend/src/components/auth/ProtectedRoute.tsx
+  - Files created: frontend/tests/unit/App.routes.test.tsx
+
+- **Frontend**: PublicPost page for displaying published blog posts
+
+  - Implemented public-facing page component at /posts/:slug for viewing published posts without authentication
+  - Integrated with backend GET /posts/:slug/public endpoint via new postsApi.getPublicPost() method
+  - React Query hook usePublicPost() for data fetching with caching and loading states
+  - Displays post title, author, published date metadata, and sanitized HTML content via dangerouslySetInnerHTML
+  - Error handling: 404 state for unpublished/missing posts, error alert for API failures
+  - Semantic HTML structure using article element with accessibility attributes
+  - "Back to Home" navigation link for user convenience
+  - Comprehensive test suite with 32 unit tests covering loading, success, error, and 404 states
+  - Files created: frontend/src/pages/PublicPost.tsx
+  - Files modified: frontend/src/App.tsx (routing), frontend/src/services/postsApi.ts (API client), frontend/src/hooks/usePosts.ts (React Query hook), frontend/src/hooks/queryKeys.ts (cache keys)
+
 - **Backend**: Public endpoint for published posts without authentication
 
   - Implemented GET /api/posts/:slug/public endpoint for unauthenticated access to published posts
