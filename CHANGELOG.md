@@ -1083,7 +1083,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created backend/src/api/routes/health.py with Flask blueprint
   - Implemented GET /health endpoint for basic uptime check (returns 200 with {"status": "healthy"})
   - Implemented GET /health/db endpoint for database connectivity test (executes SELECT 1 query, returns 200/503)
-  - Implemented GET /health/github endpoint for GitHub API reachability test (calls <https://api.github.com/rate_limit>, returns 200/503)
+  - Implemented GET /health/github endpoint for GitHub API reachability test (calls <https://api.github.com/rate_limit>>, returns 200/503)
   - All endpoints return JSON responses with appropriate status codes
   - Added Flask and requests dependencies to pyproject.toml
   - Health endpoints handle exceptions gracefully, returning 503 on failure with error details

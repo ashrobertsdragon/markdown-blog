@@ -456,11 +456,73 @@ def test_get_draft_by_other_author_returns_403(
     assert response.status_code == 403
 
 
+def test_get_published_post_without_auth_returns_200(client, published_post):
+    """GET /api/posts/:slug/public for published post should return 200.
+
+    Public users can view published posts without authentication.
+    """
+    mock_query_handler = MagicMock()
+    mock_query_handler.handle.return_value = published_post
+
+    with patch(
+        "backend.api.routes.posts._get_get_post_query_handler",
+        return_value=mock_query_handler,
+    ):
+        response = client.get("/api/posts/published-article/public")
+
+    assert response.status_code == 200
+    assert response.json["slug"] == "published-article"
+    assert response.json["title"] == "Published Article"
+    assert response.json["html_content"] is not None
+    assert "author_id" not in response.json
+    assert "published" not in response.json
+
+
+def test_get_unpublished_post_without_auth_returns_404(client, draft_post):
+    """GET /api/posts/:slug/public for draft should return 404.
+
+    Public users cannot view unpublished posts.
+    """
+    mock_query_handler = MagicMock()
+    mock_query_handler.handle.return_value = draft_post
+
+    with patch(
+        "backend.api.routes.posts._get_get_post_query_handler",
+        return_value=mock_query_handler,
+    ):
+        response = client.get("/api/posts/my-first-post/public")
+
+    assert response.status_code == 404
+    assert "error" in response.json
+    assert "slug" not in response.json
+    assert "title" not in response.json
+    assert "html_content" not in response.json
+    assert "author_id" not in response.json
+
+
 def test_get_draft_without_auth_returns_401(client):
-    """GET /api/posts/:slug without Authorization should return 401."""
+    """GET /api/posts/:slug without Authorization should return 401.
+
+    Ensures authenticated endpoint still requires auth.
+    """
     response = client.get("/api/posts/my-first-post")
 
     assert response.status_code == 401
+
+
+def test_get_nonexistent_post_without_auth_returns_404(client):
+    """GET /api/posts/:slug/public for non-existent post returns 404."""
+    mock_query_handler = MagicMock()
+    mock_query_handler.handle.return_value = None
+
+    with patch(
+        "backend.api.routes.posts._get_get_post_query_handler",
+        return_value=mock_query_handler,
+    ):
+        response = client.get("/api/posts/nonexistent/public")
+
+    assert response.status_code == 404
+    assert "error" in response.json
 
 
 def test_save_draft_with_valid_content_returns_200(
