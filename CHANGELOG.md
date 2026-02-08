@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend**: Post management routes with role-based access control
+
+  - Added three protected author routes: /new-post for creating posts, /edit/:slug for editing drafts, and /my-posts for managing all posts
+  - Integrated ProtectedRoute component with requireRole="author" for author-only access enforcement
+  - Organized routes by access level (public → admin → author → catch-all) for clear security model
+  - Added comprehensive routing documentation with JSDoc explaining organizational strategy
+  - Improved ProtectedRoute loading spinner accessibility with role="img" and aria-label attributes
+  - 33 route tests passing covering authentication, authorization, role hierarchy, and navigation flows
+  - Files modified: frontend/src/App.tsx, frontend/src/components/auth/ProtectedRoute.tsx
+  - Files created: frontend/tests/unit/App.routes.test.tsx
+
 - **Frontend**: PublicPost page for displaying published blog posts
 
   - Implemented public-facing page component at /posts/:slug for viewing published posts without authentication

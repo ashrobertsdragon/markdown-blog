@@ -28,7 +28,7 @@ export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
   if (!isLoaded) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin" role="img" aria-label="Loading" />
       </div>
     )
   }
