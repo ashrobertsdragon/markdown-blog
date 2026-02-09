@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend Documentation**: Comprehensive post management API documentation
+
+  - Documented all 7 post management endpoints with full specifications and examples
+  - Created curl examples for each endpoint showing proper authentication and request/response formats
+  - Documented markdown rendering pipeline: markdown-it-py parsing → Pygments syntax highlighting → Bleach HTML sanitization
+  - Documented all allowed HTML tags and security measures (XSS prevention, external link rel attributes, dangerous tag removal)
+  - Documented draft file format with YAML front matter specification and examples
+  - Documented workflow from draft creation through publishing/unpublishing/deletion
+  - Added visual pipeline diagram showing the 3-step rendering process
+  - Included security measures table showing filtered content examples
+  - Files modified: README.md (added "Post Management" section with API Endpoints, Rendering Pipeline, and Draft File Format subsections)
+
 - **Frontend**: PublicPost page for displaying published blog posts
 
   - Implemented public-facing page component at /posts/:slug for viewing published posts without authentication
