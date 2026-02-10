@@ -1,7 +1,9 @@
 import { Link, useParams } from 'react-router-dom'
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { usePublicPost } from '@/hooks/usePosts'
+import { formatDate } from '@/lib/utils'
 
 /**
  * PublicPost page component
@@ -15,21 +17,22 @@ import { usePublicPost } from '@/hooks/usePosts'
  */
 export default function PublicPost() {
   const { slug } = useParams<{ slug: string }>()
-  const { data: post, isLoading, isError } = usePublicPost(slug || '')
+  const { data: post, isLoading, isError, error } = usePublicPost(slug || '')
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-lg text-gray-600">Loading...</p>
-      </div>
-    )
+    return <LoadingSpinner message="Loading..." className="min-h-screen" />
   }
 
   if (isError || !post) {
+    const is404 = error && 'response' in error && error.response?.status === 404
+    const errorMessage = is404
+      ? 'Post not found. It may have been deleted or is not yet published.'
+      : 'Failed to load post. Please try again later.'
+
     return (
       <div className="container mx-auto max-w-4xl px-4 py-8">
         <Alert variant="destructive" role="alert">
-          <AlertDescription data-testid="error-message">Post not found</AlertDescription>
+          <AlertDescription data-testid="error-message">{errorMessage}</AlertDescription>
         </Alert>
         <div className="mt-6">
           <Link to="/" data-testid="back-to-home">
@@ -40,11 +43,7 @@ export default function PublicPost() {
     )
   }
 
-  const formattedDate = new Date(post.published_at).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  const formattedDate = formatDate(post.published_at)
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -62,6 +61,7 @@ export default function PublicPost() {
           </div>
         </header>
 
+        {/* Note: html_content is sanitized by the backend using Bleach before storage */}
         <div
           className="prose prose-lg max-w-none"
           data-testid="post-content"

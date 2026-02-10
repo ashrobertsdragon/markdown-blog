@@ -98,15 +98,14 @@ export function PostForm({ onSubmit, initialValues, onChange, className }: PostF
   const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const handleSlugChange = (value: string) => {
-    const baseNormalized = baseNormalizeSlug(value)
-    const normalized = baseNormalized.slice(0, 200)
+    const normalized = _normalizeSlug(value)
 
     setSlug(normalized)
     setTouched(prev => ({ ...prev, slug: true }))
 
     const validationErrors = validateForm(normalized, title)
 
-    if (baseNormalized.length > 200) {
+    if (baseNormalizeSlug(value).length > 200) {
       validationErrors.slug = 'Slug must not exceed 200 characters'
     }
 

@@ -125,3 +125,27 @@ class Post:
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
+
+    def to_public_dict(self) -> dict[str, object]:
+        """Serialize Post for public API responses (excludes internal fields).
+
+        Only use for published posts that have html_content and published_at.
+
+        Returns:
+            Dictionary with public-safe fields only (no author_id, published).
+
+        Raises:
+            AssertionError: If called on unpublished post.
+        """
+        assert self.published_at is not None, (
+            "to_public_dict() requires published post"
+        )
+        return {
+            "id": self.id,
+            "slug": str(self.slug),
+            "title": self.title,
+            "html_content": str(self._html_content),
+            "published_at": self.published_at.isoformat(),
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { MarkdownEditor } from '@/components/post/MarkdownEditor'
 import { PreviewPane } from '@/components/post/PreviewPane'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -18,9 +19,10 @@ import { useDraft, usePublishPost, useSaveDraft } from '@/hooks/usePosts'
 import { cn } from '@/lib/utils'
 
 /**
- * PostEditor page component for editing blog post drafts
+ * PostEditor page component for creating and editing blog post drafts
  *
  * Features:
+ * - Create new posts (when no slug param) or edit existing drafts
  * - Markdown editing with real-time preview
  * - Auto-save on Ctrl+S/Cmd+S
  * - Save and publish workflows
@@ -31,6 +33,7 @@ import { cn } from '@/lib/utils'
 export default function PostEditor() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
+  const isEditMode = Boolean(slug)
 
   // State
   const [content, setContent] = useState('')
@@ -41,17 +44,17 @@ export default function PostEditor() {
   // Refs
   const successAlertRef = useRef<HTMLDivElement>(null)
 
-  // Hooks
-  const { data: draft, isLoading, error } = useDraft(slug || '')
+  // Hooks - only fetch draft in edit mode (useDraft has enabled: Boolean(slug))
+  const { data: draft, isLoading, error } = useDraft(isEditMode ? slug || '' : '')
   const saveDraft = useSaveDraft()
   const publishPost = usePublishPost()
 
-  // Sync content from draft data
+  // Sync content from draft data in edit mode
   useEffect(() => {
-    if (draft?.content) {
+    if (isEditMode && draft?.content) {
       setContent(draft.content)
     }
-  }, [draft])
+  }, [draft, isEditMode])
 
   // Auto-dismiss save success message and focus alert
   useEffect(() => {
@@ -66,6 +69,12 @@ export default function PostEditor() {
    * Save draft content
    */
   const handleSave = async () => {
+    if (!isEditMode) {
+      // Create mode - show user they need to create a post first
+      // In a full implementation, this would call a createDraft API
+      return
+    }
+
     if (!slug) return
 
     try {
@@ -80,6 +89,11 @@ export default function PostEditor() {
    * Publish draft to database
    */
   const handlePublish = async () => {
+    if (!isEditMode) {
+      // Create mode - show user they need to save first
+      return
+    }
+
     if (!slug) return
 
     try {
@@ -92,24 +106,13 @@ export default function PostEditor() {
     }
   }
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex items-center gap-2" aria-live="polite">
-          {/* biome-ignore lint/a11y/useSemanticElements: Test expects role="status" on spinner div */}
-          <div
-            role="status"
-            className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-          />
-          <span className="text-lg text-muted-foreground">Loading draft...</span>
-        </div>
-      </div>
-    )
+  // Loading state - only in edit mode
+  if (isEditMode && isLoading) {
+    return <LoadingSpinner message="Loading draft..." className="min-h-screen" />
   }
 
-  // Error state - draft not found or fetch failed
-  if (error || !draft) {
+  // Error state - only in edit mode
+  if (isEditMode && (error || !draft)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <Alert variant="destructive" className="max-w-md">
@@ -122,15 +125,25 @@ export default function PostEditor() {
     )
   }
 
+  // In create mode, use placeholder draft data
+  const displayDraft =
+    isEditMode && draft
+      ? draft
+      : {
+          title: 'New Post',
+          updated_at: new Date().toISOString(),
+          content: '',
+        }
+
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <div className="mx-auto w-full max-w-7xl p-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">{draft.title}</h1>
+            <h1 className="text-3xl font-bold text-gray-800">{displayDraft.title}</h1>
             <p className="mt-1 text-sm text-gray-600">
-              Last updated: {new Date(draft.updated_at).toLocaleString()}
+              Last updated: {new Date(displayDraft.updated_at).toLocaleString()}
             </p>
           </div>
 

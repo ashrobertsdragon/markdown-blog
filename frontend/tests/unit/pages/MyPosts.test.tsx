@@ -124,9 +124,11 @@ describe('MyPosts Component', () => {
     renderMyPosts()
 
     expect(screen.getByText(/loading posts/i)).toBeInTheDocument()
-    const spinner = screen.getByRole('status', { hidden: true })
+    const loadingContainer = screen.getByRole('status')
+    expect(loadingContainer).toBeInTheDocument()
+    // Spinner is decorative (aria-hidden), so we check for the animated element by class
+    const spinner = loadingContainer.querySelector('.animate-spin')
     expect(spinner).toBeInTheDocument()
-    expect(spinner).toHaveClass('animate-spin')
   })
 
   /**
@@ -615,6 +617,7 @@ describe('MyPosts Component', () => {
   /**
    * RED phase: Test active filter button has visual indicator
    * Expected to FAIL if active filter not styled differently
+   * Also verifies ARIA state via aria-pressed for accessibility
    */
   it('highlights active filter button', () => {
     mockUseMyPosts.mockReturnValue({
@@ -629,6 +632,7 @@ describe('MyPosts Component', () => {
     fireEvent.click(draftsButton)
 
     expect(draftsButton).toHaveClass(/bg-primary|bg-blue|variant-default/)
+    expect(draftsButton).toHaveAttribute('aria-pressed', 'true')
   })
 
   /**
