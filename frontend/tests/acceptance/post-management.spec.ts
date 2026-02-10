@@ -119,20 +119,14 @@ test.describe('Post Management UI', () => {
       await expect(page.locator('.w-md-editor-preview')).toContainText('Updated Title')
     }
 
-    // Requirement 2: Ctrl+S saves automatically
-    let _saveCalled = false
-    await page.route('**/api/posts/*', async route => {
-      if (route.request().method() === 'PUT') {
-        _saveCalled = true
-        await route.fulfill({ status: 200, body: '{}' })
-      } else {
-        await route.continue()
-      }
-    })
+    const savePromise = page.waitForRequest(
+      request =>
+        request.url().includes('/api/posts/') && request.method() === 'PUT',
+    )
 
     await textarea.press('Control+s')
-    // Note: Playwright might need special handling for shortcuts or wait for toast
-    // expect(_saveCalled).toBeTruthy()
+    const saveRequest = await savePromise
+    expect(saveRequest).toBeDefined()
   })
 
   test('Requirement 4 & 5: Publish/Unpublish flow with modals', async ({ page }) => {

@@ -324,6 +324,9 @@ def test_requirement_6_delete_draft(client, mock_clerk_auth, mock_github):
     # Verify deletion
     assert not os.path.exists(file_path)
     mock_github.delete_file.assert_called_once()
+    delete_kwargs = mock_github.delete_file.call_args.kwargs
+    assert slug in delete_kwargs["path"]
+    assert delete_kwargs["message"] == f"Delete draft: {slug}"
 
 
 def test_requirement_7_list_author_posts(client, mock_clerk_auth):

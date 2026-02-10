@@ -107,7 +107,6 @@ def test_build_dir(tmp_path):
 
 @pytest.fixture
 def client(test_settings, test_build_dir, monkeypatch, tmp_path):
-    """Create Flask test client with real test build directory."""
     monkeypatch.setenv("BUILD_DIR", str(test_build_dir))
     monkeypatch.setenv("DRAFTS_PATH", str(tmp_path / "drafts"))
     monkeypatch.setenv("GITHUB_PERSONAL_ACCESS_TOKEN", "test_token")
@@ -116,8 +115,8 @@ def client(test_settings, test_build_dir, monkeypatch, tmp_path):
 
     import backend.api.routes.posts
 
-    backend.api.routes.posts._filesystem_settings = None
-    backend.api.routes.posts._github_settings = None
+    monkeypatch.setattr(backend.api.routes.posts, "_filesystem_settings", None)
+    monkeypatch.setattr(backend.api.routes.posts, "_github_settings", None)
 
     app = create_app()
 
