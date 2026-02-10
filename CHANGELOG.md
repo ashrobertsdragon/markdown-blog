@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend Documentation**: Comprehensive post management UI documentation
+
+  - Documented all post management components: MarkdownEditor, PreviewPane, PostForm with props interfaces, features, and usage examples
+  - Documented all pages: PostEditor, MyPosts, PublicPost with workflows and error handling
+  - Documented 8 React Query hooks: useDraft, useMyPosts, usePublicPost (queries), useCreateDraft, useSaveDraft, usePublishPost, useUnpublishPost, useDeleteDraft (mutations) with parameters, return types, authentication requirements, and cache invalidation patterns
+  - Documented postsApi client: 8 methods with HTTP endpoints, request/response formats, and error codes
+  - Complete workflow examples: Create → Edit → Save → Publish (4-step process), list with filters/pagination, delete with confirmation
+  - Architecture overview: tech stack table, component hierarchy, data flow diagram
+  - State management: React Query cache keys, invalidation patterns, optimistic updates
+  - Testing guide: Vitest unit tests and Playwright E2E tests with examples
+  - Accessibility: ARIA attributes, keyboard navigation, focus management
+  - Security: XSS prevention (client + server), JWT token handling, input validation, CORS
+  - Files created: frontend/README.md (2000+ lines of developer documentation)
+
+- **Backend Documentation**: Comprehensive post management API documentation
+
+  - Documented all 7 post management endpoints with full specifications and examples
+  - Created curl examples for each endpoint showing proper authentication and request/response formats
+  - Documented markdown rendering pipeline: markdown-it-py parsing → Pygments syntax highlighting → Bleach HTML sanitization
+  - Documented all allowed HTML tags and security measures (XSS prevention, external link rel attributes, dangerous tag removal)
+  - Documented draft file format with YAML front matter specification and examples
+  - Documented workflow from draft creation through publishing/unpublishing/deletion
+  - Added visual pipeline diagram showing the 3-step rendering process
+  - Included security measures table showing filtered content examples
+  - Files modified: README.md (added "Post Management" section with API Endpoints, Rendering Pipeline, and Draft File Format subsections)
+
 - **Frontend**: Post management routes with role-based access control
 
   - Added three protected author routes: /new-post for creating posts, /edit/:slug for editing drafts, and /my-posts for managing all posts

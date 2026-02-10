@@ -57,27 +57,27 @@ A modern blog platform combining Domain-Driven Design principles with a dual-sto
    cd markdown-blog
    ```
 
-1. **Configure Environment**
+2. **Configure Environment**
 
    - Copy `backend/.env.example` to `backend/.env`.
    - Copy `frontend/.env.example` to `frontend/.env`.
    - Fill in the required values in both `.env` files, such as database credentials and API keys.
 
-1. **Setup Backend**
+3. **Setup Backend**
 
    ```bash
    cd backend
    uv sync
    ```
 
-1. **Setup Frontend**
+4. **Setup Frontend**
 
    ```bash
    cd ../frontend
    npm install
    ```
 
-1. **Setup Database**
+5. **Setup Database**
    Ensure your PostgreSQL server is running, then create the development database.
 
    ```bash
@@ -86,7 +86,7 @@ A modern blog platform combining Domain-Driven Design principles with a dual-sto
 
    The backend is configured to use this database via the `DATABASE_URL` in `backend/.env`.
 
-1. **Run the Application**
+6. **Run the Application**
    Open two terminals:
 
    ```bash
@@ -235,9 +235,9 @@ CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
 **Where to find these values:**
 
 1. Sign up at [clerk.com](https://clerk.com)
-1. Create a new application
-1. Navigate to **API Keys** in the Clerk dashboard
-1. Copy the **Secret Key** and **Publishable Key**
+2. Create a new application
+3. Navigate to **API Keys** in the Clerk dashboard
+4. Copy the **Secret Key** and **Publishable Key**
 
 #### Protecting Endpoints
 
@@ -485,7 +485,7 @@ The application provides two `useAuth` hooks with different purposes:
    - Provides role-based logic (`role`, `isSignedIn`, `isLoaded`, `user`)
    - Use for role checks and user display in components
 
-1. **Clerk useAuth** (`@clerk/clerk-react`):
+2. **Clerk useAuth** (`@clerk/clerk-react`):
 
    - Provides `getToken()` for obtaining JWT tokens
    - Use when making authenticated API calls
@@ -630,9 +630,9 @@ def create_post():
 **Debugging Tips:**
 
 1. **Check JWT payload**: Use [jwt.io](https://jwt.io) to decode tokens and verify claims (`sub`, `email`, `exp`)
-1. **Inspect network requests**: Use browser DevTools Network tab to verify `Authorization` header is present
-1. **Enable Flask debug logging**: Set `FLASK_DEBUG=1` in `backend/.env` to see detailed auth errors
-1. **Test with curl**: Manually test endpoints with curl to isolate frontend vs backend issues:
+2. **Inspect network requests**: Use browser DevTools Network tab to verify `Authorization` header is present
+3. **Enable Flask debug logging**: Set `FLASK_DEBUG=1` in `backend/.env` to see detailed auth errors
+4. **Test with curl**: Manually test endpoints with curl to isolate frontend vs backend issues:
 
 ```bash
 # Get token from Clerk dashboard or browser DevTools
@@ -644,6 +644,643 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:5000/auth/me
 # Test role-based access
 curl -H "Authorization: Bearer $TOKEN" http://localhost:5000/users
 ```
+
+## Post Management
+
+### API Endpoints
+
+The post management API provides endpoints for creating, editing, publishing, and listing blog posts. All endpoints require authentication.
+
+#### Create Draft
+
+Create a new blog post draft.
+
+**Endpoint:** `POST /api/posts`
+
+**Authentication:** Required (author role minimum)
+
+**Request body:**
+
+```json
+{
+  "slug": "my-first-post",
+  "title": "My First Blog Post"
+}
+```
+
+**Response (201 Created):**
+
+```json
+{
+  "id": 1,
+  "slug": "my-first-post",
+  "title": "My First Blog Post",
+  "author_id": 42,
+  "html_content": null,
+  "content": "",
+  "published": false,
+  "published_at": null,
+  "created_at": "2026-01-20T14:30:00+00:00",
+  "updated_at": "2026-01-20T14:30:00+00:00"
+}
+```
+
+**Error responses:**
+
+- `400 Bad Request`: Missing fields (slug, title) or invalid slug format
+- `401 Unauthorized`: Missing or invalid authentication token
+- `403 Forbidden`: User does not have author role
+
+**Example curl:**
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl -X POST http://localhost:5000/api/posts \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "slug": "my-first-post",
+    "title": "My First Blog Post"
+  }'
+```
+
+**Slug format:**
+
+- Must be lowercase alphanumeric with hyphens only
+- Cannot contain spaces, underscores, or special characters
+- Example valid slugs: `hello-world`, `my-post-123`, `draft-2026`
+
+#### Get Draft
+
+Retrieve a draft post by slug.
+
+**Endpoint:** `GET /api/posts/:slug`
+
+**Authentication:** Required
+
+**Request parameters:**
+
+- `slug` (path): The post slug identifier
+
+**Response (200 OK):**
+
+```json
+{
+  "id": 1,
+  "slug": "my-first-post",
+  "title": "My First Blog Post",
+  "author_id": 42,
+  "html_content": null,
+  "content": "# My First Blog Post\n\nWelcome to my blog!",
+  "published": false,
+  "published_at": null,
+  "created_at": "2026-01-20T14:30:00+00:00",
+  "updated_at": "2026-01-20T14:30:00+00:00"
+}
+```
+
+**Error responses:**
+
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: User cannot access another author's draft (non-admin)
+- `404 Not Found`: Draft does not exist
+
+**Access control:**
+
+- Authors can only view their own drafts
+- Admins can view any draft
+
+**Example curl:**
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl http://localhost:5000/api/posts/my-first-post \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+#### Save Draft
+
+Update draft content.
+
+**Endpoint:** `PUT /api/posts/:slug`
+
+**Authentication:** Required
+
+**Request body:**
+
+```json
+{
+  "content": "# My Post\n\nThis is the markdown content of my post."
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "message": "Draft saved successfully",
+  "slug": "my-first-post"
+}
+```
+
+**Error responses:**
+
+- `400 Bad Request`: Missing content field
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: User cannot edit another author's draft (non-admin)
+- `404 Not Found`: Draft does not exist
+
+**Notes:**
+
+- Saves raw markdown content only (rendering happens on publish)
+- Automatically commits to GitHub for version history
+- Updates the `updated_at` timestamp
+
+**Example curl:**
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl -X PUT http://localhost:5000/api/posts/my-first-post \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "content": "# My First Blog Post\n\nWelcome to my blog!"
+  }'
+```
+
+#### Publish Post
+
+Publish a draft, rendering markdown to HTML and making it visible.
+
+**Endpoint:** `POST /api/posts/:slug/publish`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "id": 1,
+  "slug": "my-first-post",
+  "title": "My First Blog Post",
+  "author_id": 42,
+  "html_content": "<h1>My First Blog Post</h1>\n<p>Welcome to my blog!</p>\n",
+  "published": true,
+  "published_at": "2026-01-20T14:35:00+00:00",
+  "created_at": "2026-01-20T14:30:00+00:00",
+  "updated_at": "2026-01-20T14:35:00+00:00"
+}
+```
+
+**Error responses:**
+
+- `400 Bad Request`: Post already published
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: User cannot publish another author's post (non-admin)
+- `404 Not Found`: Draft does not exist
+
+**Pipeline on publish:**
+
+1. Reads draft markdown from filesystem
+2. Renders markdown to HTML using markdown-it-py
+3. Applies syntax highlighting to code blocks with Pygments
+4. Sanitizes HTML with Bleach (allowlist-based)
+5. Stores rendered HTML in database
+6. Updates publication status and timestamps
+7. Commits changes to GitHub
+
+**Example curl:**
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl -X POST http://localhost:5000/api/posts/my-first-post/publish \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+#### Unpublish Post
+
+Hide a published post from public view.
+
+**Endpoint:** `POST /api/posts/:slug/unpublish`
+
+**Authentication:** Required
+
+**Response (200 OK):**
+
+```json
+{
+  "id": 1,
+  "slug": "my-first-post",
+  "title": "My First Blog Post",
+  "author_id": 42,
+  "html_content": "<h1>My First Blog Post</h1>\n<p>Welcome to my blog!</p>\n",
+  "published": false,
+  "published_at": "2026-01-20T14:35:00+00:00",
+  "created_at": "2026-01-20T14:30:00+00:00",
+  "updated_at": "2026-01-20T14:40:00+00:00"
+}
+```
+
+**Error responses:**
+
+- `400 Bad Request`: Post is not published
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: User cannot unpublish another author's post (non-admin)
+- `404 Not Found`: Post does not exist
+
+**Notes:**
+
+- Removes post from public view but keeps HTML content in database
+- HTML content remains accessible via API to authenticated users
+- Published timestamp is preserved
+
+**Example curl:**
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl -X POST http://localhost:5000/api/posts/my-first-post/unpublish \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+#### Delete Draft
+
+Delete a draft post permanently.
+
+**Endpoint:** `DELETE /api/posts/:slug`
+
+**Authentication:** Required
+
+**Response:**
+
+204 No Content
+
+**Error responses:**
+
+- `400 Bad Request`: Post is published (must unpublish first)
+- `401 Unauthorized`: Missing or invalid authentication
+- `403 Forbidden`: User cannot delete another author's draft (non-admin)
+- `404 Not Found`: Draft does not exist
+
+**Notes:**
+
+- Cannot delete published posts (unpublish first)
+- Removes draft from filesystem, database, and GitHub
+- This operation is permanent
+
+**Example curl:**
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl -X DELETE http://localhost:5000/api/posts/my-first-post \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+#### Get Public Post
+
+Retrieve a published post by slug. This is a public endpoint and does not require authentication.
+
+**Endpoint:** `GET /api/posts/:slug/public`
+
+**Authentication:** None
+
+**Response (200 OK):**
+
+```json
+{
+  "slug": "my-first-post",
+  "title": "My First Blog Post",
+  "author": "author@example.com",
+  "html_content": "<h1>My First Blog Post</h1>\n<p>Welcome to my blog!</p>\n",
+  "published_at": "2026-01-20T14:35:00+00:00"
+}
+```
+
+**Error responses:**
+
+- `403 Forbidden`: Post is not published
+- `404 Not Found`: Post does not exist
+
+**Example curl:**
+
+```bash
+curl http://localhost:5000/api/posts/my-first-post/public
+```
+
+#### List Author's Posts
+
+List all posts belonging to the authenticated user.
+
+**Endpoint:** `GET /api/posts/my-posts`
+
+**Authentication:** Required
+
+**Query parameters:**
+
+- `filter` (optional): Filter posts by status: `all` (default), `drafts`, `published`
+- `page` (optional): Page number (1-indexed, default: 1)
+- `limit` (optional): Posts per page, 1-100 (default: 20)
+
+**Response (200 OK):**
+
+```json
+{
+  "posts": [
+    {
+      "id": 1,
+      "slug": "my-first-post",
+      "title": "My First Blog Post",
+      "author_id": 42,
+      "html_content": "<h1>My First Blog Post</h1>\n<p>Welcome to my blog!</p>\n",
+      "content": null,
+      "published": true,
+      "published_at": "2026-01-20T14:35:00+00:00",
+      "created_at": "2026-01-20T14:30:00+00:00",
+      "updated_at": "2026-01-20T14:35:00+00:00"
+    }
+  ],
+  "total_count": 15,
+  "total_pages": 1,
+  "page": 1,
+  "limit": 20
+}
+```
+
+**Error responses:**
+
+- `400 Bad Request`: Invalid query parameters (invalid filter or pagination)
+- `401 Unauthorized`: Missing or invalid authentication
+
+**Examples:**
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl "http://localhost:5000/api/posts/my-posts" \
+  -H "Authorization: Bearer $TOKEN"
+
+curl "http://localhost:5000/api/posts/my-posts?filter=drafts&page=1&limit=10" \
+  -H "Authorization: Bearer $TOKEN"
+
+curl "http://localhost:5000/api/posts/my-posts?filter=published" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### Markdown Rendering Pipeline
+
+The post management system uses a multi-step pipeline to safely convert markdown to HTML with syntax highlighting.
+
+#### Overview
+
+```text
+Markdown Draft
+    ↓
+1. Parse with markdown-it-py
+    ↓
+2. Highlight code blocks with Pygments
+    ↓
+3. Sanitize HTML with Bleach
+    ↓
+Published HTML
+```
+
+#### Step 1: Markdown Parsing
+
+The system uses **markdown-it-py**, a Python implementation of the markdown-it JavaScript library.
+
+**Features:**
+
+- CommonMark-compliant markdown parsing
+- Support for tables, strikethrough, code blocks, etc.
+- Link and image support
+- Nested lists and blockquotes
+
+**Supported markdown:**
+
+```markdown
+# Headings
+
+## Level 2
+### Level 3
+
+**Bold text** and *italic text*
+
+- Unordered lists
+  - Nested items
+  - More items
+
+1. Ordered lists
+2. Second item
+
+[Links](https://example.com)
+
+![Images](https://example.com/image.png)
+
+> Block quotes
+> can span multiple lines
+
+`inline code` and code blocks:
+
+    python
+    def hello():
+        print("world")
+```
+
+#### Step 2: Syntax Highlighting
+
+Code blocks are highlighted using **Pygments**, a syntax highlighter supporting 500+ languages.
+
+**Features:**
+
+- Automatic language detection if not specified
+- Fallback to plain text for unknown languages
+- HTML-escaped code to prevent injection
+- CSS classes for styling
+
+**Code block syntax:**
+
+````markdown
+```python
+def factorial(n):
+    return 1 if n <= 1 else n * factorial(n - 1)
+```
+
+```javascript
+const sum = (a, b) => a + b;
+```
+
+```
+Plain text code block (language not specified)
+```
+````
+
+**Rendered output:**
+
+The highlighted code is wrapped in `<pre>` tags with CSS classes for styling:
+
+```html
+<div class="highlight highlight-python">
+  <pre>
+    <span class="k">def</span> <span class="nf">factorial</span>(<span class="n">n</span>):
+      <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">n</span> <span class="o">*</span> <span class="n">factorial</span>(<span class="n">n</span> <span class="o">-</span> <span class="mi">1</span>)
+  </pre>
+</div>
+```
+
+**Supported languages:**
+
+Common languages include: Python, JavaScript, TypeScript, Java, C++, C#, Go, Rust, Ruby, PHP, SQL, Bash, HTML, CSS, JSON, YAML, and 400+ more.
+
+#### Step 3: HTML Sanitization
+
+The rendered HTML is sanitized using **Bleach**, an allowlist-based HTML sanitizer that removes dangerous content while preserving safe formatting.
+
+**Allowed tags:**
+
+- **Headings:** `<h1>`, `<h2>`, `<h3>`, `<h4>`, `<h5>`, `<h6>`
+- **Text formatting:** `<p>`, `<strong>`, `<em>`
+- **Lists:** `<ul>`, `<ol>`, `<li>`
+- **Code:** `<code>`, `<pre>`, `<div>` (for syntax highlighting)
+- **Links and images:** `<a>`, `<img>`
+- **Tables:** `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>`
+- **Other:** `<blockquote>`, `<br>`, `<hr>`, `<span>`
+
+**Allowed attributes:**
+
+- **Links (`<a>`):** `href`, `title`, `rel`
+- **Images (`<img>`):** `src`, `alt`, `title`
+
+**Security measures:**
+
+1. **Dangerous tags removed:** `<script>`, `<style>`, `<iframe>`, `<object>` and their contents are completely removed
+2. **Protocol filtering:** Only `http://`, `https://`, and `mailto:` protocols allowed
+3. **External link security:** All external links (`http://`, `https://`) automatically get `rel="nofollow noreferrer"` attributes
+4. **XSS prevention:** Event handlers and inline styles removed
+
+**Examples of filtered content:**
+
+| Input                               | Output                                                     | Reason                          |
+| ----------------------------------- | ---------------------------------------------------------- | ------------------------------- |
+| `<script>alert('xss')</script>`     | *(removed)*                                                | Script tags completely stripped |
+| `<a href="javascript:alert()">`     | `<a>` (no href)                                            | JavaScript protocol removed     |
+| `<a href="https://example.com">`    | `<a href="https://example.com" rel="nofollow noreferrer">` | External link protection added  |
+| `<img src="x" onerror="alert()">`   | `<img src="x">`                                            | Event handler removed           |
+| `<style>body{display:none}</style>` | *(removed)*                                                | Style tags completely stripped  |
+
+### Draft File Format
+
+Draft posts are stored as markdown files with YAML front matter in the `drafts/` directory.
+
+#### Directory Structure
+
+```text
+drafts/
+├── my-first-post.md
+├── hello-world.md
+├── draft-2026-01-20.md
+└── .git/                # Separate git repository for version control
+```
+
+Each draft file corresponds to one post slug.
+
+#### File Format
+
+Files are stored as markdown with YAML front matter separated by `---` delimiters.
+
+**Example draft file (`drafts/my-first-post.md`):**
+
+```markdown
+---
+title: My First Blog Post
+author: user_abc123
+created_at: '2026-01-20T14:30:00+00:00'
+published: false
+tags:
+- blogging
+- first-post
+---
+
+# My First Blog Post
+
+Welcome to my blog! This is my first post.
+
+## Subsection
+
+Here's some content with **bold** and *italic* text.
+
+```
+
+#### YAML Front Matter Fields
+
+All fields are required unless noted otherwise.
+
+| Field          | Type              | Required | Description                                                 | Example                       |
+| -------------- | ----------------- | -------- | ----------------------------------------------------------- | ----------------------------- |
+| `title`        | string            | Yes      | Post title displayed to readers                             | `"My First Blog Post"`        |
+| `author`       | string            | Yes      | Clerk user ID of the post author                            | `"user_abc123"`               |
+| `created_at`   | ISO 8601 datetime | Yes      | UTC timestamp when draft was created                        | `"2026-01-20T14:30:00+00:00"` |
+| `published`    | boolean           | Yes      | Whether the post is published                               | `false`                       |
+| `published_at` | ISO 8601 datetime | Optional | UTC timestamp when first published (omitted if unpublished) | `"2026-01-20T14:35:00+00:00"` |
+| `tags`         | string array      | No       | List of tags for categorization                             | `["blogging", "tutorial"]`    |
+
+#### Front Matter Examples
+
+**Draft post (unpublished):**
+
+```yaml
+---
+title: Work in Progress
+author: user_xyz789
+created_at: '2026-01-20T10:00:00+00:00'
+published: false
+tags: []
+---
+```
+
+**Published post:**
+
+```yaml
+---
+title: Published Guide
+author: user_xyz789
+created_at: '2026-01-15T08:30:00+00:00'
+published: true
+published_at: '2026-01-20T14:35:00+00:00'
+tags:
+- tutorial
+- guides
+---
+```
+
+#### Markdown Content
+
+Everything after the closing `---` delimiter is the raw markdown content.
+
+**Features:**
+
+- Supports all CommonMark markdown syntax
+- Code blocks with language-specific syntax highlighting
+- Tables, lists, blockquotes, links, and images
+- Rendered HTML is generated only when post is published
+
+**Storage:**
+
+- Stored in plain text (easy to version control and edit)
+- Stored on filesystem at `drafts/{slug}.md`
+- Backed up to GitHub API automatically on every save
+- Supports concurrent editing with proper file locking
+
+#### Workflow
+
+1. **Draft created:** When you create a draft via the API, a new `.md` file is created with initial YAML front matter and blank content
+2. **Draft saved:** Each `PUT /api/posts/:slug` saves the markdown content to the filesystem and commits to GitHub
+3. **Draft published:** When you publish, the markdown is rendered to HTML, sanitized, and stored in the database; `published: true` is set in front matter
+4. **Draft unpublished:** Setting `published: false` hides the post but keeps the rendered HTML stored
 
 ## Testing
 
@@ -787,7 +1424,7 @@ Before deploying to production:
    git checkout -b feature/your-feature-name
    ```
 
-1. **Write failing tests (TDD)**
+2. **Write failing tests (TDD)**
 
    ```bash
    # Backend
@@ -797,20 +1434,20 @@ Before deploying to production:
    cd frontend && npm test -- tests/NewComponent.test.jsx
    ```
 
-1. **Implement feature**
+3. **Implement feature**
 
    - Follow existing patterns in codebase
    - Keep domain logic in `domain/` layer
    - Infrastructure concerns in `infrastructure/`
 
-1. **Ensure tests pass**
+4. **Ensure tests pass**
 
    ```bash
    uv run pytest          # Backend
    npm test               # Frontend
    ```
 
-1. **Run quality checks**
+5. **Run quality checks**
 
 ```bash
 uvx ruff check --fix . # Backend lint
@@ -825,11 +1462,11 @@ git add .
 git commit -m "feat: add post revision comparison API"
 ```
 
-7.**Push and create PR**
+7. **Push and create PR**
 
 ```bash
 git push origin feature/your-feature-name
-#Create PR on GitHub
+# Create PR on GitHub
 ```
 
 ### Commit Message Convention
