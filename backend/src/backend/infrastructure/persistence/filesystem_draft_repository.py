@@ -60,6 +60,7 @@ class DraftFile:
             Post content here.
         """
         front_matter = {
+            "slug": self.slug,
             "title": self.title,
             "author": self.author,
             "created_at": self.created_at.isoformat(),

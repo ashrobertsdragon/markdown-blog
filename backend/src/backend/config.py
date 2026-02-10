@@ -166,10 +166,15 @@ class DBSettings(BaseSettings):
 
 
 class TestDBSettings(DBSettings):
-    """Settings for testing."""
+    """Settings for testing - uses in-memory SQLite."""
 
     model_config = SettingsConfigDict(env_prefix="LOCAL_")
     FLASK_ENV: FlaskEnv = FlaskEnv.TESTING
+
+    @property
+    def url(self) -> str:
+        """Use in-memory SQLite for testing."""
+        return "sqlite:///:memory:"
 
 
 class DevDBSettings(DBSettings):

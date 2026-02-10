@@ -62,6 +62,8 @@ class HtmlSanitizer:
     ALLOWED_ATTRIBUTES = {
         "a": ["href", "title", "rel"],
         "img": ["src", "alt", "title"],
+        "div": ["class"],
+        "span": ["class"],
     }
 
     ALLOWED_PROTOCOLS = ["http", "https", "mailto"]

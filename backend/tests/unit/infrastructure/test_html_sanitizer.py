@@ -323,8 +323,15 @@ class TestHtmlSanitizerAttributeFiltering:
     def test_removes_class_attributes(
         self, html_sanitizer: HtmlSanitizer
     ) -> None:
-        """Class attributes should be removed."""
-        html = '<div class="container">Content</div>'
+        """Class attributes preserved on allowed tags.
+
+        Classes are preserved on div/span for syntax highlighting.
+        """
+        html = '<div class="highlight">Content</div>'
+        result = html_sanitizer.sanitize(html)
+        assert 'class="highlight"' in result
+
+        html = '<p class="invalid">Content</p>'
         result = html_sanitizer.sanitize(html)
         assert "class=" not in result
 
