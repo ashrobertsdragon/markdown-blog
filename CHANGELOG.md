@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Comprehensive acceptance tests for post management
+
+  - Created `monorepo/backend/tests/acceptance/test_post_management.py` covering all 12 requirements
+  - Scenarios include: draft creation, slug validation, editing content, markdown preview, publishing/unpublishing, deletion, and author authorization
+  - Tests exercise the full stack using Flask test client and temporary filesystem for drafts
+  - Corrected mock paths for GitHub service integration
+  - Moved shared `client` and `test_build_dir` fixtures to root `conftest.py` for multi-directory accessibility
+
+- **Frontend**: Comprehensive acceptance tests for post management UI
+
+  - Created `monorepo/frontend/tests/acceptance/post-management.spec.ts` covering UI-specific requirements
+  - Scenarios include: form visibility, real-time slug normalization, markdown preview toggling, and confirmation modals
+  - Tests verify client-side navigation and state transitions using Playwright
+  - Updated `playwright.config.ts` to include the new `acceptance` test directory
+
 - **Frontend Documentation**: Comprehensive post management UI documentation
 
   - Documented all post management components: MarkdownEditor, PreviewPane, PostForm with props interfaces, features, and usage examples
