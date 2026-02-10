@@ -164,12 +164,32 @@ class DBSettings(BaseSettings):
         )
         return str(db)
 
+    @property
+    def engine_kwargs(self) -> dict:
+        """Engine arguments for SQLModel create_engine."""
+        return {}
+
 
 class TestDBSettings(DBSettings):
-    """Settings for testing."""
+    """Settings for testing - uses in-memory SQLite."""
 
     model_config = SettingsConfigDict(env_prefix="LOCAL_")
     FLASK_ENV: FlaskEnv = FlaskEnv.TESTING
+
+    @property
+    def url(self) -> str:
+        """Use in-memory SQLite for testing."""
+        return "sqlite:///:memory:"
+
+    @property
+    def engine_kwargs(self) -> dict:
+        """Engine arguments for SQLite in-memory."""
+        from sqlalchemy.pool import StaticPool
+
+        return {
+            "connect_args": {"check_same_thread": False},
+            "poolclass": StaticPool,
+        }
 
 
 class DevDBSettings(DBSettings):

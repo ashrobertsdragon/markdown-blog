@@ -14,20 +14,50 @@ Requirements implemented:
 """
 
 import re
-from collections.abc import MutableMapping
+from collections.abc import Iterator, MutableMapping
+from typing import Any
 
 import bleach
+from bleach.sanitizer import BleachSanitizerFilter, Cleaner
+
+
+class SensitiveClassFilter(BleachSanitizerFilter):
+    """Filter for html5lib to strip sensitive class prefixes."""
+
+    def __init__(
+        self,
+        source: Any,
+        prefixes: tuple[str, ...],
+    ) -> None:
+        """Initialize filter."""
+        super().__init__(source)
+        self.prefixes = prefixes
+
+    def __iter__(self) -> Iterator[dict]:
+        """Iterate over tokens and filter class attributes."""
+        for token in self.source:
+            if token["type"] in ("StartTag", "EmptyTag"):
+                attrs = token["data"]
+                if isinstance(attrs, dict):
+                    for attr_key, attr_value in list(attrs.items()):
+                        if attr_key[1] == "class":
+                            classes = attr_value.split()
+                            filtered = [
+                                c
+                                for c in classes
+                                if not any(
+                                    c.startswith(p) for p in self.prefixes
+                                )
+                            ]
+                            if not filtered:
+                                del attrs[attr_key]
+                            else:
+                                attrs[attr_key] = " ".join(filtered)
+            yield token
 
 
 class HtmlSanitizer:
-    """Sanitizes HTML content using allowlist-based filtering.
-
-    This class provides stateless HTML sanitization using Bleach. It removes
-    dangerous tags, attributes, and protocols while preserving safe HTML
-    formatting for blog post content.
-
-    All methods are stateless and can be called on a single instance.
-    """
+    """Sanitizes HTML content using allowlist-based filtering."""
 
     ALLOWED_TAGS = [
         "p",
@@ -62,34 +92,40 @@ class HtmlSanitizer:
     ALLOWED_ATTRIBUTES = {
         "a": ["href", "title", "rel"],
         "img": ["src", "alt", "title"],
+        "div": ["class"],
+        "span": ["class"],
     }
 
     ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
 
-    def sanitize(self, html: str) -> str:
-        """Sanitize HTML using Bleach allowlist.
+    SENSITIVE_CLASS_PREFIXES = (
+        "js-",
+        "admin-",
+        "tracking-",
+        "track-",
+        "analytics-",
+        "experiment-",
+    )
 
-        This method performs a three-step sanitization:
-        1. Remove script and style tags with their contents completely
-        2. Clean HTML using allowlist of tags, attributes, and protocols
-        3. Add rel="nofollow noreferrer" to external links
+    def __init__(self) -> None:
+        """Initialize the sanitizer with a configured Bleach Cleaner."""
 
-        Args:
-            html: The HTML string to sanitize.
+        def filter_factory(source: Any) -> SensitiveClassFilter:
+            return SensitiveClassFilter(source, self.SENSITIVE_CLASS_PREFIXES)
 
-        Returns:
-            Sanitized HTML string with dangerous content removed and
-            external links modified to include nofollow/noreferrer.
-        """
-        preprocessed = self._remove_dangerous_tags_with_content(html)
-
-        cleaned = bleach.clean(
-            preprocessed,
+        self._cleaner = Cleaner(
             tags=self.ALLOWED_TAGS,
             attributes=self.ALLOWED_ATTRIBUTES,
             protocols=self.ALLOWED_PROTOCOLS,
+            filters=[filter_factory],
             strip=True,
         )
+
+    def sanitize(self, html: str) -> str:
+        """Sanitize HTML using Bleach allowlist."""
+        preprocessed = self._remove_dangerous_tags_with_content(html)
+
+        cleaned = self._cleaner.clean(preprocessed)
 
         linkified = bleach.linkify(
             cleaned,

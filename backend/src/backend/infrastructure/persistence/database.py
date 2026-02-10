@@ -11,23 +11,18 @@ from functools import lru_cache
 from sqlalchemy.engine import Engine
 from sqlmodel import Session, create_engine
 
-from backend.config import get_db_url
-
 
 @lru_cache
 def get_engine() -> Engine:
-    """Get or create database engine.
+    """Get or create database engine."""
+    from backend.config import _db_settings
 
-    Returns:
-        Cached SQLModel engine instance
-
-    Note:
-        Uses pool_pre_ping for connection health checks.
-    """
+    settings = _db_settings()
     return create_engine(
-        get_db_url(),
+        settings.url,
         pool_pre_ping=True,
         echo=False,
+        **settings.engine_kwargs,
     )
 
 

@@ -3,7 +3,7 @@ import { waitForAuthToLoad } from './fixtures/helpers'
 
 /**
  * Acceptance tests for Post Management UI based on requirements.md.
- * 
+ *
  * These tests verify the frontend implementation of the post management lifecycle,
  * covering form interactions, real-time updates, and state transitions.
  */
@@ -17,13 +17,15 @@ test.describe('Post Management UI', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           client: {
-            sessions: [{ 
-              id: 'sess_123', 
-              status: 'active',
-              user: { id: 'user_123', public_metadata: { role: 'author' } } 
-            }]
-          }
-        })
+            sessions: [
+              {
+                id: 'sess_123',
+                status: 'active',
+                user: { id: 'user_123', public_metadata: { role: 'author' } },
+              },
+            ],
+          },
+        }),
       })
     })
 
@@ -36,8 +38,8 @@ test.describe('Post Management UI', () => {
           id: 10,
           clerk_user_id: 'user_123',
           email: 'author@example.com',
-          role: 'author'
-        })
+          role: 'author',
+        }),
       })
     })
 
@@ -48,7 +50,7 @@ test.describe('Post Management UI', () => {
   test('Requirement 1 & 8: New Post form and slug normalization', async ({ page }) => {
     // Navigate to New Post page
     await page.goto('/new-post')
-    
+
     // Verify form fields SHALL appear
     const titleInput = page.locator('input[name="title"]')
     const slugInput = page.locator('input[name="slug"]')
@@ -65,7 +67,7 @@ test.describe('Post Management UI', () => {
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({ slug: 'my-new-post', title: 'My New Post' })
+        body: JSON.stringify({ slug: 'my-new-post', title: 'My New Post' }),
       })
     })
 
@@ -84,17 +86,17 @@ test.describe('Post Management UI', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ 
-          slug, 
-          title: 'Test Post', 
+        body: JSON.stringify({
+          slug,
+          title: 'Test Post',
           content: '# Initial Content',
-          published: false 
-        })
+          published: false,
+        }),
       })
     })
 
     await page.goto(`/edit/${slug}`)
-    
+
     // Verify markdown editor SHALL display
     const editor = page.locator('.w-md-editor')
     await expect(editor).toBeVisible()
@@ -112,25 +114,19 @@ test.describe('Post Management UI', () => {
     // Requirement 2: Real-time updates (simulated by typing and checking preview)
     const textarea = page.locator('.w-md-editor-text-input')
     await textarea.fill('# Updated Title')
-    
+
     if (await previewTab.isVisible()) {
       await expect(page.locator('.w-md-editor-preview')).toContainText('Updated Title')
     }
 
-    // Requirement 2: Ctrl+S saves automatically
-    let saveCalled = false
-    await page.route('**/api/posts/*', async route => {
-      if (route.request().method() === 'PUT') {
-        saveCalled = true
-        await route.fulfill({ status: 200, body: '{}' })
-      } else {
-        await route.continue()
-      }
-    })
+    const savePromise = page.waitForRequest(
+      request =>
+        request.url().includes('/api/posts/') && request.method() === 'PUT',
+    )
 
     await textarea.press('Control+s')
-    // Note: Playwright might need special handling for shortcuts or wait for toast
-    // expect(saveCalled).toBeTruthy()
+    const saveRequest = await savePromise
+    expect(saveRequest).toBeDefined()
   })
 
   test('Requirement 4 & 5: Publish/Unpublish flow with modals', async ({ page }) => {
@@ -139,7 +135,7 @@ test.describe('Post Management UI', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ slug, title: 'Publish Me', content: '...', published: false })
+        body: JSON.stringify({ slug, title: 'Publish Me', content: '...', published: false }),
       })
     })
 
@@ -158,7 +154,7 @@ test.describe('Post Management UI', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ slug, published: true })
+        body: JSON.stringify({ slug, published: true }),
       })
     })
 
@@ -175,7 +171,7 @@ test.describe('Post Management UI', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ slug, title: 'Delete Me', content: '...', published: false })
+        body: JSON.stringify({ slug, title: 'Delete Me', content: '...', published: false }),
       })
     })
 
@@ -213,14 +209,24 @@ test.describe('Post Management UI', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           posts: [
-            { slug: 'draft-1', title: 'Draft 1', published: false, updated_at: '2024-01-01T12:00:00Z' },
-            { slug: 'pub-1', title: 'Published 1', published: true, updated_at: '2024-01-02T12:00:00Z' }
+            {
+              slug: 'draft-1',
+              title: 'Draft 1',
+              published: false,
+              updated_at: '2024-01-01T12:00:00Z',
+            },
+            {
+              slug: 'pub-1',
+              title: 'Published 1',
+              published: true,
+              updated_at: '2024-01-02T12:00:00Z',
+            },
           ],
           total_count: 2,
           total_pages: 1,
           current_page: 1,
-          limit: 20
-        })
+          limit: 20,
+        }),
       })
     })
 

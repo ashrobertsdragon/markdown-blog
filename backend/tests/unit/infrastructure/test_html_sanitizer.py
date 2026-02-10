@@ -323,8 +323,28 @@ class TestHtmlSanitizerAttributeFiltering:
     def test_removes_class_attributes(
         self, html_sanitizer: HtmlSanitizer
     ) -> None:
-        """Class attributes should be removed."""
-        html = '<div class="container">Content</div>'
+        html = '<div class="highlight">Content</div>'
+        result = html_sanitizer.sanitize(html)
+        assert 'class="highlight"' in result
+
+        html = '<span class="token keyword">Content</span>'
+        result = html_sanitizer.sanitize(html)
+        assert 'class="token keyword"' in result
+
+        html = '<p class="invalid">Content</p>'
+        result = html_sanitizer.sanitize(html)
+        assert "class=" not in result
+
+    def test_strips_sensitive_class_prefixes(
+        self, html_sanitizer: HtmlSanitizer
+    ) -> None:
+        html = '<div class="js-hook safe-class admin-panel">Content</div>'
+        result = html_sanitizer.sanitize(html)
+        assert 'class="safe-class"' in result
+        assert "js-hook" not in result
+        assert "admin-panel" not in result
+
+        html = '<span class="tracking-id experiment-a">Content</span>'
         result = html_sanitizer.sanitize(html)
         assert "class=" not in result
 
