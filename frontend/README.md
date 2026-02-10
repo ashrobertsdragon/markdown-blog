@@ -270,11 +270,11 @@ interface PostFormProps {
 **Slug Normalization Rules:**
 
 1. Convert to lowercase
-1. Replace spaces with hyphens
-1. Remove special characters (keep only `a-z`, `0-9`, `-`)
-1. Collapse consecutive hyphens
-1. Trim leading/trailing hyphens
-1. Enforce 200 character limit
+2. Replace spaces with hyphens
+3. Remove special characters (keep only `a-z`, `0-9`, `-`)
+4. Collapse consecutive hyphens
+5. Trim leading/trailing hyphens
+6. Enforce 200 character limit
 
 **Example Usage:**
 
@@ -338,17 +338,17 @@ Main page for editing blog post drafts with markdown editor and preview.
 **Workflow:**
 
 1. Component mounts with slug from URL
-1. `useDraft(slug)` fetches draft from API
-1. Display loading spinner while fetching
-1. Render editor with draft content
-1. User edits markdown in editor
-1. User saves with button or Ctrl+S
-1. `useSaveDraft` mutation with optimistic update
-1. Success message shown and auto-dismissed
-1. User publishes with button
-1. Confirmation dialog shown
-1. `usePublishPost` mutation
-1. Navigate to public post page
+2. `useDraft(slug)` fetches draft from API
+3. Display loading spinner while fetching
+4. Render editor with draft content
+5. User edits markdown in editor
+6. User saves with button or Ctrl+S
+7. `useSaveDraft` mutation with optimistic update
+8. Success message shown and auto-dismissed
+9. User publishes with button
+10. Confirmation dialog shown
+11. `usePublishPost` mutation
+12. Navigate to public post page
 
 **Example Navigation:**
 
@@ -407,11 +407,11 @@ Author's post management page with filtering, pagination, and CRUD actions.
 **Workflow:**
 
 1. Component mounts, fetches posts with `useMyPosts(filter, page)`
-1. Display posts in table
-1. User clicks filter button → update filter state → refetch with new filter
-1. User clicks pagination → update page state → refetch with new page
-1. User clicks Delete → confirmation dialog opens
-1. User confirms → `useDeleteDraft` mutation → cache invalidated → list refreshes
+2. Display posts in table
+3. User clicks filter button → update filter state → refetch with new filter
+4. User clicks pagination → update page state → refetch with new page
+5. User clicks Delete → confirmation dialog opens
+6. User confirms → `useDeleteDraft` mutation → cache invalidated → list refreshes
 
 **Example Usage in Route:**
 
@@ -464,10 +464,10 @@ Public-facing page for viewing published blog posts.
 **Workflow:**
 
 1. Component mounts with slug from URL
-1. `usePublicPost(slug)` fetches from public endpoint (no auth)
-1. Display loading spinner while fetching
-1. Render post with title, metadata, and content
-1. Error: show "Post not found" alert with back link
+2. `usePublicPost(slug)` fetches from public endpoint (no auth)
+3. Display loading spinner while fetching
+4. Render post with title, metadata, and content
+5. Error: show "Post not found" alert with back link
 
 **Example Usage:**
 
@@ -558,6 +558,7 @@ interface PostResponse {
   title: string
   author_id: number
   html_content: string
+  content: string | null
   published: boolean
   published_at: string | null
   created_at: string
@@ -862,10 +863,10 @@ function DraftEditor({ slug }: { slug: string }) {
 **Optimistic Update Behavior:**
 
 1. User clicks Save
-1. UI immediately shows updated `updated_at` timestamp
-1. API request sent in background
-1. On success: cache updated with server response
-1. On error: cache rolled back to previous state, error shown
+2. UI immediately shows updated `updated_at` timestamp
+3. API request sent in background
+4. On success: cache updated with server response
+5. On error: cache rolled back to previous state, error shown
 
 ### usePublishPost
 
@@ -933,11 +934,11 @@ function PublishButton({ slug }: { slug: string }) {
 On publish, the backend:
 
 1. Reads markdown from filesystem
-1. Renders to HTML with syntax highlighting
-1. Sanitizes HTML with Bleach
-1. Stores in database
-1. Updates `published: true` and `published_at` timestamp
-1. Commits to GitHub
+2. Renders to HTML with syntax highlighting
+3. Sanitizes HTML with Bleach
+4. Stores in database
+5. Updates `published: true` and `published_at` timestamp
+6. Commits to GitHub
 
 ### useUnpublishPost
 
