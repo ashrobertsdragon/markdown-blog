@@ -76,7 +76,7 @@ class TestPostRevisionFactoryMethod:
         assert revision.id is not None
         assert isinstance(revision.id, UUID)
 
-    def test_post_revision_create_commit_sha_is_commit_sha_value_object(self) -> None:
+    def test_post_revision_create_stores_commit_sha_object(self) -> None:
         """Verify commit_sha field stores CommitSHA object."""
         post_id = uuid4()
         author_id = uuid4()
@@ -204,7 +204,9 @@ class TestPostRevisionFieldValidation:
         post_id = uuid4()
         author_id = uuid4()
 
-        with pytest.raises(TypeError, match="markdown_content must be a string"):
+        with pytest.raises(
+            TypeError, match="markdown_content must be a string"
+        ):
             PostRevision.create(
                 post_id=post_id,
                 commit_sha=commit_sha_str,

@@ -57,10 +57,10 @@ class TestCommitSHAValidationErrors:
             CommitSHA("")
 
     def test_commit_sha_rejects_non_hex_characters(self) -> None:
-        """CommitSHA raises ValueError when SHA contains non-hexadecimal characters."""
+        """CommitSHA raises ValueError for non-hexadecimal characters."""
         invalid_sha = "g1h2i3j4k5l6m7n8o9p0q1r2s3t4u5v6w7x8y9z0"
         with pytest.raises(
-            ValueError, match="Commit SHA must contain only hexadecimal characters"
+            ValueError, match="Commit SHA must contain only hexadecimal"
         ):
             CommitSHA(invalid_sha)
 
