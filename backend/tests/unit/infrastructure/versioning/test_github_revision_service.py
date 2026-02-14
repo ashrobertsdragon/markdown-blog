@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 import requests
+
 from backend.infrastructure.versioning.github_revision_service import (
     GitHubRevisionService,
 )
