@@ -3,6 +3,7 @@
 import datetime as dt
 from uuid import UUID
 
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, select
 
@@ -94,6 +95,41 @@ class PostRevisionRepository:
                 return None
         return None
 
+    def find_by_sha(self, commit_sha: str) -> PostRevision | None:
+        """Fetch revision by commit SHA only.
+
+        Args:
+            commit_sha: Git commit SHA string
+
+        Returns:
+            PostRevision domain aggregate or None if not found
+        """
+        if self.session:
+            session = self.session
+            statement = select(PostRevisionModel).where(
+                PostRevisionModel.commit_sha == commit_sha
+            )
+            model = session.exec(statement).first()
+            if model:
+                return self._to_domain(
+                    model, UUID(int=model.post_id), UUID(int=model.author_id)
+                )
+            return None
+        else:
+            for session in get_db():
+                statement = select(PostRevisionModel).where(
+                    PostRevisionModel.commit_sha == commit_sha
+                )
+                model = session.exec(statement).first()
+                if model:
+                    return self._to_domain(
+                        model,
+                        UUID(int=model.post_id),
+                        UUID(int=model.author_id),
+                    )
+                return None
+        return None
+
     def get_by_post_and_sha(
         self,
         post_id: int,
@@ -133,6 +169,73 @@ class PostRevisionRepository:
                     return self._to_domain(model, post_uuid, author_uuid)
                 return None
         return None
+
+    def find_by_post_id(
+        self, post_id: UUID, skip: int = 0, limit: int = 10
+    ) -> tuple[list[PostRevision], int]:
+        """Fetch revisions for a post by UUID with total count.
+
+        Args:
+            post_id: UUID of the post
+            skip: Number of records to skip (for pagination)
+            limit: Maximum number of records to return
+
+        Returns:
+            Tuple of (list of PostRevision aggregates, total count)
+        """
+        post_id_int = post_id.int
+
+        if self.session:
+            session = self.session
+            count_statement = (
+                select(func.count())
+                .select_from(PostRevisionModel)
+                .where(PostRevisionModel.post_id == post_id_int)
+            )
+            total_count = session.exec(count_statement).one()
+
+            statement = (
+                select(PostRevisionModel)
+                .where(PostRevisionModel.post_id == post_id_int)
+                .order_by(col(PostRevisionModel.created_at).desc())
+                .offset(skip)
+                .limit(limit)
+            )
+            models = session.exec(statement).all()
+            return (
+                [
+                    self._to_domain(model, post_id, UUID(int=model.author_id))
+                    for model in models
+                ],
+                total_count,
+            )
+        else:
+            for session in get_db():
+                count_statement = (
+                    select(func.count())
+                    .select_from(PostRevisionModel)
+                    .where(PostRevisionModel.post_id == post_id_int)
+                )
+                total_count = session.exec(count_statement).one()
+
+                statement = (
+                    select(PostRevisionModel)
+                    .where(PostRevisionModel.post_id == post_id_int)
+                    .order_by(col(PostRevisionModel.created_at).desc())
+                    .offset(skip)
+                    .limit(limit)
+                )
+                models = session.exec(statement).all()
+                return (
+                    [
+                        self._to_domain(
+                            model, post_id, UUID(int=model.author_id)
+                        )
+                        for model in models
+                    ],
+                    total_count,
+                )
+        return ([], 0)
 
     def list_by_post(
         self,

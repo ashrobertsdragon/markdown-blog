@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Revision tracking application layer with queries and commands
+
+  - Created application layer commands and queries for post revision management
+  - `RevertToRevisionCommand` - Revert post content to previous Git commit with authorization checks
+  - `GetRevisionHistoryQuery` - Retrieve paginated commit history for posts (skip/limit support)
+  - `GetRevisionQuery` - Fetch specific revision content with rendered HTML output
+  - `CompareRevisionsQuery` - Generate diffs between two revisions for change tracking
+  - All handlers follow pure function pattern with injected dependencies and comprehensive logging
+  - Authorization enforces owner-or-admin access for revert operations
+  - PostRevisionRepository extended with `find_by_post_id()` and `find_by_sha()` methods
+  - Comprehensive test coverage (99% for commands, 90% for queries) with 31 passing tests
+  - Type-safe implementation with Protocol pattern for dependency inversion
+  - Validates input constraints (slug ≤1000 chars, SHA ≤100 chars, skip ≤10000, limit ≤100)
+
 - **Backend**: GitHubRevisionService for fetching commit history from GitHub API
 
   - Created `backend/infrastructure/versioning/github_revision_service.py` with comprehensive error handling and rate limiting
