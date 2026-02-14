@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: GitHubRevisionService for fetching commit history from GitHub API
+
+  - Created `backend/infrastructure/versioning/github_revision_service.py` with comprehensive error handling and rate limiting
+  - Implemented `fetch_commits()` method for retrieving file commit history with pagination support
+  - Implemented `fetch_file_at_sha()` method for retrieving file content at specific commits
+  - Added exponential backoff retry logic (1s, 2s, 4s) for HTTP 429 rate limiting
+  - Returns None/empty list on errors for graceful degradation without exceptions
+  - Comprehensive unit test suite with 21 tests covering all methods and error paths
+  - Follows GitHubSyncService patterns for consistency (5s timeout, 3 max retries)
+  - Exported GitHubRevisionService from versioning infrastructure module
+  - All tests pass with 91.60% overall backend coverage maintained
+
 - **Backend**: Comprehensive acceptance tests for post management
 
   - Created `monorepo/backend/tests/acceptance/test_post_management.py` covering all 12 requirements
