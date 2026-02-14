@@ -1,6 +1,8 @@
 import datetime as dt
 from datetime import datetime
+from uuid import UUID
 
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -28,3 +30,25 @@ class Post(SQLModel, table=True):
     )
     created_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
+
+
+class PostRevisionModel(SQLModel, table=True):
+    """PostRevision table model."""
+
+    __tablename__ = "post_revisions"
+    __table_args__ = (
+        UniqueConstraint("post_id", "commit_sha", name="uq_post_commit"),
+    )
+
+    id: UUID | None = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="post.id", index=True)
+    commit_sha: str = Field(index=True)
+    author_id: int = Field(foreign_key="user.id", index=True)
+    commit_message: str
+    markdown_content: str
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(dt.UTC), index=True
+    )
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
+    is_revert: bool = Field(default=False)
+    attempt_count: int = Field(default=0)
