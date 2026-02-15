@@ -690,6 +690,146 @@ class TestListRevisionsEndpoint:
         assert response.json["has_more"] is True
         assert response.json["total_count"] == 25
 
+    def test_list_revisions_non_owner_returns_403(
+        self,
+        client,
+        other_author_user,
+        other_author_jwt_payload,
+        post_with_id,
+    ):
+        """GET by non-owner (different author) returns 403."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = other_author_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = other_author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+        ):
+            response = client.get(
+                "/api/posts/test-post/revisions",
+                headers={"Authorization": "Bearer other_token"},
+            )
+
+        assert response.status_code == 403
+        assert "error" in response.json
+        assert "Not authorized" in response.json["error"]
+
+    def test_list_revisions_admin_can_access_any_post(
+        self,
+        client,
+        admin_user,
+        admin_jwt_payload,
+        post_with_id,
+        revision_1,
+    ):
+        """GET by admin succeeds for any post."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = admin_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_query_handler = MagicMock()
+        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
+            revisions=[revision_1],
+            total_count=1,
+            has_more=False,
+        )
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_history_handler",
+                return_value=mock_query_handler,
+            ),
+        ):
+            response = client.get(
+                "/api/posts/test-post/revisions",
+                headers={"Authorization": "Bearer admin_token"},
+            )
+
+        assert response.status_code == 200
+
+    def test_list_revisions_owner_can_access_own_post(
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
+    ):
+        """GET by owner succeeds for own post."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = author_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_query_handler = MagicMock()
+        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
+            revisions=[revision_1],
+            total_count=1,
+            has_more=False,
+        )
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_history_handler",
+                return_value=mock_query_handler,
+            ),
+        ):
+            response = client.get(
+                "/api/posts/test-post/revisions",
+                headers={"Authorization": "Bearer author_token"},
+            )
+
+        assert response.status_code == 200
+
 
 class TestGetSingleRevisionEndpoint:
     """Tests for GET /api/posts/<slug>/revisions/<sha> endpoint."""
@@ -1137,6 +1277,160 @@ class TestGetSingleRevisionEndpoint:
         assert response.status_code == 200
         assert "is_current" in response.json or "is_revert" in response.json
 
+    def test_get_revision_non_owner_returns_403(
+        self,
+        client,
+        other_author_user,
+        other_author_jwt_payload,
+        post_with_id,
+    ):
+        """GET by non-owner (different author) returns 403."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = other_author_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = other_author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+        ):
+            response = client.get(
+                "/api/posts/test-post/revisions/abc1234567890abcdef1234567890abcdef12345",
+                headers={"Authorization": "Bearer other_token"},
+            )
+
+        assert response.status_code == 403
+        assert "error" in response.json
+        assert "Not authorized" in response.json["error"]
+
+    def test_get_revision_admin_can_access_any_post(
+        self,
+        client,
+        admin_user,
+        admin_jwt_payload,
+        post_with_id,
+        revision_1,
+    ):
+        """GET by admin succeeds for any post."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = admin_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_revision_repo = MagicMock()
+        mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
+
+        mock_query_handler = MagicMock()
+        mock_query_handler.handle.return_value = GetRevisionResponse(
+            revision=revision_1,
+            markdown_content=revision_1.markdown_content,
+            html_content="<h1>Test</h1>",
+        )
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_repository",
+                return_value=mock_revision_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_handler",
+                return_value=mock_query_handler,
+            ),
+        ):
+            response = client.get(
+                f"/api/posts/test-post/revisions/{revision_1.commit_sha}",
+                headers={"Authorization": "Bearer admin_token"},
+            )
+
+        assert response.status_code == 200
+
+    def test_get_revision_owner_can_access_own_post(
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
+    ):
+        """GET by owner succeeds for own post."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = author_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_revision_repo = MagicMock()
+        mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
+
+        mock_query_handler = MagicMock()
+        mock_query_handler.handle.return_value = GetRevisionResponse(
+            revision=revision_1,
+            markdown_content=revision_1.markdown_content,
+            html_content="<h1>Test</h1>",
+        )
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_repository",
+                return_value=mock_revision_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_handler",
+                return_value=mock_query_handler,
+            ),
+        ):
+            response = client.get(
+                f"/api/posts/test-post/revisions/{revision_1.commit_sha}",
+                headers={"Authorization": "Bearer author_token"},
+            )
+
+        assert response.status_code == 200
+
 
 class TestCompareRevisionsEndpoint:
     """Tests for GET /api/posts/<slug>/revisions/<sha1>/diff/<sha2> endpoint."""
@@ -1582,6 +1876,150 @@ class TestCompareRevisionsEndpoint:
         assert response.status_code == 200
         assert len(response.json["diff_lines"]) == 2
         assert isinstance(response.json["diff_lines"], list)
+
+    def test_compare_revisions_non_owner_returns_403(
+        self,
+        client,
+        other_author_user,
+        other_author_jwt_payload,
+        post_with_id,
+    ):
+        """GET by non-owner (different author) returns 403."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = other_author_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = other_author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+        ):
+            response = client.get(
+                "/api/posts/test-post/revisions/abc123/diff/def456",
+                headers={"Authorization": "Bearer other_token"},
+            )
+
+        assert response.status_code == 403
+        assert "error" in response.json
+        assert "Not authorized" in response.json["error"]
+
+    def test_compare_revisions_admin_can_access_any_post(
+        self,
+        client,
+        admin_user,
+        admin_jwt_payload,
+        post_with_id,
+        revision_1,
+        revision_2,
+    ):
+        """GET by admin succeeds for any post."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = admin_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_query_handler = MagicMock()
+        diff_lines = [{"line": "test", "type": "added"}]
+        mock_query_handler.handle.return_value = CompareRevisionsResponse(
+            from_revision=revision_1,
+            to_revision=revision_2,
+            diff_lines=diff_lines,
+        )
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
+                return_value=mock_query_handler,
+            ),
+        ):
+            response = client.get(
+                f"/api/posts/test-post/revisions/{revision_1.commit_sha}/diff/{revision_2.commit_sha}",
+                headers={"Authorization": "Bearer admin_token"},
+            )
+
+        assert response.status_code == 200
+
+    def test_compare_revisions_owner_can_access_own_post(
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
+        revision_2,
+    ):
+        """GET by owner succeeds for own post."""
+        mock_clerk_adapter = MagicMock()
+        mock_clerk_adapter.verify_token.return_value = author_jwt_payload
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_query_handler = MagicMock()
+        diff_lines = [{"line": "test", "type": "added"}]
+        mock_query_handler.handle.return_value = CompareRevisionsResponse(
+            from_revision=revision_1,
+            to_revision=revision_2,
+            diff_lines=diff_lines,
+        )
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_clerk_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
+                return_value=mock_query_handler,
+            ),
+        ):
+            response = client.get(
+                f"/api/posts/test-post/revisions/{revision_1.commit_sha}/diff/{revision_2.commit_sha}",
+                headers={"Authorization": "Bearer author_token"},
+            )
+
+        assert response.status_code == 200
 
 
 class TestRevertEndpoint:

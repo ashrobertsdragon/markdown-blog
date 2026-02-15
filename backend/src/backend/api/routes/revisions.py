@@ -279,6 +279,10 @@ def list_revisions(slug: str) -> tuple[Response, int]:
     if post.id is None:
         return jsonify({"error": f"Post '{slug}' has no ID"}), 500
 
+    # Authorization: only author or admin can view revision history
+    if post.author_id != g.current_user.id and g.current_user.role != "admin":
+        return jsonify({"error": "Not authorized to view revisions"}), 403
+
     try:
         query = GetRevisionHistoryQuery(
             post_id=UUID(int=post.id),
@@ -343,6 +347,10 @@ def get_revision(slug: str, sha: str) -> tuple[Response, int]:
 
     if post.id is None:
         return jsonify({"error": f"Post '{slug}' has no ID"}), 500
+
+    # Authorization: only author or admin can view revision details
+    if post.author_id != g.current_user.id and g.current_user.role != "admin":
+        return jsonify({"error": "Not authorized to view revisions"}), 403
 
     try:
         query = GetRevisionQuery(post_id=UUID(int=post.id), commit_sha=sha)
@@ -431,6 +439,10 @@ def compare_revisions(slug: str, sha1: str, sha2: str) -> tuple[Response, int]:
 
     if post.id is None:
         return jsonify({"error": f"Post '{slug}' has no ID"}), 500
+
+    # Authorization: only author or admin can compare revisions
+    if post.author_id != g.current_user.id and g.current_user.role != "admin":
+        return jsonify({"error": "Not authorized to view revisions"}), 403
 
     try:
         query = CompareRevisionsQuery(
