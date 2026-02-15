@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Integration tests for revision API routes (TDD RED phase)
+
+  - Created comprehensive test suite with 47 tests covering 4 revision management endpoints
+  - Tests follow TDD principles with all tests in RED phase (awaiting implementation)
+  - `GET /api/posts/<slug>/revisions` - List revisions with pagination (14 tests)
+  - `GET /api/posts/<slug>/revisions/<sha>` - Get single revision with content (10 tests)
+  - `GET /api/posts/<slug>/revisions/<sha1>/diff/<sha2>` - Compare revisions (10 tests)
+  - `POST /api/posts/<slug>/revert` - Revert to revision (13 tests)
+  - Authentication tests (401 for missing/invalid token)
+  - Authorization tests (403 for non-author/non-admin users)
+  - Pagination validation (skip 0-10000, limit 1-100)
+  - Input validation (invalid SHA format, empty values)
+  - Response structure validation (metadata, diff_lines, revision data)
+  - Edge cases (empty lists, identical revisions, non-existent revisions)
+  - All tests mocked dependencies with proper fixtures for auth, users, and revisions
+  - File: `backend/tests/integration/api/test_revisions_routes.py`
+
 - **Backend**: Revision tracking application layer with queries and commands
 
   - Created application layer commands and queries for post revision management
