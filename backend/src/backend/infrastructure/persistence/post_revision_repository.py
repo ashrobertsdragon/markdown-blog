@@ -62,15 +62,11 @@ class PostRevisionRepository:
                         "Duplicate revision for post and commit SHA"
                     ) from e
 
-    def get_by_id(
-        self, revision_id: UUID, post_uuid: UUID, author_uuid: UUID
-    ) -> PostRevision | None:
+    def get_by_id(self, revision_id: UUID) -> PostRevision | None:
         """Fetch single revision by UUID.
 
         Args:
             revision_id: UUID of the revision
-            post_uuid: UUID of the post (for domain aggregate)
-            author_uuid: UUID of the author (for domain aggregate)
 
         Returns:
             PostRevision domain aggregate or None if not found
@@ -82,7 +78,7 @@ class PostRevisionRepository:
             )
             model = session.exec(statement).first()
             if model:
-                return self._to_domain(model, post_uuid, author_uuid)
+                return self._to_domain(model)
             return None
         else:
             for session in get_db():
@@ -91,7 +87,7 @@ class PostRevisionRepository:
                 )
                 model = session.exec(statement).first()
                 if model:
-                    return self._to_domain(model, post_uuid, author_uuid)
+                    return self._to_domain(model)
                 return None
         return None
 
@@ -111,9 +107,7 @@ class PostRevisionRepository:
             )
             model = session.exec(statement).first()
             if model:
-                return self._to_domain(
-                    model, UUID(int=model.post_id), UUID(int=model.author_id)
-                )
+                return self._to_domain(model)
             return None
         else:
             for session in get_db():
@@ -122,11 +116,7 @@ class PostRevisionRepository:
                 )
                 model = session.exec(statement).first()
                 if model:
-                    return self._to_domain(
-                        model,
-                        UUID(int=model.post_id),
-                        UUID(int=model.author_id),
-                    )
+                    return self._to_domain(model)
                 return None
         return None
 
@@ -134,16 +124,12 @@ class PostRevisionRepository:
         self,
         post_id: int,
         commit_sha: str,
-        post_uuid: UUID,
-        author_uuid: UUID,
     ) -> PostRevision | None:
         """Fetch revision by post_id + commit_sha (unique pair).
 
         Args:
             post_id: Database integer ID for Post
             commit_sha: Git commit SHA string
-            post_uuid: UUID of the post (for domain aggregate)
-            author_uuid: UUID of the author (for domain aggregate)
 
         Returns:
             PostRevision domain aggregate or None if not found
@@ -156,7 +142,7 @@ class PostRevisionRepository:
             )
             model = session.exec(statement).first()
             if model:
-                return self._to_domain(model, post_uuid, author_uuid)
+                return self._to_domain(model)
             return None
         else:
             for session in get_db():
@@ -166,47 +152,42 @@ class PostRevisionRepository:
                 )
                 model = session.exec(statement).first()
                 if model:
-                    return self._to_domain(model, post_uuid, author_uuid)
+                    return self._to_domain(model)
                 return None
         return None
 
     def find_by_post_id(
-        self, post_id: UUID, skip: int = 0, limit: int = 10
+        self, post_id: int, skip: int = 0, limit: int = 10
     ) -> tuple[list[PostRevision], int]:
-        """Fetch revisions for a post by UUID with total count.
+        """Fetch revisions for a post by int ID with total count.
 
         Args:
-            post_id: UUID of the post
+            post_id: int ID of the post
             skip: Number of records to skip (for pagination)
             limit: Maximum number of records to return
 
         Returns:
             Tuple of (list of PostRevision aggregates, total count)
         """
-        post_id_int = post_id.int
-
         if self.session:
             session = self.session
             count_statement = (
                 select(func.count())
                 .select_from(PostRevisionModel)
-                .where(PostRevisionModel.post_id == post_id_int)
+                .where(PostRevisionModel.post_id == post_id)
             )
             total_count = session.exec(count_statement).one()
 
             statement = (
                 select(PostRevisionModel)
-                .where(PostRevisionModel.post_id == post_id_int)
+                .where(PostRevisionModel.post_id == post_id)
                 .order_by(col(PostRevisionModel.created_at).desc())
                 .offset(skip)
                 .limit(limit)
             )
             models = session.exec(statement).all()
             return (
-                [
-                    self._to_domain(model, post_id, UUID(int=model.author_id))
-                    for model in models
-                ],
+                [self._to_domain(model) for model in models],
                 total_count,
             )
         else:
@@ -214,25 +195,20 @@ class PostRevisionRepository:
                 count_statement = (
                     select(func.count())
                     .select_from(PostRevisionModel)
-                    .where(PostRevisionModel.post_id == post_id_int)
+                    .where(PostRevisionModel.post_id == post_id)
                 )
                 total_count = session.exec(count_statement).one()
 
                 statement = (
                     select(PostRevisionModel)
-                    .where(PostRevisionModel.post_id == post_id_int)
+                    .where(PostRevisionModel.post_id == post_id)
                     .order_by(col(PostRevisionModel.created_at).desc())
                     .offset(skip)
                     .limit(limit)
                 )
                 models = session.exec(statement).all()
                 return (
-                    [
-                        self._to_domain(
-                            model, post_id, UUID(int=model.author_id)
-                        )
-                        for model in models
-                    ],
+                    [self._to_domain(model) for model in models],
                     total_count,
                 )
         return ([], 0)
@@ -240,8 +216,6 @@ class PostRevisionRepository:
     def list_by_post(
         self,
         post_id: int,
-        post_uuid: UUID,
-        author_uuid: UUID,
         skip: int = 0,
         limit: int = 10,
     ) -> list[PostRevision]:
@@ -249,8 +223,6 @@ class PostRevisionRepository:
 
         Args:
             post_id: Database integer ID for Post
-            post_uuid: UUID of the post (for domain aggregate)
-            author_uuid: UUID of the author (for domain aggregate)
             skip: Number of records to skip (for pagination)
             limit: Maximum number of records to return
 
@@ -267,10 +239,7 @@ class PostRevisionRepository:
                 .limit(limit)
             )
             models = session.exec(statement).all()
-            return [
-                self._to_domain(model, post_uuid, author_uuid)
-                for model in models
-            ]
+            return [self._to_domain(model) for model in models]
         else:
             for session in get_db():
                 statement = (
@@ -281,10 +250,7 @@ class PostRevisionRepository:
                     .limit(limit)
                 )
                 models = session.exec(statement).all()
-                return [
-                    self._to_domain(model, post_uuid, author_uuid)
-                    for model in models
-                ]
+                return [self._to_domain(model) for model in models]
         return []
 
     def delete(self, revision_id: UUID) -> None:
@@ -344,15 +310,11 @@ class PostRevisionRepository:
     def _to_domain(
         self,
         model: PostRevisionModel,
-        post_uuid: UUID,
-        author_uuid: UUID,
     ) -> PostRevision:
         """Convert SQLModel to domain aggregate.
 
         Args:
             model: PostRevisionModel from database
-            post_uuid: UUID of the post (for domain aggregate)
-            author_uuid: UUID of the author (for domain aggregate)
 
         Returns:
             PostRevision domain aggregate
@@ -373,9 +335,9 @@ class PostRevisionRepository:
 
         return PostRevision(
             id=model.id,
-            post_id=post_uuid,
+            post_id=model.post_id,
             commit_sha=CommitSHA(model.commit_sha),
-            author_id=author_uuid,
+            author_id=model.author_id,
             commit_message=model.commit_message,
             markdown_content=model.markdown_content,
             created_at=created_at,

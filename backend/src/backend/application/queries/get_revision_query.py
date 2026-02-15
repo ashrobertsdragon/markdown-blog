@@ -7,7 +7,6 @@ Revision Tracking bounded context application layer.
 
 import logging
 from dataclasses import dataclass
-from uuid import UUID
 
 from backend.domain.aggregates.post_revision import PostRevision
 from backend.domain.protocols.services import HtmlSanitizer, MarkdownService
@@ -26,11 +25,11 @@ class GetRevisionQuery:
     identified by its Git commit SHA.
 
     Attributes:
-        post_id: UUID of the post
+        post_id: int ID of the post
         commit_sha: Git commit SHA to retrieve
     """
 
-    post_id: UUID
+    post_id: int
     commit_sha: str
 
     def __post_init__(self) -> None:

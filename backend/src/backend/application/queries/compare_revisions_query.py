@@ -7,7 +7,6 @@ Tracking bounded context application layer.
 
 import logging
 from dataclasses import dataclass
-from uuid import UUID
 
 from backend.domain.aggregates.post_revision import PostRevision
 from backend.domain.protocols.services import DiffService
@@ -26,12 +25,12 @@ class CompareRevisionsQuery:
     revisions identified by their Git commit SHAs.
 
     Attributes:
-        post_id: UUID of the post
+        post_id: int ID of the post
         from_sha: Git commit SHA of the source revision
         to_sha: Git commit SHA of the target revision
     """
 
-    post_id: UUID
+    post_id: int
     from_sha: str
     to_sha: str
 

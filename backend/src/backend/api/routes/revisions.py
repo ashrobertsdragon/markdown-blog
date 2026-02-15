@@ -2,8 +2,6 @@
 
 import logging
 from datetime import UTC, datetime
-from typing import cast
-from uuid import UUID
 
 from flask import Blueprint, Response, g, jsonify, request
 
@@ -14,30 +12,18 @@ from backend.application.commands.revert_to_revision_command import (
 )
 from backend.application.queries.compare_revisions_query import (
     CompareRevisionsQuery,
-    CompareRevisionsResponse,
     compare_revisions_handler,
 )
 from backend.application.queries.get_revision_history_query import (
     GetRevisionHistoryQuery,
-    GetRevisionHistoryResponse,
     get_revision_history_handler,
 )
 from backend.application.queries.get_revision_query import (
     GetRevisionQuery,
-    GetRevisionResponse,
     get_revision_handler,
 )
 from backend.config import FileSystemSettings, GitHubSettings
 from backend.domain.aggregates.post_revision import PostRevision
-from backend.domain.protocols.services import (
-    DiffService as DiffServiceProtocol,
-)
-from backend.domain.protocols.services import (
-    HtmlSanitizer as HtmlSanitizerProtocol,
-)
-from backend.domain.protocols.services import (
-    MarkdownService as MarkdownServiceProtocol,
-)
 from backend.infrastructure.markdown.markdown_rendering_service import (
     MarkdownRenderingService,
 )
@@ -116,78 +102,6 @@ def _get_sanitizer() -> HtmlSanitizer:
 def _get_diff_service() -> DiffService:
     """Get DiffService instance."""
     return DiffService()
-
-
-class GetRevisionHistoryQueryHandler:
-    """Handler wrapper for get_revision_history_handler."""
-
-    def handle(
-        self, query: GetRevisionHistoryQuery
-    ) -> GetRevisionHistoryResponse:
-        """Handle GetRevisionHistoryQuery."""
-        return get_revision_history_handler(
-            query,
-            _get_revision_repository(),
-        )
-
-
-class GetRevisionQueryHandler:
-    """Handler wrapper for get_revision_handler."""
-
-    def handle(self, query: GetRevisionQuery) -> GetRevisionResponse:
-        """Handle GetRevisionQuery."""
-        return get_revision_handler(
-            query,
-            _get_revision_repository(),
-            cast(MarkdownServiceProtocol, _get_markdown_service()),
-            cast(HtmlSanitizerProtocol, _get_sanitizer()),
-        )
-
-
-class CompareRevisionsQueryHandler:
-    """Handler wrapper for compare_revisions_handler."""
-
-    def handle(self, query: CompareRevisionsQuery) -> CompareRevisionsResponse:
-        """Handle CompareRevisionsQuery."""
-        return compare_revisions_handler(
-            query,
-            _get_revision_repository(),
-            cast(DiffServiceProtocol, _get_diff_service()),
-        )
-
-
-class RevertToRevisionCommandHandler:
-    """Handler wrapper for revert_to_revision_handler."""
-
-    def handle(self, command: RevertToRevisionCommand) -> PostRevision:
-        """Handle RevertToRevisionCommand."""
-        return revert_to_revision_handler(
-            command,
-            _get_post_repository(),
-            _get_revision_repository(),
-            _get_draft_repository(),
-            _get_github_service(),
-        )
-
-
-def _get_revision_history_handler() -> GetRevisionHistoryQueryHandler:
-    """Get revision history query handler."""
-    return GetRevisionHistoryQueryHandler()
-
-
-def _get_revision_handler() -> GetRevisionQueryHandler:
-    """Get revision query handler."""
-    return GetRevisionQueryHandler()
-
-
-def _get_compare_handler() -> CompareRevisionsQueryHandler:
-    """Get compare revisions query handler."""
-    return CompareRevisionsQueryHandler()
-
-
-def _get_revert_handler() -> RevertToRevisionCommandHandler:
-    """Get revert to revision command handler."""
-    return RevertToRevisionCommandHandler()
 
 
 def _format_revision_dict(revision: PostRevision) -> dict:
@@ -285,12 +199,14 @@ def list_revisions(slug: str) -> tuple[Response, int]:
 
     try:
         query = GetRevisionHistoryQuery(
-            post_id=UUID(int=post.id),
+            post_id=post.id,
             skip=skip,
             limit=limit,
         )
-        handler = _get_revision_history_handler()
-        response = handler.handle(query)
+        response = get_revision_history_handler(
+            query,
+            _get_revision_repository(),
+        )
 
         return jsonify(
             {
@@ -353,14 +269,18 @@ def get_revision(slug: str, sha: str) -> tuple[Response, int]:
         return jsonify({"error": "Not authorized to view revisions"}), 403
 
     try:
-        query = GetRevisionQuery(post_id=UUID(int=post.id), commit_sha=sha)
-        handler = _get_revision_handler()
-        response = handler.handle(query)
+        query = GetRevisionQuery(post_id=post.id, commit_sha=sha)
+        response = get_revision_handler(
+            query,
+            _get_revision_repository(),
+            _get_markdown_service(),
+            _get_sanitizer(),
+        )
 
         # Determine if this is the most recent revision by querying
         revision_repo = _get_revision_repository()
         recent_revisions, _ = revision_repo.find_by_post_id(
-            post_id=UUID(int=post.id), skip=0, limit=1
+            post_id=post.id, skip=0, limit=1
         )
         is_current = len(recent_revisions) > 0 and str(
             recent_revisions[0].commit_sha
@@ -446,12 +366,15 @@ def compare_revisions(slug: str, sha1: str, sha2: str) -> tuple[Response, int]:
 
     try:
         query = CompareRevisionsQuery(
-            post_id=UUID(int=post.id),
+            post_id=post.id,
             from_sha=sha1,
             to_sha=sha2,
         )
-        handler = _get_compare_handler()
-        response = handler.handle(query)
+        response = compare_revisions_handler(
+            query,
+            _get_revision_repository(),
+            _get_diff_service(),
+        )
 
         return jsonify(
             {
@@ -537,8 +460,13 @@ def revert_to_revision(slug: str) -> tuple[Response, int]:
             author_id=g.current_user.id,
             user_role=g.current_user.role,
         )
-        handler = _get_revert_handler()
-        new_revision = handler.handle(command)
+        new_revision = revert_to_revision_handler(
+            command,
+            _get_post_repository(),
+            _get_revision_repository(),
+            _get_draft_repository(),
+            _get_github_service(),
+        )
 
         return jsonify(
             {

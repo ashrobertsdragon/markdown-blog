@@ -7,12 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Backend**: Refactored PostRevision aggregate to use int IDs for consistency
+
+  - Changed PostRevision.post_id and PostRevision.author_id from UUID to int to match Post and User aggregates
+  - Eliminated fragile UUID(int=...) conversion pattern throughout codebase
+  - Updated PostRevisionRepository to work directly with int IDs
+  - Updated all queries and commands to use int for post_id parameter
+  - Improved architectural consistency across domain layer
+
+- **Backend**: Simplified revision API routes by removing unnecessary abstractions
+
+  - Removed handler wrapper classes (GetRevisionHistoryQueryHandler, etc.) that added no value
+  - Handler functions now called directly from route handlers
+  - Reduced revisions.py from 571 to 500 lines (12% reduction)
+  - Improved code maintainability and readability
+
 ### Added
 
-- **Backend**: Integration tests for revision API routes (TDD RED phase)
+- **Backend**: Integration tests for revision API routes
 
   - Created comprehensive test suite with 47 tests covering 4 revision management endpoints
-  - Tests follow TDD principles with all tests in RED phase (awaiting implementation)
   - `GET /api/posts/<slug>/revisions` - List revisions with pagination (14 tests)
   - `GET /api/posts/<slug>/revisions/<sha>` - Get single revision with content (10 tests)
   - `GET /api/posts/<slug>/revisions/<sha1>/diff/<sha2>` - Compare revisions (10 tests)

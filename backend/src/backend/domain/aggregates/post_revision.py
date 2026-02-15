@@ -15,9 +15,9 @@ class PostRevision:
 
     Attributes:
         id: UUID primary key
-        post_id: UUID foreign key to Post
+        post_id: int foreign key to Post
         commit_sha: CommitSHA value object
-        author_id: UUID foreign key to User
+        author_id: int foreign key to User
         commit_message: str (human-readable commit message)
         markdown_content: str (full markdown for diffs)
         created_at: datetime (UTC, when this revision was created)
@@ -26,9 +26,9 @@ class PostRevision:
     """
 
     id: UUID
-    post_id: UUID
+    post_id: int
     commit_sha: CommitSHA
-    author_id: UUID
+    author_id: int
     commit_message: str
     markdown_content: str
     created_at: datetime
@@ -38,9 +38,9 @@ class PostRevision:
     @classmethod
     def create(
         cls,
-        post_id: UUID,
+        post_id: int,
         commit_sha: str,
-        author_id: UUID,
+        author_id: int,
         commit_message: str,
         markdown_content: str,
         is_revert: bool = False,
@@ -48,9 +48,9 @@ class PostRevision:
         """Factory method to create new PostRevision.
 
         Args:
-            post_id: UUID foreign key to Post
+            post_id: int foreign key to Post
             commit_sha: Raw SHA string to validate
-            author_id: UUID foreign key to User
+            author_id: int foreign key to User
             commit_message: Human-readable commit message
             markdown_content: Full markdown content
             is_revert: Whether this revision is a revert commit
@@ -59,20 +59,24 @@ class PostRevision:
             New PostRevision instance
 
         Raises:
-            ValueError: If post_id or author_id is None, or
+            ValueError: If post_id or author_id is None or not positive, or
                 commit_message is empty
-            TypeError: If post_id or author_id is not UUID, or
+            TypeError: If post_id or author_id is not int, or
                 commit_message/markdown_content is not string
         """
         if post_id is None:
             raise ValueError("post_id cannot be None")
-        if not isinstance(post_id, UUID):
-            raise TypeError("post_id must be a UUID")
+        if not isinstance(post_id, int):
+            raise TypeError("post_id must be an int")
+        if post_id <= 0:
+            raise ValueError("post_id must be positive")
 
         if author_id is None:
             raise ValueError("author_id cannot be None")
-        if not isinstance(author_id, UUID):
-            raise TypeError("author_id must be a UUID")
+        if not isinstance(author_id, int):
+            raise TypeError("author_id must be an int")
+        if author_id <= 0:
+            raise ValueError("author_id must be positive")
 
         if commit_message is None:
             raise TypeError("commit_message must be a string")

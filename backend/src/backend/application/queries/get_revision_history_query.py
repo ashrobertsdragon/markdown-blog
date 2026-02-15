@@ -7,7 +7,6 @@ Tracking bounded context application layer.
 
 import logging
 from dataclasses import dataclass
-from uuid import UUID
 
 from backend.domain.aggregates.post_revision import PostRevision
 from backend.infrastructure.persistence.post_revision_repository import (
@@ -25,12 +24,12 @@ class GetRevisionHistoryQuery:
     of revisions for a specific post.
 
     Attributes:
-        post_id: UUID of the post to retrieve revisions for
+        post_id: int ID of the post to retrieve revisions for
         skip: Number of records to skip (for pagination, 0-10000)
         limit: Number of records to return (1-100)
     """
 
-    post_id: UUID
+    post_id: int
     skip: int
     limit: int
 

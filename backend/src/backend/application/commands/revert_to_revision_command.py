@@ -7,7 +7,6 @@ bounded context application layer.
 
 import logging
 from dataclasses import dataclass
-from uuid import UUID
 
 from backend.domain.aggregates.post_revision import PostRevision
 from backend.infrastructure.persistence.filesystem_draft_repository import (
@@ -194,9 +193,9 @@ def revert_to_revision_handler(
         f"{new_commit_sha[:7]})"
     )
     new_revision = PostRevision.create(
-        post_id=UUID(int=post_id),
+        post_id=post_id,
         commit_sha=new_commit_sha,
-        author_id=UUID(int=author_id),
+        author_id=author_id,
         commit_message=revert_message,
         markdown_content=revision.markdown_content,
         is_revert=True,
