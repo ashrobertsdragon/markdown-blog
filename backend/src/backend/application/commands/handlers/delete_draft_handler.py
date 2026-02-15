@@ -41,7 +41,6 @@ def delete_draft_handler(
         ValueError: If post not found, user unauthorized, or post is published
         RuntimeError: If GitHub deletion fails (critical)
     """
-    # Step 1: Load post and verify ownership
     logger.debug(f"Loading post for deletion: {command.slug}")
     post = post_repo.find_by_slug(command.slug)
 
@@ -57,7 +56,6 @@ def delete_draft_handler(
         )
         raise ValueError("Cannot delete another author's post")
 
-    # Step 2: Check publication status
     if post.published:
         logger.error(
             f"Cannot delete published post '{command.slug}' - unpublish first"
@@ -67,12 +65,10 @@ def delete_draft_handler(
             "Unpublish the post first via UnpublishPostCommand"
         )
 
-    # Step 3: Delete from filesystem
     logger.info(f"Deleting draft from filesystem: {command.slug}")
     draft_repo.delete(command.slug)
     logger.debug(f"Filesystem deletion completed: {command.slug}")
 
-    # Step 3: Commit to GitHub (CRITICAL)
     logger.debug(f"Committing deletion to GitHub: drafts/{post.slug}.md")
     commit_message = f"Delete draft: {post.slug}"
 

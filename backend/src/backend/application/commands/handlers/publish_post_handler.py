@@ -57,7 +57,6 @@ def publish_post_handler(
         ValueError: If draft not found, user unauthorized, already published,
             post not in DB, or DB save fails
     """
-    # Step 1: Load Post aggregate from database and verify ownership
     logger.debug(f"Loading Post from database: {command.slug}")
     post = post_repo.find_by_slug(command.slug)
     if post is None:
@@ -73,7 +72,6 @@ def publish_post_handler(
         )
         raise ValueError("Cannot publish another author's post")
 
-    # Step 2: Load draft from filesystem
     logger.debug(f"Loading draft: {command.slug}")
     draft = draft_repo.find_by_slug(command.slug)
     if draft is None:
@@ -82,23 +80,19 @@ def publish_post_handler(
     if draft.published:
         raise ValueError(f"Post '{command.slug}' is already published")
 
-    # Step 3: Render markdown to HTML
     logger.info(f"Publishing post: {command.slug} - rendering markdown")
     html = markdown_service.render(draft.content)
     logger.debug(f"Rendered HTML for {command.slug}: {len(html)} bytes")
 
-    # Step 4: Sanitize HTML
     logger.debug(f"Sanitizing HTML for {command.slug}")
     sanitized_html = html_sanitizer.sanitize(html)
     logger.debug(
         f"Sanitized HTML for {command.slug}: {len(sanitized_html)} bytes"
     )
 
-    # Step 5: Update Post via domain method (sets published=True, published_at)
     logger.debug(f"Calling post.publish() for {command.slug}")
     post.publish(sanitized_html)
 
-    # Step 6: Persist to database (atomic transaction)
     logger.info(f"Saving published post to database: {command.slug}")
     try:
         post = post_repo.save(post)
@@ -107,7 +101,6 @@ def publish_post_handler(
         logger.error(f"Failed to save post to database: {command.slug}: {e}")
         raise
 
-    # Step 7: Update draft front matter (best-effort)
     try:
         logger.debug(f"Updating draft front matter: {command.slug}")
         draft.published = True
@@ -120,7 +113,6 @@ def publish_post_handler(
             "post is published, draft file state may be stale"
         )
 
-    # Step 8: Commit to GitHub (best-effort)
     try:
         logger.debug(f"Committing to GitHub: drafts/{post.slug}.md")
         commit_message = f"Publish post: {draft.title}"

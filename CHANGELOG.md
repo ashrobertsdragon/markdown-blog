@@ -7,7 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Backend**: Refactored PostRevision aggregate to use int IDs for consistency
+
+  - Changed PostRevision.post_id and PostRevision.author_id from UUID to int to match Post and User aggregates
+  - Eliminated fragile UUID(int=...) conversion pattern throughout codebase
+  - Updated PostRevisionRepository to work directly with int IDs
+  - Updated all queries and commands to use int for post_id parameter
+  - Improved architectural consistency across domain layer
+
+- **Backend**: Simplified revision API routes by removing unnecessary abstractions
+
+  - Removed handler wrapper classes (GetRevisionHistoryQueryHandler, etc.) that added no value
+  - Handler functions now called directly from route handlers
+  - Split revisions.py into three focused modules (routes, dependencies, formatters)
+  - Reduced revisions.py from 571 to 379 lines (34% reduction)
+  - Extracted dependency injection to api/dependencies.py (93 lines)
+  - Extracted response formatters to api/formatters.py (56 lines)
+  - Improved code maintainability and readability
+
+- **Backend**: Removed all inline code comments from production code
+
+  - Replaced inline comments with docstrings where needed
+  - Removed redundant comments that restated obvious code
+  - Enforced CLAUDE.md rule: no code comments, only docstrings
+
 ### Added
+
+- **Backend**: Integration tests for revision API routes
+
+  - Created comprehensive test suite with 47 tests covering 4 revision management endpoints
+  - `GET /api/posts/<slug>/revisions` - List revisions with pagination (14 tests)
+  - `GET /api/posts/<slug>/revisions/<sha>` - Get single revision with content (10 tests)
+  - `GET /api/posts/<slug>/revisions/<sha1>/diff/<sha2>` - Compare revisions (10 tests)
+  - `POST /api/posts/<slug>/revert` - Revert to revision (13 tests)
+  - Authentication tests (401 for missing/invalid token)
+  - Authorization tests (403 for non-author/non-admin users)
+  - Pagination validation (skip 0-10000, limit 1-100)
+  - Input validation (invalid SHA format, empty values)
+  - Response structure validation (metadata, diff_lines, revision data)
+  - Edge cases (empty lists, identical revisions, non-existent revisions)
+  - All tests mocked dependencies with proper fixtures for auth, users, and revisions
+  - File: `backend/tests/integration/api/test_revisions_routes.py`
+
+- **Backend**: Revision tracking application layer with queries and commands
+
+  - Created application layer commands and queries for post revision management
+  - `RevertToRevisionCommand` - Revert post content to previous Git commit with authorization checks
+  - `GetRevisionHistoryQuery` - Retrieve paginated commit history for posts (skip/limit support)
+  - `GetRevisionQuery` - Fetch specific revision content with rendered HTML output
+  - `CompareRevisionsQuery` - Generate diffs between two revisions for change tracking
+  - All handlers follow pure function pattern with injected dependencies and comprehensive logging
+  - Authorization enforces owner-or-admin access for revert operations
+  - PostRevisionRepository extended with `find_by_post_id()` and `find_by_sha()` methods
+  - Comprehensive test coverage (99% for commands, 90% for queries) with 31 passing tests
+  - Type-safe implementation with Protocol pattern for dependency inversion
+  - Validates input constraints (slug ≤1000 chars, SHA ≤100 chars, skip ≤10000, limit ≤100)
+
+- **Backend**: GitHubRevisionService for fetching commit history from GitHub API
+
+  - Created `backend/infrastructure/versioning/github_revision_service.py` with comprehensive error handling and rate limiting
+  - Implemented `fetch_commits()` method for retrieving file commit history with pagination support
+  - Implemented `fetch_file_at_sha()` method for retrieving file content at specific commits
+  - Added exponential backoff retry logic (1s, 2s, 4s) for HTTP 429 rate limiting
+  - Returns None/empty list on errors for graceful degradation without exceptions
+  - Comprehensive unit test suite with 21 tests covering all methods and error paths
+  - Follows GitHubSyncService patterns for consistency (5s timeout, 3 max retries)
+  - Exported GitHubRevisionService from versioning infrastructure module
+  - All tests pass with 91.60% overall backend coverage maintained
 
 - **Backend**: Comprehensive acceptance tests for post management
 
