@@ -152,7 +152,10 @@ def require_auth(f: Callable[..., Any]) -> Callable[..., Any]:
         if not token:
             raise AuthenticationError("Empty token")
 
-        payload = clerk_adapter.verify_token(token)
+        try:
+            payload = clerk_adapter.verify_token(token)
+        except ValueError as e:
+            raise AuthenticationError(f"Invalid token: {str(e)}") from e
 
         clerk_user_id = payload["sub"]
         email = payload["email"]

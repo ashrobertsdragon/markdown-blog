@@ -7,31 +7,15 @@ Revision Tracking bounded context application layer.
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
 
 from backend.domain.aggregates.post_revision import PostRevision
+from backend.domain.protocols.services import HtmlSanitizer, MarkdownService
 from backend.infrastructure.persistence.post_revision_repository import (
     PostRevisionRepository,
 )
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-
-    class MarkdownService(Protocol):
-        """Protocol for markdown rendering service."""
-
-        def render(self, content: str) -> str:
-            """Render markdown to HTML."""
-            ...
-
-    class HtmlSanitizer(Protocol):
-        """Protocol for HTML sanitization service."""
-
-        def sanitize(self, content: str) -> str:
-            """Sanitize HTML content."""
-            ...
 
 
 @dataclass(frozen=True)
@@ -86,8 +70,8 @@ class GetRevisionResponse:
 def get_revision_handler(
     query: GetRevisionQuery,
     revision_repo: PostRevisionRepository,
-    markdown_service: "MarkdownService",
-    html_sanitizer: "HtmlSanitizer",
+    markdown_service: MarkdownService,
+    html_sanitizer: HtmlSanitizer,
 ) -> GetRevisionResponse:
     """Handle GetRevisionQuery to retrieve revision with rendered content.
 

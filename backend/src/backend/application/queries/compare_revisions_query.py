@@ -7,26 +7,15 @@ Tracking bounded context application layer.
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
 from uuid import UUID
 
 from backend.domain.aggregates.post_revision import PostRevision
+from backend.domain.protocols.services import DiffService
 from backend.infrastructure.persistence.post_revision_repository import (
     PostRevisionRepository,
 )
 
 logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-
-    class DiffService(Protocol):
-        """Protocol for diff generation service."""
-
-        def diff_text(
-            self, old_content: str | None, new_content: str | None
-        ) -> list:
-            """Generate diff between two text contents."""
-            ...
 
 
 @dataclass(frozen=True)
@@ -90,7 +79,7 @@ class CompareRevisionsResponse:
 def compare_revisions_handler(
     query: CompareRevisionsQuery,
     revision_repo: PostRevisionRepository,
-    diff_service: "DiffService",
+    diff_service: DiffService,
 ) -> CompareRevisionsResponse:
     """Handle CompareRevisionsQuery to generate diff between revisions.
 

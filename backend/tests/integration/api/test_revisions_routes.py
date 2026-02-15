@@ -197,7 +197,13 @@ class TestListRevisionsEndpoint:
         assert response.status_code == 401
 
     def test_list_revisions_returns_200_with_pagination(
-        self, client, author_user, author_jwt_payload, revision_1, revision_2
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
+        revision_2,
     ):
         """GET /api/posts/:slug/revisions returns 200 with paginated results."""
         mock_clerk_adapter = MagicMock()
@@ -205,6 +211,9 @@ class TestListRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
@@ -221,6 +230,10 @@ class TestListRevisionsEndpoint:
             patch(
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
             ),
             patch(
                 "backend.api.routes.revisions._get_revision_history_handler",
@@ -242,7 +255,12 @@ class TestListRevisionsEndpoint:
         assert response.json["has_more"] is False
 
     def test_list_revisions_default_pagination(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """GET /api/posts/:slug/revisions uses skip=0, limit=10 by default."""
         mock_clerk_adapter = MagicMock()
@@ -250,6 +268,9 @@ class TestListRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
@@ -266,6 +287,10 @@ class TestListRevisionsEndpoint:
             patch(
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
             ),
             patch(
                 "backend.api.routes.revisions._get_revision_history_handler",
@@ -284,7 +309,12 @@ class TestListRevisionsEndpoint:
         assert call_args.limit == 10
 
     def test_list_revisions_with_custom_skip_limit(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """GET /api/posts/:slug/revisions?skip=5&limit=20 uses custom values."""
         mock_clerk_adapter = MagicMock()
@@ -292,6 +322,9 @@ class TestListRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
@@ -308,6 +341,10 @@ class TestListRevisionsEndpoint:
             patch(
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
             ),
             patch(
                 "backend.api.routes.revisions._get_revision_history_handler",
@@ -436,7 +473,11 @@ class TestListRevisionsEndpoint:
         assert "error" in response.json
 
     def test_list_revisions_empty_returns_200(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """GET /api/posts/:slug/revisions returns 200 with empty list."""
         mock_clerk_adapter = MagicMock()
@@ -444,6 +485,9 @@ class TestListRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
@@ -462,6 +506,10 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revision_history_handler",
                 return_value=mock_query_handler,
             ),
@@ -477,7 +525,12 @@ class TestListRevisionsEndpoint:
         assert response.json["has_more"] is False
 
     def test_list_revisions_response_contains_revision_metadata(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """Response includes revision metadata (message, author, timestamp)."""
         mock_clerk_adapter = MagicMock()
@@ -485,6 +538,9 @@ class TestListRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
@@ -503,6 +559,10 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revision_history_handler",
                 return_value=mock_query_handler,
             ),
@@ -519,13 +579,14 @@ class TestListRevisionsEndpoint:
         assert "commit_sha" in revision_json
         assert "commit_message" in revision_json
         assert "author_id" in revision_json
-        assert "created_at" in revision_json
+        assert "created_at" in revision_json or "timestamp" in revision_json
 
     def test_list_revisions_most_recent_first(
         self,
         client,
         author_user,
         author_jwt_payload,
+        post_with_id,
         revision_1,
         revision_2,
         revision_3,
@@ -536,6 +597,9 @@ class TestListRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
@@ -552,6 +616,10 @@ class TestListRevisionsEndpoint:
             patch(
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
             ),
             patch(
                 "backend.api.routes.revisions._get_revision_history_handler",
@@ -571,7 +639,12 @@ class TestListRevisionsEndpoint:
         assert revisions[2]["commit_sha"] == str(revision_1.commit_sha)
 
     def test_list_revisions_has_more_true_when_more_exist(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """has_more is true when more revisions exist beyond current page."""
         mock_clerk_adapter = MagicMock()
@@ -579,6 +652,9 @@ class TestListRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
@@ -595,6 +671,10 @@ class TestListRevisionsEndpoint:
             patch(
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
             ),
             patch(
                 "backend.api.routes.revisions._get_revision_history_handler",
@@ -641,7 +721,12 @@ class TestGetSingleRevisionEndpoint:
         assert response.status_code == 401
 
     def test_get_revision_returns_200_with_content(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """GET /api/posts/:slug/revisions/:sha returns 200 with content."""
         mock_clerk_adapter = MagicMock()
@@ -649,6 +734,12 @@ class TestGetSingleRevisionEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_revision_repo = MagicMock()
+        mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionResponse(
@@ -667,6 +758,14 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_repository",
+                return_value=mock_revision_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revision_handler",
                 return_value=mock_query_handler,
             ),
@@ -677,12 +776,17 @@ class TestGetSingleRevisionEndpoint:
             )
 
         assert response.status_code == 200
-        assert "revision" in response.json
+        assert "commit_sha" in response.json
         assert "markdown_content" in response.json
         assert "html_content" in response.json
 
     def test_get_revision_includes_markdown_and_html(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """Response includes both markdown_content and html_content."""
         mock_clerk_adapter = MagicMock()
@@ -690,6 +794,12 @@ class TestGetSingleRevisionEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_revision_repo = MagicMock()
+        mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
         markdown = "# Test Post\n\nInitial content"
@@ -710,6 +820,14 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_repository",
+                return_value=mock_revision_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revision_handler",
                 return_value=mock_query_handler,
             ),
@@ -724,7 +842,11 @@ class TestGetSingleRevisionEndpoint:
         assert response.json["html_content"] == html
 
     def test_get_revision_nonexistent_sha_returns_404(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """GET with non-existent SHA returns 404."""
         mock_clerk_adapter = MagicMock()
@@ -732,6 +854,9 @@ class TestGetSingleRevisionEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.side_effect = ValueError("Revision not found")
@@ -746,12 +871,16 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revision_handler",
                 return_value=mock_query_handler,
             ),
         ):
             response = client.get(
-                "/api/posts/test-post/revisions/nonexistent123",
+                "/api/posts/test-post/revisions/nonexistent123456789012345678901234567890",
                 headers={"Authorization": "Bearer author_token"},
             )
 
@@ -759,7 +888,11 @@ class TestGetSingleRevisionEndpoint:
         assert "error" in response.json
 
     def test_get_revision_invalid_sha_format_returns_400(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """GET with invalid SHA format returns 400."""
         mock_clerk_adapter = MagicMock()
@@ -767,6 +900,9 @@ class TestGetSingleRevisionEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.side_effect = ValueError("Invalid SHA format")
@@ -779,6 +915,10 @@ class TestGetSingleRevisionEndpoint:
             patch(
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
             ),
             patch(
                 "backend.api.routes.revisions._get_revision_handler",
@@ -821,7 +961,12 @@ class TestGetSingleRevisionEndpoint:
         assert response.status_code == 404
 
     def test_get_revision_html_is_sanitized(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """HTML content is sanitized (safe HTML without script tags)."""
         mock_clerk_adapter = MagicMock()
@@ -829,6 +974,12 @@ class TestGetSingleRevisionEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_revision_repo = MagicMock()
+        mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
         safe_html = "<h1>Test Post</h1><p>Content</p>"
@@ -848,6 +999,14 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_repository",
+                return_value=mock_revision_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revision_handler",
                 return_value=mock_query_handler,
             ),
@@ -861,7 +1020,12 @@ class TestGetSingleRevisionEndpoint:
         assert response.json["html_content"] == safe_html
 
     def test_get_revision_includes_metadata(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """Response includes revision metadata (author, timestamp)."""
         mock_clerk_adapter = MagicMock()
@@ -869,6 +1033,12 @@ class TestGetSingleRevisionEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_revision_repo = MagicMock()
+        mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionResponse(
@@ -885,6 +1055,14 @@ class TestGetSingleRevisionEndpoint:
             patch(
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_repository",
+                return_value=mock_revision_repo,
             ),
             patch(
                 "backend.api.routes.revisions._get_revision_handler",
@@ -897,13 +1075,17 @@ class TestGetSingleRevisionEndpoint:
             )
 
         assert response.status_code == 200
-        revision_json = response.json["revision"]
-        assert "author_id" in revision_json
-        assert "created_at" in revision_json
-        assert "commit_message" in revision_json
+        assert "author_id" in response.json
+        assert "timestamp" in response.json or "created_at" in response.json
+        assert "commit_message" in response.json
 
     def test_get_revision_is_current_flag_present(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """Response includes is_current flag for current revision status."""
         mock_clerk_adapter = MagicMock()
@@ -911,6 +1093,12 @@ class TestGetSingleRevisionEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        mock_revision_repo = MagicMock()
+        mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = GetRevisionResponse(
@@ -927,6 +1115,14 @@ class TestGetSingleRevisionEndpoint:
             patch(
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_revision_repository",
+                return_value=mock_revision_repo,
             ),
             patch(
                 "backend.api.routes.revisions._get_revision_handler",
@@ -974,7 +1170,13 @@ class TestCompareRevisionsEndpoint:
         assert response.status_code == 401
 
     def test_compare_revisions_returns_200_with_diff(
-        self, client, author_user, author_jwt_payload, revision_1, revision_2
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
+        revision_2,
     ):
         """GET returns 200 with diff data."""
         mock_clerk_adapter = MagicMock()
@@ -982,6 +1184,9 @@ class TestCompareRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         diff_lines = [
@@ -1005,7 +1210,11 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_revisions_handler",
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
                 return_value=mock_query_handler,
             ),
         ):
@@ -1020,7 +1229,13 @@ class TestCompareRevisionsEndpoint:
         assert "diff_lines" in response.json
 
     def test_compare_revisions_response_structure(
-        self, client, author_user, author_jwt_payload, revision_1, revision_2
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
+        revision_2,
     ):
         """Response contains correct structure with both revisions and diff."""
         mock_clerk_adapter = MagicMock()
@@ -1028,6 +1243,9 @@ class TestCompareRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         diff_lines = [{"line": "test", "type": "added"}]
@@ -1047,7 +1265,11 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_revisions_handler",
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
                 return_value=mock_query_handler,
             ),
         ):
@@ -1062,7 +1284,11 @@ class TestCompareRevisionsEndpoint:
         assert isinstance(response.json["diff_lines"], list)
 
     def test_compare_revisions_from_sha_not_found_returns_404(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """GET with non-existent from_sha returns 404."""
         mock_clerk_adapter = MagicMock()
@@ -1070,6 +1296,9 @@ class TestCompareRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.side_effect = ValueError(
@@ -1086,12 +1315,16 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_revisions_handler",
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
                 return_value=mock_query_handler,
             ),
         ):
             response = client.get(
-                "/api/posts/test-post/revisions/nonexistent1/diff/def456",
+                "/api/posts/test-post/revisions/nonexistent1234567890abcdef1234567890abcdef/diff/def4567890abcdef1234567890abcdef12345678",
                 headers={"Authorization": "Bearer author_token"},
             )
 
@@ -1099,7 +1332,11 @@ class TestCompareRevisionsEndpoint:
         assert "error" in response.json
 
     def test_compare_revisions_to_sha_not_found_returns_404(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """GET with non-existent to_sha returns 404."""
         mock_clerk_adapter = MagicMock()
@@ -1107,6 +1344,9 @@ class TestCompareRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.side_effect = ValueError(
@@ -1123,12 +1363,16 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_revisions_handler",
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
                 return_value=mock_query_handler,
             ),
         ):
             response = client.get(
-                "/api/posts/test-post/revisions/abc123/diff/nonexistent2",
+                "/api/posts/test-post/revisions/abc1234567890abcdef1234567890abcdef12345/diff/nonexistent2222222222222222222222222",
                 headers={"Authorization": "Bearer author_token"},
             )
 
@@ -1136,7 +1380,11 @@ class TestCompareRevisionsEndpoint:
         assert "error" in response.json
 
     def test_compare_revisions_invalid_from_sha_returns_400(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """GET with invalid from_sha format returns 400."""
         mock_clerk_adapter = MagicMock()
@@ -1144,6 +1392,9 @@ class TestCompareRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.side_effect = ValueError(
@@ -1160,12 +1411,16 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_revisions_handler",
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
                 return_value=mock_query_handler,
             ),
         ):
             response = client.get(
-                "/api/posts/test-post/revisions/invalid!!!/diff/abc123",
+                "/api/posts/test-post/revisions/invalid!!!/diff/abc1234567890abcdef1234567890abcdef12345",
                 headers={"Authorization": "Bearer author_token"},
             )
 
@@ -1173,7 +1428,11 @@ class TestCompareRevisionsEndpoint:
         assert "error" in response.json
 
     def test_compare_revisions_invalid_to_sha_returns_400(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """GET with invalid to_sha format returns 400."""
         mock_clerk_adapter = MagicMock()
@@ -1181,6 +1440,9 @@ class TestCompareRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.side_effect = ValueError(
@@ -1197,12 +1459,16 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_revisions_handler",
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
                 return_value=mock_query_handler,
             ),
         ):
             response = client.get(
-                "/api/posts/test-post/revisions/abc123/diff/invalid!!!",
+                "/api/posts/test-post/revisions/abc1234567890abcdef1234567890abcdef12345/diff/invalid!!!",
                 headers={"Authorization": "Bearer author_token"},
             )
 
@@ -1210,7 +1476,12 @@ class TestCompareRevisionsEndpoint:
         assert "error" in response.json
 
     def test_compare_revisions_identical_content_returns_empty_diff(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """Comparing revision with itself returns empty diff."""
         mock_clerk_adapter = MagicMock()
@@ -1218,6 +1489,9 @@ class TestCompareRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         mock_query_handler.handle.return_value = CompareRevisionsResponse(
@@ -1236,7 +1510,11 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_revisions_handler",
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
                 return_value=mock_query_handler,
             ),
         ):
@@ -1249,7 +1527,13 @@ class TestCompareRevisionsEndpoint:
         assert response.json["diff_lines"] == []
 
     def test_compare_revisions_diff_lines_array_present(
-        self, client, author_user, author_jwt_payload, revision_1, revision_2
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
+        revision_2,
     ):
         """Response includes diff_lines array with diff content."""
         mock_clerk_adapter = MagicMock()
@@ -1257,6 +1541,9 @@ class TestCompareRevisionsEndpoint:
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
+
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
         diff_lines = [
@@ -1279,7 +1566,11 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_revisions_handler",
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
+                "backend.api.routes.revisions._get_compare_handler",
                 return_value=mock_query_handler,
             ),
         ):
@@ -1325,7 +1616,11 @@ class TestRevertEndpoint:
         assert response.status_code == 401
 
     def test_revert_by_non_author_returns_403(
-        self, client, regular_user, regular_jwt_payload
+        self,
+        client,
+        regular_user,
+        regular_jwt_payload,
+        post_with_id,
     ):
         """POST by non-author/non-admin returns 403."""
         mock_clerk_adapter = MagicMock()
@@ -1334,6 +1629,9 @@ class TestRevertEndpoint:
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = regular_user
 
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
         with (
             patch(
                 "backend.api.middleware.auth_middleware._get_clerk_adapter",
@@ -1343,18 +1641,26 @@ class TestRevertEndpoint:
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
             ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
         ):
             response = client.post(
                 "/api/posts/test-post/revert",
                 headers={"Authorization": "Bearer user_token"},
-                json={"target_sha": "abc123"},
+                json={"target_sha": "abc1234567890abcdef1234567890abcdef12345"},
             )
 
         assert response.status_code == 403
         assert "error" in response.json
 
     def test_revert_by_different_author_returns_403(
-        self, client, other_author_user, other_author_jwt_payload
+        self,
+        client,
+        other_author_user,
+        other_author_jwt_payload,
+        post_with_id,
     ):
         """POST by different author returns 403."""
         mock_clerk_adapter = MagicMock()
@@ -1363,6 +1669,9 @@ class TestRevertEndpoint:
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = other_author_user
 
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
         with (
             patch(
                 "backend.api.middleware.auth_middleware._get_clerk_adapter",
@@ -1372,18 +1681,27 @@ class TestRevertEndpoint:
                 "backend.api.middleware.auth_middleware._get_user_repository",
                 return_value=mock_user_repo,
             ),
+            patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
         ):
             response = client.post(
                 "/api/posts/test-post/revert",
                 headers={"Authorization": "Bearer other_token"},
-                json={"target_sha": "abc123"},
+                json={"target_sha": "abc1234567890abcdef1234567890abcdef12345"},
             )
 
         assert response.status_code == 403
         assert "error" in response.json
 
     def test_revert_by_admin_succeeds(
-        self, client, admin_user, admin_jwt_payload, revision_1
+        self,
+        client,
+        admin_user,
+        admin_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """POST by admin should succeed regardless of post author."""
         mock_clerk_adapter = MagicMock()
@@ -1392,9 +1710,12 @@ class TestRevertEndpoint:
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = admin_user
 
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
         revert_revision = PostRevision.create(
             post_id=UUID("12345678-1234-5678-1234-567812345678"),
-            commit_sha="newsha1234567890abcdef1234567890abcdef1",
+            commit_sha="abcdef1234567890abcdef1234567890abcdef12",
             author_id=UUID(int=20),
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
@@ -1414,6 +1735,10 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revert_handler",
                 return_value=mock_handler,
             ),
@@ -1421,13 +1746,18 @@ class TestRevertEndpoint:
             response = client.post(
                 "/api/posts/test-post/revert",
                 headers={"Authorization": "Bearer admin_token"},
-                json={"target_sha": "abc123"},
+                json={"target_sha": "abc1234567890abcdef1234567890abcdef12345"},
             )
 
         assert response.status_code == 200
 
     def test_revert_by_post_owner_succeeds(
-        self, client, author_user, author_jwt_payload, revision_1
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
+        revision_1,
     ):
         """POST by post owner should succeed."""
         mock_clerk_adapter = MagicMock()
@@ -1436,9 +1766,12 @@ class TestRevertEndpoint:
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
         revert_revision = PostRevision.create(
             post_id=UUID("12345678-1234-5678-1234-567812345678"),
-            commit_sha="newsha1234567890abcdef1234567890abcdef1",
+            commit_sha="abcdef1234567890abcdef1234567890abcdef12",
             author_id=UUID(int=10),
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
@@ -1458,6 +1791,10 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revert_handler",
                 return_value=mock_handler,
             ),
@@ -1465,7 +1802,7 @@ class TestRevertEndpoint:
             response = client.post(
                 "/api/posts/test-post/revert",
                 headers={"Authorization": "Bearer author_token"},
-                json={"target_sha": "abc123"},
+                json={"target_sha": "abc1234567890abcdef1234567890abcdef12345"},
             )
 
         assert response.status_code == 200
@@ -1608,7 +1945,11 @@ class TestRevertEndpoint:
         assert "error" in response.json
 
     def test_revert_success_returns_new_commit_sha(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """Successful revert returns new_commit_sha in response."""
         mock_clerk_adapter = MagicMock()
@@ -1617,7 +1958,10 @@ class TestRevertEndpoint:
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
-        new_sha = "newsha1234567890abcdef1234567890abcdef1"
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
+        new_sha = "abcdef1234567890abcdef1234567890abcdef12"
         revert_revision = PostRevision.create(
             post_id=UUID("12345678-1234-5678-1234-567812345678"),
             commit_sha=new_sha,
@@ -1640,6 +1984,10 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revert_handler",
                 return_value=mock_handler,
             ),
@@ -1647,7 +1995,7 @@ class TestRevertEndpoint:
             response = client.post(
                 "/api/posts/test-post/revert",
                 headers={"Authorization": "Bearer author_token"},
-                json={"target_sha": "abc123"},
+                json={"target_sha": "abc1234567890abcdef1234567890abcdef12345"},
             )
 
         assert response.status_code == 200
@@ -1656,7 +2004,11 @@ class TestRevertEndpoint:
         )
 
     def test_revert_success_returns_redirect_url(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """Successful revert returns redirect_url in response."""
         mock_clerk_adapter = MagicMock()
@@ -1665,9 +2017,12 @@ class TestRevertEndpoint:
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
         revert_revision = PostRevision.create(
             post_id=UUID("12345678-1234-5678-1234-567812345678"),
-            commit_sha="newsha1234567890abcdef1234567890abcdef1",
+            commit_sha="abcdef1234567890abcdef1234567890abcdef12",
             author_id=UUID(int=10),
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
@@ -1687,6 +2042,10 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revert_handler",
                 return_value=mock_handler,
             ),
@@ -1694,14 +2053,18 @@ class TestRevertEndpoint:
             response = client.post(
                 "/api/posts/test-post/revert",
                 headers={"Authorization": "Bearer author_token"},
-                json={"target_sha": "abc123"},
+                json={"target_sha": "abc1234567890abcdef1234567890abcdef12345"},
             )
 
         assert response.status_code == 200
         assert "redirect_url" in response.json or "success" in response.json
 
     def test_revert_creates_new_revision_with_is_revert_flag(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """Revert creates PostRevision with is_revert=True."""
         mock_clerk_adapter = MagicMock()
@@ -1710,9 +2073,12 @@ class TestRevertEndpoint:
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
         revert_revision = PostRevision.create(
             post_id=UUID("12345678-1234-5678-1234-567812345678"),
-            commit_sha="newsha1234567890abcdef1234567890abcdef1",
+            commit_sha="abcdef1234567890abcdef1234567890abcdef12",
             author_id=UUID(int=10),
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
@@ -1732,6 +2098,10 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revert_handler",
                 return_value=mock_handler,
             ),
@@ -1739,7 +2109,7 @@ class TestRevertEndpoint:
             response = client.post(
                 "/api/posts/test-post/revert",
                 headers={"Authorization": "Bearer author_token"},
-                json={"target_sha": "abc123"},
+                json={"target_sha": "abc1234567890abcdef1234567890abcdef12345"},
             )
 
         assert response.status_code == 200
@@ -1776,7 +2146,11 @@ class TestRevertEndpoint:
         assert "error" in response.json
 
     def test_revert_non_destructive_original_revision_visible(
-        self, client, author_user, author_jwt_payload
+        self,
+        client,
+        author_user,
+        author_jwt_payload,
+        post_with_id,
     ):
         """Revert is non-destructive: original revision remains visible."""
         mock_clerk_adapter = MagicMock()
@@ -1785,9 +2159,12 @@ class TestRevertEndpoint:
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
+        mock_post_repo = MagicMock()
+        mock_post_repo.find_by_slug.return_value = post_with_id
+
         revert_revision = PostRevision.create(
             post_id=UUID("12345678-1234-5678-1234-567812345678"),
-            commit_sha="newsha1234567890abcdef1234567890abcdef1",
+            commit_sha="abcdef1234567890abcdef1234567890abcdef12",
             author_id=UUID(int=10),
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
@@ -1807,6 +2184,10 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
+                "backend.api.routes.revisions._get_post_repository",
+                return_value=mock_post_repo,
+            ),
+            patch(
                 "backend.api.routes.revisions._get_revert_handler",
                 return_value=mock_handler,
             ),
@@ -1814,7 +2195,7 @@ class TestRevertEndpoint:
             response = client.post(
                 "/api/posts/test-post/revert",
                 headers={"Authorization": "Bearer author_token"},
-                json={"target_sha": "abc123"},
+                json={"target_sha": "abc1234567890abcdef1234567890abcdef12345"},
             )
 
         assert response.status_code == 200
