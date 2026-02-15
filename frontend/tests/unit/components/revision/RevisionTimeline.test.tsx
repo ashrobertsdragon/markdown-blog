@@ -606,6 +606,85 @@ describe('RevisionTimeline', () => {
 
       expect(mockOnSelect).toHaveBeenCalledTimes(3)
     })
+
+    it('activates revision item with Enter key when isAuthor is true', () => {
+      const mockOnSelect = vi.fn()
+      mockUseRevisionHistory.mockReturnValue({
+        isLoading: false,
+        isError: false,
+        isSuccess: true,
+        data: mockRevisionsData,
+        error: null,
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
+
+      render(<RevisionTimeline {...defaultProps} isAuthor={true} onSelectRevision={mockOnSelect} />)
+
+      const revisionItem = screen.getByTestId('revision-item-abc123d')
+      fireEvent.keyDown(revisionItem, { key: 'Enter', code: 'Enter', charCode: 13 })
+
+      expect(mockOnSelect).toHaveBeenCalledWith('abc123d')
+      expect(mockOnSelect).toHaveBeenCalledTimes(1)
+    })
+
+    it('activates revision item with Space key when isAuthor is true', () => {
+      const mockOnSelect = vi.fn()
+      mockUseRevisionHistory.mockReturnValue({
+        isLoading: false,
+        isError: false,
+        isSuccess: true,
+        data: mockRevisionsData,
+        error: null,
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
+
+      render(<RevisionTimeline {...defaultProps} isAuthor={true} onSelectRevision={mockOnSelect} />)
+
+      const revisionItem = screen.getByTestId('revision-item-789ghi0')
+      fireEvent.keyDown(revisionItem, { key: ' ', code: 'Space', charCode: 32 })
+
+      expect(mockOnSelect).toHaveBeenCalledWith('789ghi0')
+      expect(mockOnSelect).toHaveBeenCalledTimes(1)
+    })
+
+    it('prevents default Space key behavior to avoid page scroll', () => {
+      const mockOnSelect = vi.fn()
+      mockUseRevisionHistory.mockReturnValue({
+        isLoading: false,
+        isError: false,
+        isSuccess: true,
+        data: mockRevisionsData,
+        error: null,
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
+
+      render(<RevisionTimeline {...defaultProps} isAuthor={true} onSelectRevision={mockOnSelect} />)
+
+      const revisionItem = screen.getByTestId('revision-item-def456a')
+      const event = new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true })
+      const preventDefaultSpy = vi.spyOn(event, 'preventDefault')
+
+      revisionItem.dispatchEvent(event)
+
+      expect(preventDefaultSpy).toHaveBeenCalled()
+    })
+
+    it('ignores other keys when isAuthor is true', () => {
+      const mockOnSelect = vi.fn()
+      mockUseRevisionHistory.mockReturnValue({
+        isLoading: false,
+        isError: false,
+        isSuccess: true,
+        data: mockRevisionsData,
+        error: null,
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
+
+      render(<RevisionTimeline {...defaultProps} isAuthor={true} onSelectRevision={mockOnSelect} />)
+
+      const revisionItem = screen.getByTestId('revision-item-abc123d')
+      fireEvent.keyDown(revisionItem, { key: 'a', code: 'KeyA' })
+      fireEvent.keyDown(revisionItem, { key: 'Tab', code: 'Tab' })
+      fireEvent.keyDown(revisionItem, { key: 'Escape', code: 'Escape' })
+
+      expect(mockOnSelect).not.toHaveBeenCalled()
+    })
   })
 
   describe('Authorization - Read-Only Mode', () => {
@@ -657,6 +736,27 @@ describe('RevisionTimeline', () => {
 
       const revisionItem = screen.getByTestId('revision-item-abc123d')
       expect(revisionItem).toHaveAttribute('data-interactive', 'false')
+    })
+
+    it('ignores keyboard activation when isAuthor is false', () => {
+      const mockOnSelect = vi.fn()
+      mockUseRevisionHistory.mockReturnValue({
+        isLoading: false,
+        isError: false,
+        isSuccess: true,
+        data: mockRevisionsData,
+        error: null,
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
+
+      render(
+        <RevisionTimeline {...defaultProps} isAuthor={false} onSelectRevision={mockOnSelect} />
+      )
+
+      const revisionItem = screen.getByTestId('revision-item-abc123d')
+      fireEvent.keyDown(revisionItem, { key: 'Enter', code: 'Enter', charCode: 13 })
+      fireEvent.keyDown(revisionItem, { key: ' ', code: 'Space', charCode: 32 })
+
+      expect(mockOnSelect).not.toHaveBeenCalled()
     })
   })
 
