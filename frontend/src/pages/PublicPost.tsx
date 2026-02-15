@@ -24,7 +24,14 @@ export default function PublicPost() {
   }
 
   if (isError || !post) {
-    const is404 = error && 'response' in error && error.response?.status === 404
+    const is404 =
+      error &&
+      typeof error === 'object' &&
+      'response' in error &&
+      typeof error.response === 'object' &&
+      error.response !== null &&
+      'status' in error.response &&
+      error.response.status === 404
     const errorMessage = is404
       ? 'Post not found. It may have been deleted or is not yet published.'
       : 'Failed to load post. Please try again later.'

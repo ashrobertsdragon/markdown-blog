@@ -259,7 +259,7 @@ describe('PostForm', () => {
       const longSlug = 'a'.repeat(250)
       fireEvent.change(slugInput, { target: { value: longSlug } })
 
-      expect(slugInput.value.length).toBeLessThanOrEqual(200)
+      expect((slugInput as HTMLInputElement).value.length).toBeLessThanOrEqual(200)
     })
 
     /**
@@ -522,8 +522,8 @@ describe('PostForm', () => {
 
       fireEvent.change(slugInput, { target: { value: 'my-blog-post-🎉-test' } })
 
-      expect(slugInput.value).not.toContain('🎉')
-      expect(slugInput.value).toMatch(/^[a-z0-9-]+$/)
+      expect((slugInput as HTMLInputElement).value).not.toContain('🎉')
+      expect((slugInput as HTMLInputElement).value).toMatch(/^[a-z0-9-]+$/)
     })
 
     /**

@@ -61,6 +61,7 @@ export interface DiffRevisionMeta {
 export interface DiffLine {
   type: 'context' | 'addition' | 'deletion'
   content: string
+  lineNumber?: number
 }
 
 /**

@@ -8,6 +8,7 @@ export interface PostResponse {
   slug: string
   title: string
   author_id: number
+  content?: string
   html_content: string
   published: boolean
   published_at: string | null

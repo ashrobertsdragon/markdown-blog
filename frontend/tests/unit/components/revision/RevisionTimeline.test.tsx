@@ -74,7 +74,7 @@ describe('RevisionTimeline', () => {
         isError: false,
         data: undefined,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -88,7 +88,7 @@ describe('RevisionTimeline', () => {
         isError: false,
         data: undefined,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -105,7 +105,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -124,7 +124,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -139,7 +139,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -155,7 +155,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -171,7 +171,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -189,7 +189,7 @@ describe('RevisionTimeline', () => {
         isSuccess: false,
         data: undefined,
         error: new Error(errorMessage),
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -205,7 +205,7 @@ describe('RevisionTimeline', () => {
         data: undefined,
         error: new Error('Network error'),
         refetch: vi.fn(),
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -222,7 +222,7 @@ describe('RevisionTimeline', () => {
         data: undefined,
         error: new Error('Network error'),
         refetch: mockRefetch,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -239,7 +239,7 @@ describe('RevisionTimeline', () => {
         isSuccess: false,
         data: undefined,
         error: new Error('Network error'),
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -254,7 +254,7 @@ describe('RevisionTimeline', () => {
         isSuccess: false,
         data: undefined,
         error: new Error('Failed to fetch'),
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -274,7 +274,7 @@ describe('RevisionTimeline', () => {
           has_more: false,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -293,7 +293,7 @@ describe('RevisionTimeline', () => {
           has_more: false,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -311,7 +311,7 @@ describe('RevisionTimeline', () => {
           has_more: false,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -328,7 +328,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -343,7 +343,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -358,7 +358,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -375,7 +375,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -390,7 +390,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -407,7 +407,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -422,7 +422,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -447,7 +447,7 @@ describe('RevisionTimeline', () => {
           has_more: true,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -465,7 +465,7 @@ describe('RevisionTimeline', () => {
           has_more: false,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -483,7 +483,7 @@ describe('RevisionTimeline', () => {
           has_more: true,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -505,7 +505,7 @@ describe('RevisionTimeline', () => {
           has_more: true,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       const { rerender } = render(<RevisionTimeline {...defaultProps} />)
 
@@ -518,7 +518,7 @@ describe('RevisionTimeline', () => {
         isSuccess: false,
         data: undefined,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       rerender(<RevisionTimeline {...defaultProps} />)
 
@@ -535,7 +535,7 @@ describe('RevisionTimeline', () => {
           has_more: true,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -552,7 +552,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} isAuthor={true} />)
 
@@ -568,7 +568,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} isAuthor={true} onSelectRevision={mockOnSelect} />)
 
@@ -587,7 +587,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} isAuthor={true} onSelectRevision={mockOnSelect} />)
 
@@ -616,7 +616,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} isAuthor={false} />)
 
@@ -632,7 +632,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(
         <RevisionTimeline {...defaultProps} isAuthor={false} onSelectRevision={mockOnSelect} />
@@ -651,7 +651,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} isAuthor={false} />)
 
@@ -668,7 +668,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -683,7 +683,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -698,7 +698,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -712,7 +712,7 @@ describe('RevisionTimeline', () => {
         isError: false,
         data: undefined,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -726,7 +726,7 @@ describe('RevisionTimeline', () => {
         isError: true,
         data: undefined,
         error: new Error('Network error'),
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -743,7 +743,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -760,7 +760,7 @@ describe('RevisionTimeline', () => {
           has_more: true,
         },
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -781,7 +781,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 
@@ -796,7 +796,7 @@ describe('RevisionTimeline', () => {
         isSuccess: true,
         data: mockRevisionsData,
         error: null,
-      } as UseQueryResult<ListRevisionsResponse, Error>)
+      } as unknown as UseQueryResult<ListRevisionsResponse, Error>)
 
       render(<RevisionTimeline {...defaultProps} />)
 

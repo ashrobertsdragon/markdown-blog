@@ -223,7 +223,7 @@ export default function PostEditor() {
           {/* Preview Column (only shown when enabled) */}
           {showPreview && (
             <div className="lg:col-span-1">
-              <PreviewPane content={content} />
+              <PreviewPane markdown={content} />
             </div>
           )}
         </div>

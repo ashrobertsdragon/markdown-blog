@@ -65,7 +65,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: false,
           role: 'authenticated',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should redirect unauthenticated user to /login', async () => {
@@ -93,7 +93,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'authenticated',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should redirect authenticated non-author to /forbidden', async () => {
@@ -121,7 +121,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'author',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render PostEditor component for author', async () => {
@@ -150,7 +150,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'admin',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render PostEditor component for admin (hierarchical access)', async () => {
@@ -174,7 +174,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: false,
           role: 'authenticated',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should redirect unauthenticated user to /login', async () => {
@@ -202,7 +202,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'authenticated',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should redirect authenticated non-author to /forbidden', async () => {
@@ -230,7 +230,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'author',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render PostEditor component for author', async () => {
@@ -273,7 +273,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'admin',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render PostEditor component for admin (hierarchical access)', async () => {
@@ -295,7 +295,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: false,
           role: 'authenticated',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should redirect unauthenticated user to /login', async () => {
@@ -323,7 +323,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'authenticated',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should redirect authenticated non-author to /forbidden', async () => {
@@ -351,7 +351,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'author',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render MyPosts component for author', async () => {
@@ -380,7 +380,7 @@ describe('App Routes - Protected Author Routes', () => {
           isSignedIn: true,
           role: 'admin',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render MyPosts component for admin (hierarchical access)', async () => {
@@ -406,7 +406,7 @@ describe('App Routes - Public Routes', () => {
           isSignedIn: false,
           role: 'authenticated',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render PublicPost component without authentication', async () => {
@@ -449,7 +449,7 @@ describe('App Routes - Public Routes', () => {
           isSignedIn: true,
           role: 'authenticated',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render PublicPost component for authenticated user', async () => {
@@ -478,7 +478,7 @@ describe('App Routes - Public Routes', () => {
           isSignedIn: true,
           role: 'author',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render PublicPost component for author', async () => {
@@ -498,7 +498,7 @@ describe('App Routes - Public Routes', () => {
           isSignedIn: true,
           role: 'admin',
           getToken: vi.fn(),
-        } as AuthContextType
+        } as unknown as AuthContextType
       })
 
       it('should render PublicPost component for admin', async () => {
@@ -521,7 +521,7 @@ describe('App Routes - Loading States', () => {
         isSignedIn: false,
         role: 'authenticated',
         getToken: vi.fn(),
-      } as AuthContextType
+      } as unknown as AuthContextType
     })
 
     it('should show loading spinner for protected /new-post route', () => {

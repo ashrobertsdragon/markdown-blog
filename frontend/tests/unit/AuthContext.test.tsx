@@ -61,7 +61,7 @@ describe('AuthProvider', () => {
         id: 'user_123',
         firstName: 'John',
         publicMetadata: { role: 'author' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -100,7 +100,7 @@ describe('AuthProvider', () => {
         id: 'user_123',
         firstName: 'John',
         publicMetadata: { role: 'author' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -146,7 +146,7 @@ describe('AuthProvider', () => {
       const mockUser = {
         id: 'user_123',
         firstName: 'John',
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -173,7 +173,7 @@ describe('AuthProvider', () => {
         id: 'user_123',
         firstName: 'John',
         publicMetadata: {},
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -200,7 +200,7 @@ describe('AuthProvider', () => {
         id: 'user_123',
         firstName: 'John',
         publicMetadata: { role: 'author' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -227,7 +227,7 @@ describe('AuthProvider', () => {
         id: 'user_123',
         firstName: 'Admin',
         publicMetadata: { role: 'admin' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -262,7 +262,7 @@ describe('useAuth Hook', () => {
         id: 'user_456',
         firstName: 'Jane',
         publicMetadata: { role: 'admin' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -297,7 +297,7 @@ describe('useAuth Hook', () => {
         id: 'user_789',
         firstName: 'Bob',
         publicMetadata: { role: 'author' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -330,7 +330,7 @@ describe('AuthContext Integration', () => {
         firstName: 'Integration',
         lastName: 'Test',
         publicMetadata: { role: 'author' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -367,7 +367,7 @@ describe('AuthContext Integration', () => {
         id: 'user_nested',
         firstName: 'Nested',
         publicMetadata: { role: 'admin' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -402,7 +402,7 @@ describe('AuthContext Integration', () => {
         user: null,
         isLoaded: false,
         isSignedIn: false,
-      })
+      } as unknown as ReturnType<typeof useUser>)
 
       const TestComponent = () => {
         const { isLoaded, user } = useAuth()
@@ -428,7 +428,7 @@ describe('AuthContext Integration', () => {
         id: 'user_signed_in',
         firstName: 'SignedIn',
         publicMetadata: { role: 'author' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
@@ -480,13 +480,13 @@ describe('AuthContext Integration', () => {
         id: 'user_rerender',
         firstName: 'ReRender',
         publicMetadata: { role: 'author' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: null,
         isLoaded: false,
         isSignedIn: false,
-      })
+      } as unknown as ReturnType<typeof useUser>)
 
       const TestComponent = () => {
         const { isLoaded, isSignedIn, user } = useAuth()
@@ -546,7 +546,7 @@ describe('AuthContext Integration', () => {
         id: 'user_multi',
         firstName: 'Multi',
         publicMetadata: { role: 'admin' },
-      } as UserResource
+      } as unknown as UserResource
 
       mockUseUser.mockReturnValue({
         user: mockUser,
