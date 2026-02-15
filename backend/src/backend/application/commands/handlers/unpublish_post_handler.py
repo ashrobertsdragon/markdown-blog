@@ -48,7 +48,6 @@ def unpublish_post_handler(
     Raises:
         ValueError: If post not found, user unauthorized, or already unpublished
     """
-    # Step 1: Load Post aggregate from database and verify ownership
     logger.debug(f"Loading Post from database: {command.slug}")
     post = post_repo.find_by_slug(command.slug)
     if post is None:
@@ -61,17 +60,14 @@ def unpublish_post_handler(
         )
         raise ValueError("Cannot unpublish another author's post")
 
-    # Step 2: Validate post is published
     if not post.published:
         raise ValueError(
             f"Post '{command.slug}' is not published (already unpublished)"
         )
 
-    # Step 3: Unpublish via domain method
     logger.info(f"Unpublishing post: {command.slug}")
     post.unpublish()
 
-    # Step 4: Persist to database (ATOMIC - must succeed)
     logger.debug(f"Saving unpublished post to database: {command.slug}")
     try:
         post = post_repo.save(post)
@@ -80,7 +76,6 @@ def unpublish_post_handler(
         logger.error(f"Failed to save post to database: {command.slug}: {e}")
         raise
 
-    # Step 5: Update draft front matter (BEST EFFORT)
     logger.debug(f"Loading draft file: {command.slug}")
     draft = draft_repo.find_by_slug(command.slug)
 
@@ -90,7 +85,6 @@ def unpublish_post_handler(
             "post is unpublished in database, skipping file update"
         )
     else:
-        # Try to update draft file
         try:
             logger.debug(f"Updating draft front matter: {command.slug}")
             draft.published = False
@@ -102,7 +96,6 @@ def unpublish_post_handler(
                 "post is unpublished, draft file state may be stale"
             )
 
-        # Step 6: Commit to GitHub (BEST EFFORT, always attempt if draft exists)
         try:
             logger.debug(f"Committing to GitHub: drafts/{post.slug}.md")
             commit_message = f"Unpublish post: {draft.title}"

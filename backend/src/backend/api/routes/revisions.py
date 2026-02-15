@@ -1,10 +1,19 @@
 """Revisions API routes blueprint for revision tracking operations."""
 
 import logging
-from datetime import UTC, datetime
 
 from flask import Blueprint, Response, g, jsonify, request
 
+from backend.api.dependencies import (
+    get_diff_service,
+    get_draft_repository,
+    get_github_service,
+    get_markdown_service,
+    get_post_repository,
+    get_revision_repository,
+    get_sanitizer,
+)
+from backend.api.formatters import format_revision_dict
 from backend.api.middleware.auth_middleware import require_auth
 from backend.application.commands.revert_to_revision_command import (
     RevertToRevisionCommand,
@@ -22,135 +31,9 @@ from backend.application.queries.get_revision_query import (
     GetRevisionQuery,
     get_revision_handler,
 )
-from backend.config import FileSystemSettings, GitHubSettings
-from backend.domain.aggregates.post_revision import PostRevision
-from backend.infrastructure.markdown.markdown_rendering_service import (
-    MarkdownRenderingService,
-)
-from backend.infrastructure.persistence.filesystem_draft_repository import (
-    FileSystemDraftRepository,
-)
-from backend.infrastructure.persistence.post_repository import PostRepository
-from backend.infrastructure.persistence.post_revision_repository import (
-    PostRevisionRepository,
-)
-from backend.infrastructure.rendering.html_sanitizer import HtmlSanitizer
-from backend.infrastructure.versioning.diff_service import DiffService
-from backend.infrastructure.versioning.github_sync_service import (
-    GitHubSyncService,
-)
 
 revisions_bp = Blueprint("revisions", __name__)
 logger = logging.getLogger(__name__)
-
-_filesystem_settings: FileSystemSettings | None = None
-_github_settings: GitHubSettings | None = None
-
-
-def _get_filesystem_settings() -> FileSystemSettings:
-    """Lazily initialize FileSystemSettings instance."""
-    global _filesystem_settings
-    if _filesystem_settings is None:
-        _filesystem_settings = FileSystemSettings()
-    return _filesystem_settings
-
-
-def _get_github_settings() -> GitHubSettings:
-    """Lazily initialize GitHubSettings instance."""
-    global _github_settings
-    if _github_settings is None:
-        _github_settings = GitHubSettings()
-    return _github_settings
-
-
-def _get_post_repository() -> PostRepository:
-    """Get PostRepository instance."""
-    return PostRepository()
-
-
-def _get_revision_repository() -> PostRevisionRepository:
-    """Get PostRevisionRepository instance."""
-    return PostRevisionRepository()
-
-
-def _get_draft_repository() -> FileSystemDraftRepository:
-    """Get FileSystemDraftRepository instance."""
-    fs_settings = _get_filesystem_settings()
-    return FileSystemDraftRepository(fs_settings.DRAFTS_PATH)
-
-
-def _get_github_service() -> GitHubSyncService:
-    """Get GitHubSyncService instance."""
-    gh_settings = _get_github_settings()
-    return GitHubSyncService(
-        gh_settings.GITHUB_TOKEN,
-        gh_settings.GITHUB_OWNER,
-        gh_settings.GITHUB_REPO,
-    )
-
-
-def _get_markdown_service() -> MarkdownRenderingService:
-    """Get MarkdownRenderingService instance."""
-    return MarkdownRenderingService()
-
-
-def _get_sanitizer() -> HtmlSanitizer:
-    """Get HtmlSanitizer instance."""
-    return HtmlSanitizer()
-
-
-def _get_diff_service() -> DiffService:
-    """Get DiffService instance."""
-    return DiffService()
-
-
-def _format_revision_dict(revision: PostRevision) -> dict:
-    """Format PostRevision aggregate into JSON response object.
-
-    Args:
-        revision: PostRevision aggregate
-
-    Returns:
-        Dictionary with revision metadata
-    """
-    return {
-        "id": str(revision.id),
-        "commit_sha": str(revision.commit_sha),
-        "short_sha": revision.commit_sha.short_sha,
-        "author_id": str(revision.author_id),
-        "timestamp": revision.created_at.isoformat(),
-        "relative_time": _format_relative_time(revision.created_at),
-        "commit_message": revision.commit_message,
-        "is_revert": revision.is_revert,
-    }
-
-
-def _format_relative_time(dt: datetime) -> str:
-    """Format datetime as relative time string.
-
-    Args:
-        dt: Datetime to format
-
-    Returns:
-        Human-readable relative time (e.g., "2 days ago")
-    """
-    now = datetime.now(UTC)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-
-    diff = now - dt
-    seconds = diff.total_seconds()
-
-    if seconds < 60:
-        return "just now"
-    if seconds < 3600:
-        minutes = int(seconds / 60)
-        return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
-    if seconds < 86400:
-        hours = int(seconds / 3600)
-        return f"{hours} hour{'s' if hours != 1 else ''} ago"
-    days = int(seconds / 86400)
-    return f"{days} day{'s' if days != 1 else ''} ago"
 
 
 @revisions_bp.route("/<slug>/revisions", methods=["GET"])
@@ -184,7 +67,7 @@ def list_revisions(slug: str) -> tuple[Response, int]:
     if not 1 <= limit <= 100:
         return jsonify({"error": "limit must be between 1 and 100"}), 400
 
-    post_repo = _get_post_repository()
+    post_repo = get_post_repository()
     post = post_repo.find_by_slug(slug)
 
     if post is None:
@@ -193,7 +76,6 @@ def list_revisions(slug: str) -> tuple[Response, int]:
     if post.id is None:
         return jsonify({"error": f"Post '{slug}' has no ID"}), 500
 
-    # Authorization: only author or admin can view revision history
     if post.author_id != g.current_user.id and g.current_user.role != "admin":
         return jsonify({"error": "Not authorized to view revisions"}), 403
 
@@ -205,13 +87,13 @@ def list_revisions(slug: str) -> tuple[Response, int]:
         )
         response = get_revision_history_handler(
             query,
-            _get_revision_repository(),
+            get_revision_repository(),
         )
 
         return jsonify(
             {
                 "revisions": [
-                    _format_revision_dict(rev) for rev in response.revisions
+                    format_revision_dict(rev) for rev in response.revisions
                 ],
                 "total_count": response.total_count,
                 "has_more": response.has_more,
@@ -255,7 +137,7 @@ def get_revision(slug: str, sha: str) -> tuple[Response, int]:
             {"error": f"SHA length {len(sha)} exceeds maximum of 100"}
         ), 400
 
-    post_repo = _get_post_repository()
+    post_repo = get_post_repository()
     post = post_repo.find_by_slug(slug)
 
     if post is None:
@@ -264,7 +146,6 @@ def get_revision(slug: str, sha: str) -> tuple[Response, int]:
     if post.id is None:
         return jsonify({"error": f"Post '{slug}' has no ID"}), 500
 
-    # Authorization: only author or admin can view revision details
     if post.author_id != g.current_user.id and g.current_user.role != "admin":
         return jsonify({"error": "Not authorized to view revisions"}), 403
 
@@ -272,13 +153,12 @@ def get_revision(slug: str, sha: str) -> tuple[Response, int]:
         query = GetRevisionQuery(post_id=post.id, commit_sha=sha)
         response = get_revision_handler(
             query,
-            _get_revision_repository(),
-            _get_markdown_service(),
-            _get_sanitizer(),
+            get_revision_repository(),
+            get_markdown_service(),
+            get_sanitizer(),
         )
 
-        # Determine if this is the most recent revision by querying
-        revision_repo = _get_revision_repository()
+        revision_repo = get_revision_repository()
         recent_revisions, _ = revision_repo.find_by_post_id(
             post_id=post.id, skip=0, limit=1
         )
@@ -351,7 +231,7 @@ def compare_revisions(slug: str, sha1: str, sha2: str) -> tuple[Response, int]:
             {"error": f"to_sha length {len(sha2)} exceeds maximum of 100"}
         ), 400
 
-    post_repo = _get_post_repository()
+    post_repo = get_post_repository()
     post = post_repo.find_by_slug(slug)
 
     if post is None:
@@ -360,7 +240,6 @@ def compare_revisions(slug: str, sha1: str, sha2: str) -> tuple[Response, int]:
     if post.id is None:
         return jsonify({"error": f"Post '{slug}' has no ID"}), 500
 
-    # Authorization: only author or admin can compare revisions
     if post.author_id != g.current_user.id and g.current_user.role != "admin":
         return jsonify({"error": "Not authorized to view revisions"}), 403
 
@@ -372,8 +251,8 @@ def compare_revisions(slug: str, sha1: str, sha2: str) -> tuple[Response, int]:
         )
         response = compare_revisions_handler(
             query,
-            _get_revision_repository(),
-            _get_diff_service(),
+            get_revision_repository(),
+            get_diff_service(),
         )
 
         return jsonify(
@@ -462,10 +341,10 @@ def revert_to_revision(slug: str) -> tuple[Response, int]:
         )
         new_revision = revert_to_revision_handler(
             command,
-            _get_post_repository(),
-            _get_revision_repository(),
-            _get_draft_repository(),
-            _get_github_service(),
+            get_post_repository(),
+            get_revision_repository(),
+            get_draft_repository(),
+            get_github_service(),
         )
 
         return jsonify(

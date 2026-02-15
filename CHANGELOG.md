@@ -21,8 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   - Removed handler wrapper classes (GetRevisionHistoryQueryHandler, etc.) that added no value
   - Handler functions now called directly from route handlers
-  - Reduced revisions.py from 571 to 500 lines (12% reduction)
+  - Split revisions.py into three focused modules (routes, dependencies, formatters)
+  - Reduced revisions.py from 571 to 379 lines (34% reduction)
+  - Extracted dependency injection to api/dependencies.py (93 lines)
+  - Extracted response formatters to api/formatters.py (56 lines)
   - Improved code maintainability and readability
+
+- **Backend**: Removed all inline code comments from production code
+
+  - Replaced inline comments with docstrings where needed
+  - Removed redundant comments that restated obvious code
+  - Enforced CLAUDE.md rule: no code comments, only docstrings
 
 ### Added
 

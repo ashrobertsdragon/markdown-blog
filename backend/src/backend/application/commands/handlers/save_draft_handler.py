@@ -59,7 +59,6 @@ def save_draft_handler(
         ValueError: If slug is invalid
         ValueError: If corruption recovery fails completely
     """
-    # Step 1: Load Post aggregate for authorization check
     post = post_repo.find_by_slug(command.slug)
     if post is None:
         raise ValueError(
@@ -73,7 +72,6 @@ def save_draft_handler(
         )
         raise ValueError("Cannot edit another author's post")
 
-    # Step 2: Load draft file
     try:
         draft = draft_repo.find_by_slug(command.slug)
     except (ValueError, yaml.YAMLError, AttributeError) as e:
