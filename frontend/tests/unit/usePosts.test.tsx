@@ -456,8 +456,13 @@ describe('usePosts hooks', () => {
       updated_at: '2026-02-03T10:30:00Z',
     }
 
+    const mockSaveResponse = {
+      ...mockPost,
+      message: 'Draft saved successfully',
+    }
+
     it('should call postsApi.saveDraft with correct parameters', async () => {
-      vi.mocked(postsApi.saveDraft).mockResolvedValueOnce(mockPost)
+      vi.mocked(postsApi.saveDraft).mockResolvedValueOnce(mockSaveResponse)
 
       const { result } = renderHook(() => useSaveDraft(), {
         wrapper: createWrapper(),
@@ -472,7 +477,7 @@ describe('usePosts hooks', () => {
     })
 
     it('should invalidate specific draft cache on success', async () => {
-      vi.mocked(postsApi.saveDraft).mockResolvedValueOnce(mockPost)
+      vi.mocked(postsApi.saveDraft).mockResolvedValueOnce(mockSaveResponse)
 
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -493,7 +498,7 @@ describe('usePosts hooks', () => {
     })
 
     it('should invalidate myPosts cache on success', async () => {
-      vi.mocked(postsApi.saveDraft).mockResolvedValueOnce(mockPost)
+      vi.mocked(postsApi.saveDraft).mockResolvedValueOnce(mockSaveResponse)
 
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -519,7 +524,7 @@ describe('usePosts hooks', () => {
 
     it('should perform optimistic update', async () => {
       vi.mocked(postsApi.saveDraft).mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve(mockPost), 100))
+        () => new Promise(resolve => setTimeout(() => resolve(mockSaveResponse), 100))
       )
 
       queryClient.setQueryData(['draft', 'test-post'], {

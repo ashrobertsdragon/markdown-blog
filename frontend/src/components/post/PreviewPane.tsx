@@ -58,14 +58,16 @@ export function PreviewPane({
       )}
 
       {!isLoading && !error && (
-        <MarkdownPreview
-          source={markdown}
-          rehypePlugins={[[rehypeSanitize]]}
-          className="markdown-preview bg-transparent"
-          wrapperElement={{
-            'data-color-mode': 'light',
-          }}
-        />
+        <div data-testid="preview-content">
+          <MarkdownPreview
+            source={markdown}
+            rehypePlugins={[[rehypeSanitize]]}
+            className="markdown-preview bg-transparent"
+            wrapperElement={{
+              'data-color-mode': 'light',
+            }}
+          />
+        </div>
       )}
     </div>
   )

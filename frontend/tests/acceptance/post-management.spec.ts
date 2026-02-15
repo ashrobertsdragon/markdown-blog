@@ -120,8 +120,7 @@ test.describe('Post Management UI', () => {
     }
 
     const savePromise = page.waitForRequest(
-      request =>
-        request.url().includes('/api/posts/') && request.method() === 'PUT',
+      request => request.url().includes('/api/posts/') && request.method() === 'PUT'
     )
 
     await textarea.press('Control+s')

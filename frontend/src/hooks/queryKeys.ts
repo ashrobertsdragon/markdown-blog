@@ -22,4 +22,21 @@ export const queryKeys = {
    * Query key for fetching a single published post by slug (public)
    */
   publicPost: (slug: string) => ['publicPost', slug] as const,
+
+  /**
+   * Query key for fetching revision history with optional pagination
+   */
+  revisionHistory: (slug: string, params?: { skip?: number; limit?: number }) =>
+    ['revisionHistory', slug, params ?? {}] as const,
+
+  /**
+   * Query key for fetching a single revision by slug and SHA
+   */
+  revisionDetail: (slug: string, sha: string) => ['revisionDetail', slug, sha] as const,
+
+  /**
+   * Query key for fetching diff between two revisions
+   */
+  revisionDiff: (slug: string, sha1: string, sha2: string) =>
+    ['revisionDiff', slug, sha1, sha2] as const,
 }

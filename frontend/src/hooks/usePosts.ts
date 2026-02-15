@@ -12,6 +12,7 @@ import {
   type PostResponse,
   type PublicPostResponse,
   postsApi,
+  type SaveDraftResponse,
 } from '@/services/postsApi'
 import { queryKeys } from './queryKeys'
 
@@ -81,7 +82,7 @@ export function useCreateDraft(): UseMutationResult<
  * Hook for saving draft content with optimistic updates
  */
 export function useSaveDraft(): UseMutationResult<
-  PostResponse,
+  SaveDraftResponse,
   Error,
   { slug: string; content: string }
 > {
@@ -102,7 +103,7 @@ export function useSaveDraft(): UseMutationResult<
       if (previousDraft) {
         queryClient.setQueryData<PostResponse>(queryKeys.draft(slug), {
           ...previousDraft,
-          content: content,
+          content,
           updated_at: new Date().toISOString(),
         })
       }
