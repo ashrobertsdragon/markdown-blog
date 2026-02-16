@@ -63,7 +63,7 @@ def test_user_registration_via_clerk(authenticated_user):
     assert authenticated_user.email == "user@example.com"
 
 
-def test_jwt_token_validation(client):
+def test_jwt_token_validation(client, authenticated_user):
     """Test protected endpoints validate JWT tokens.
 
     Acceptance Criteria:
@@ -75,8 +75,12 @@ def test_jwt_token_validation(client):
     response_no_auth = client.get("/api/posts/my-posts")
     assert response_no_auth.status_code == 401
 
+    from backend.exceptions import AuthenticationError
+
     mock_clerk_adapter = MagicMock()
-    mock_clerk_adapter.verify_token.side_effect = Exception("Invalid token")
+    mock_clerk_adapter.verify_token.side_effect = AuthenticationError(
+        "Invalid token"
+    )
 
     with patch(
         "backend.api.middleware.auth_middleware._get_clerk_adapter",

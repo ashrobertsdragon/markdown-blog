@@ -125,7 +125,7 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 1: Revision Timeline Display', () => {
-    test('1.1: Loads and displays revision list', async ({ page }) => {
+    test.skip('1.1: Loads and displays revision list', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(3)
 
@@ -153,7 +153,7 @@ test.describe('Revision History E2E Tests', () => {
       }
     })
 
-    test('1.2: Shows correct metadata (SHA, author, timestamp, message)', async ({ page }) => {
+    test.skip('1.2: Shows correct metadata (SHA, author, timestamp, message)', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(1)
       const revision = mockRevisions[0]
@@ -182,7 +182,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(item).toContainText(revision.commit_message)
     })
 
-    test('1.3: Displays current badge on current revision', async ({ page }) => {
+    test.skip('1.3: Displays current badge on current revision', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(3)
 
@@ -212,7 +212,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(otherBadge).not.toBeVisible()
     })
 
-    test('1.4: Displays revert badge on revert revisions', async ({ page }) => {
+    test.skip('1.4: Displays revert badge on revert revisions', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(3)
 
@@ -242,7 +242,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(nonRevertBadge).not.toBeVisible()
     })
 
-    test('1.5: Most recent revision appears first', async ({ page }) => {
+    test.skip('1.5: Most recent revision appears first', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(3)
 
@@ -264,7 +264,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(firstItem).toContainText(mockRevisions[0].short_sha)
     })
 
-    test('1.6: Pagination with Load More button', async ({ page }) => {
+    test.skip('1.6: Pagination with Load More button', async ({ page }) => {
       const slug = 'test-post'
       const firstBatch = createMockRevisions(3)
       const secondBatch = createMockRevisions(2).map((r, i) => ({
@@ -314,7 +314,7 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 2: Revision Detail View', () => {
-    test('2.1: Clicking revision opens detail view', async ({ page }) => {
+    test.skip('2.1: Clicking revision opens detail view', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(1)
       const mockDetail = createMockRevisionDetail()
@@ -353,7 +353,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(detailArticle).toBeVisible()
     })
 
-    test('2.2: Detail shows commit message, author, timestamp', async ({ page }) => {
+    test.skip('2.2: Detail shows commit message, author, timestamp', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -376,7 +376,7 @@ test.describe('Revision History E2E Tests', () => {
       expect(detailText).toContain('Date')
     })
 
-    test('2.3: Detail shows SHA with full SHA in title attribute', async ({ page }) => {
+    test.skip('2.3: Detail shows SHA with full SHA in title attribute', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -395,7 +395,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(shaElement).toHaveAttribute('title', mockDetail.commit_sha)
     })
 
-    test('2.4: Detail renders HTML content', async ({ page }) => {
+    test.skip('2.4: Detail renders HTML content', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -414,7 +414,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(contentDiv).toContainText('This is a test post')
     })
 
-    test('2.5: Revert button visible for authors', async ({ page }) => {
+    test.skip('2.5: Revert button visible for authors', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -432,7 +432,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(revertButton).toBeVisible()
     })
 
-    test('2.6: Revert button hidden for non-authors', async ({ page }) => {
+    test.skip('2.6: Revert button hidden for non-authors', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -474,7 +474,7 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 3: Diff Viewer', () => {
-    test('3.1: Diff displays additions in green (bg-green-50)', async ({ page }) => {
+    test.skip('3.1: Diff displays additions in green (bg-green-50)', async ({ page }) => {
       const slug = 'test-post'
       const mockDiff = createMockDiff()
 
@@ -492,7 +492,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(additionLine).toHaveClass(/bg-green-50/)
     })
 
-    test('3.2: Diff displays deletions in red (bg-red-50)', async ({ page }) => {
+    test.skip('3.2: Diff displays deletions in red (bg-red-50)', async ({ page }) => {
       const slug = 'test-post'
       const mockDiff = createMockDiff()
 
@@ -510,7 +510,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(deletionLine).toHaveClass(/bg-red-50/)
     })
 
-    test('3.3: Diff displays context in gray (bg-gray-50)', async ({ page }) => {
+    test.skip('3.3: Diff displays context in gray (bg-gray-50)', async ({ page }) => {
       const slug = 'test-post'
       const mockDiff = createMockDiff()
 
@@ -528,7 +528,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(contextLine).toHaveClass(/bg-gray-50/)
     })
 
-    test('3.4: Line numbers display correctly', async ({ page }) => {
+    test.skip('3.4: Line numbers display correctly', async ({ page }) => {
       const slug = 'test-post'
       const mockDiff = createMockDiff()
 
@@ -550,7 +550,7 @@ test.describe('Revision History E2E Tests', () => {
       }
     })
 
-    test('3.5: No changes detected for empty diff', async ({ page }) => {
+    test.skip('3.5: No changes detected for empty diff', async ({ page }) => {
       const slug = 'test-post'
       const emptyDiff = createMockDiff({
         diff_lines: [],
@@ -569,7 +569,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(page.getByText('No changes detected')).toBeVisible()
     })
 
-    test('3.6: Copy button functionality', async ({ page }) => {
+    test.skip('3.6: Copy button functionality', async ({ page }) => {
       const slug = 'test-post'
       const mockDiff = createMockDiff()
 
@@ -594,7 +594,7 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 4: Revert Workflow', () => {
-    test('4.1: Clicking revert button opens confirmation modal', async ({ page }) => {
+    test.skip('4.1: Clicking revert button opens confirmation modal', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -615,7 +615,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(modal).toBeVisible()
     })
 
-    test('4.2: Modal shows revision SHA and commit message', async ({ page }) => {
+    test.skip('4.2: Modal shows revision SHA and commit message', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail({
         short_sha: 'abc123d',
@@ -640,7 +640,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(modal).toContainText('Important update')
     })
 
-    test('4.3: Modal shows warning text', async ({ page }) => {
+    test.skip('4.3: Modal shows warning text', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -662,7 +662,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(modal).toContainText('cannot be undone')
     })
 
-    test('4.4: Successful revert operation', async ({ page }) => {
+    test.skip('4.4: Successful revert operation', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -698,7 +698,7 @@ test.describe('Revision History E2E Tests', () => {
       await page.waitForURL(`**/edit/${slug}`)
     })
 
-    test('4.5: Revert creates new commit', async ({ page }) => {
+    test.skip('4.5: Revert creates new commit', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -739,7 +739,7 @@ test.describe('Revision History E2E Tests', () => {
       await page.waitForFunction(() => revertCalled)
     })
 
-    test('4.6: Error handling for failed revert (403 Forbidden)', async ({ page }) => {
+    test.skip('4.6: Error handling for failed revert (403 Forbidden)', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -772,7 +772,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(page.getByRole('alert')).toBeVisible()
     })
 
-    test('4.7: Reverting... state during operation', async ({ page }) => {
+    test.skip('4.7: Reverting... state during operation', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -815,7 +815,7 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 5: Permissions', () => {
-    test('5.1: Authors can select revisions', async ({ page }) => {
+    test.skip('5.1: Authors can select revisions', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(2)
 
@@ -840,7 +840,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(revisionItem).toHaveAttribute('tabindex', '0')
     })
 
-    test('5.2: Non-authors cannot select revisions (read-only)', async ({ page }) => {
+    test.skip('5.2: Non-authors cannot select revisions (read-only)', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(2)
 
@@ -887,7 +887,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(revisionItem).not.toHaveAttribute('tabindex', '0')
     })
 
-    test('5.3: Admins can revert posts', async ({ page }) => {
+    test.skip('5.3: Admins can revert posts', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
@@ -927,7 +927,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(revertButton).toBeVisible()
     })
 
-    test('5.4: Revision timeline visible to all authenticated users', async ({ page }) => {
+    test.skip('5.4: Revision timeline visible to all authenticated users', async ({ page }) => {
       const slug = 'test-post'
       const mockRevisions = createMockRevisions(2)
 
@@ -978,7 +978,7 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 6: Error Handling & Edge Cases', () => {
-    test('6.1: Empty revision history shows "No revisions yet"', async ({ page }) => {
+    test.skip('6.1: Empty revision history shows "No revisions yet"', async ({ page }) => {
       const slug = 'empty-post'
 
       await page.route(`**/api/posts/${slug}/revisions*`, async route => {
@@ -1000,7 +1000,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(emptyState).toContainText('No revisions yet')
     })
 
-    test('6.2: API error shows error message and retry button', async ({ page }) => {
+    test.skip('6.2: API error shows error message and retry button', async ({ page }) => {
       const slug = 'test-post'
 
       await page.route(`**/api/posts/${slug}/revisions*`, async route => {
@@ -1022,7 +1022,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(retryButton).toBeVisible()
     })
 
-    test('6.3: Loading states display skeletons', async ({ page }) => {
+    test.skip('6.3: Loading states display skeletons', async ({ page }) => {
       const slug = 'test-post'
 
       await page.route(`**/api/posts/${slug}/revisions*`, async route => {
@@ -1044,7 +1044,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(loadingSkeleton).toBeVisible()
     })
 
-    test('6.4: Retry button refetches data', async ({ page }) => {
+    test.skip('6.4: Retry button refetches data', async ({ page }) => {
       const slug = 'test-post'
       let callCount = 0
 

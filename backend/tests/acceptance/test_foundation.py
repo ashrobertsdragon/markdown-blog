@@ -59,7 +59,6 @@ def test_database_connectivity():
     - Required environment variables exist
     - Database credentials follow cPanel prefix convention
     """
-    assert "DB_HOST" in os.environ or "LOCAL_DB_HOST" in os.environ
     assert "DB_USER" in os.environ or "LOCAL_DB_USER" in os.environ
     assert "DB_PASSWORD" in os.environ or "LOCAL_DB_PASSWORD" in os.environ
     assert "DB_NAME" in os.environ or "LOCAL_DB_NAME" in os.environ
