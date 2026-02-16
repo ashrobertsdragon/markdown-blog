@@ -89,7 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests validate complete user workflows from revision viewing to reverting posts
   - Mock data generators ensure test independence and maintainability
   - All tests mocked dependencies with proper fixtures for auth, users, and revisions
-  - File: `backend/tests/integration/api/test_revisions_routes.py`
+  - File: `frontend/tests/e2e/revision-history.ts`
 
 - **Backend**: Revision tracking application layer with queries and commands
 

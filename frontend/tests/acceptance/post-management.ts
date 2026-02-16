@@ -23,8 +23,8 @@ test.describe('Post Management UI', () => {
 
   test('Markdown Editor and Preview', async ({ page }) => {
     const slug = 'test-post'
-    // Mock get draft and save draft - use backend URL pattern
-    await page.route(`**/posts/${slug}`, async route => {
+    // Mock get draft and save draft
+    await page.route(`**/api/posts/${slug}`, async route => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -80,8 +80,8 @@ test.describe('Post Management UI', () => {
   test('Publish/Unpublish flow with modals', async ({ page }) => {
     const slug = 'publish-me'
 
-    // Mock get draft - use backend URL pattern
-    await page.route(`**/posts/${slug}`, async route => {
+    // Mock get draft
+    await page.route(`**/api/posts/${slug}`, async route => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -93,8 +93,8 @@ test.describe('Post Management UI', () => {
       }
     })
 
-    // Mock publish endpoint - use backend URL pattern
-    await page.route(`**/posts/${slug}/publish`, async route => {
+    // Mock publish endpoint
+    await page.route(`**/api/posts/${slug}/publish`, async route => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 200,
@@ -107,7 +107,7 @@ test.describe('Post Management UI', () => {
     })
 
     // Mock public post view
-    await page.route(`**/posts/${slug}`, async route => {
+    await page.route(`**/api/posts/${slug}`, async route => {
       await route.fulfill({
         status: 200,
         contentType: 'text/html',
@@ -133,8 +133,8 @@ test.describe('Post Management UI', () => {
   test('Delete Draft Post', async ({ page }) => {
     const slug = 'delete-me'
 
-    // Mock list posts API to show the post we want to delete - use backend URL pattern
-    await page.route('**/posts/my-posts**', async route => {
+    // Mock list posts API to show the post we want to delete
+    await page.route('**/api/posts/my-posts**', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -155,8 +155,8 @@ test.describe('Post Management UI', () => {
       })
     })
 
-    // Mock delete success - set up BEFORE clicking delete, use backend URL pattern
-    await page.route(`**/posts/${slug}`, async route => {
+    // Mock delete success - set up BEFORE clicking delete
+    await page.route(`**/api/posts/${slug}`, async route => {
       if (route.request().method() === 'DELETE') {
         await route.fulfill({ status: 204 })
       } else {
@@ -181,8 +181,8 @@ test.describe('Post Management UI', () => {
   })
 
   test('List Author Drafts and Filtering', async ({ page }) => {
-    // Mock list posts - match the actual backend URL pattern
-    await page.route('**/posts/my-posts**', async route => {
+    // Mock list posts
+    await page.route('**/api/posts/my-posts**', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

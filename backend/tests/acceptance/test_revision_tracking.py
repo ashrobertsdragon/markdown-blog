@@ -67,6 +67,7 @@ def mock_github():
         yield instance
 
 
+@pytest.mark.xfail(reason="Revision history endpoint not yet implemented")
 def test_display_post_revision_history(client, mock_clerk_auth, mock_github):
     """Test viewing revision timeline for a post.
 
@@ -97,19 +98,17 @@ def test_display_post_revision_history(client, mock_clerk_auth, mock_github):
         headers={"Authorization": "Bearer author_token"},
     )
 
-    if response.status_code == 200:
-        assert "revisions" in response.json
-        revisions = response.json["revisions"]
-        assert isinstance(revisions, list)
+    assert response.status_code == 200
+    assert "revisions" in response.json
+    revisions = response.json["revisions"]
+    assert isinstance(revisions, list)
 
-        if len(revisions) > 0:
-            revision = revisions[0]
-            assert "commit_sha" in revision
-            assert "author" in revision
-            assert "timestamp" in revision
-            assert "message" in revision
-    else:
-        pytest.skip("Revision history endpoint not implemented")
+    if len(revisions) > 0:
+        revision = revisions[0]
+        assert "commit_sha" in revision
+        assert "author" in revision
+        assert "timestamp" in revision
+        assert "message" in revision
 
 
 @pytest.mark.skip(reason="View previous version not fully implemented")
@@ -161,10 +160,13 @@ def test_revert_to_specific_revision(client, mock_clerk_auth, mock_github):
     pass
 
 
-def test_post_revision_table_schema(client, mock_clerk_auth, mock_github):
-    """Test PostRevision records created and cached.
+def test_create_post_triggers_github_commit(
+    client, mock_clerk_auth, mock_github
+):
+    """Test creating a post triggers GitHub commit.
 
     Acceptance Criteria:
+    - Creating a post triggers a commit to GitHub
     - Commit creates PostRevision record with: post_id, commit_sha,
       author_id, timestamp, commit_message
     - Markdown_content (full post) cached in table

@@ -19,15 +19,20 @@ export interface AuthProviderProps {
   children: ReactNode
 }
 
+function deriveRoleFromMetadata(
+  user?: { publicMetadata?: { role?: AuthContextType['role'] | string } } | null
+): AuthContextType['role'] {
+  const roleValue = user?.publicMetadata?.role
+  return roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
+    ? (roleValue as AuthContextType['role'])
+    : 'authenticated'
+}
+
 function ClerkAuthProvider({ children }: AuthProviderProps) {
   const { user: clerkUser, isLoaded: clerkIsLoaded, isSignedIn: clerkIsSignedIn } = useUser()
   const { getToken: clerkGetToken } = useClerkAuth()
 
-  const roleValue = clerkUser?.publicMetadata?.role
-  const role: AuthContextType['role'] =
-    roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
-      ? roleValue
-      : 'authenticated'
+  const role = deriveRoleFromMetadata(clerkUser)
 
   const value: AuthContextType = {
     user: clerkUser,
@@ -47,11 +52,7 @@ function MockAuthProvider({ children }: AuthProviderProps) {
       : undefined
 
   const isSignedIn = testMock !== undefined && testMock !== null
-  const roleValue = testMock?.publicMetadata?.role
-  const role: AuthContextType['role'] =
-    roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
-      ? roleValue
-      : 'authenticated'
+  const role = deriveRoleFromMetadata(testMock)
 
   const value: AuthContextType = {
     user: testMock,
@@ -65,12 +66,11 @@ function MockAuthProvider({ children }: AuthProviderProps) {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  // Check if we're in test mode (property exists on window, even if undefined)
   const isTestMode =
+    import.meta.env.MODE === 'test' &&
     typeof window !== 'undefined' &&
     '__CLERK_TEST_MOCK__' in (window as { __CLERK_TEST_MOCK__?: UserType })
 
-  // Use different provider based on test mode
   if (isTestMode) {
     return <MockAuthProvider>{children}</MockAuthProvider>
   }
