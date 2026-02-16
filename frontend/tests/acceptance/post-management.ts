@@ -27,18 +27,28 @@ test.describe('Post Management UI', () => {
 
   test('Markdown Editor and Preview', async ({ page }) => {
     const slug = 'test-post'
-    // Mock get draft
+    // Mock get draft and save draft
     await page.route(`**/api/posts/${slug}`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          slug,
-          title: 'Test Post',
-          content: '# Initial Content',
-          published: false,
-        }),
-      })
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            slug,
+            title: 'Test Post',
+            content: '# Initial Content',
+            published: false,
+          }),
+        })
+      } else if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Draft saved', slug }),
+        })
+      } else {
+        await route.continue()
+      }
     })
 
     await page.goto(`/edit/${slug}`)
@@ -73,11 +83,39 @@ test.describe('Post Management UI', () => {
 
   test('Publish/Unpublish flow with modals', async ({ page }) => {
     const slug = 'publish-me'
+
+    // Mock get draft
     await page.route(`**/api/posts/${slug}`, async route => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ slug, title: 'Publish Me', content: '...', published: false }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Mock publish endpoint
+    await page.route(`**/api/posts/${slug}/publish`, async route => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ slug, published: true }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Mock public post view
+    await page.route(`**/posts/${slug}`, async route => {
       await route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ slug, title: 'Publish Me', content: '...', published: false }),
+        contentType: 'text/html',
+        body: `<!DOCTYPE html><html><body><h1>Publish Me</h1></body></html>`,
       })
     })
 
@@ -90,15 +128,6 @@ test.describe('Post Management UI', () => {
     const modal = page.locator('role=alertdialog')
     await expect(modal).toBeVisible()
     await expect(modal).toContainText('Are you sure you want to publish')
-
-    // Mock publish success
-    await page.route(`**/api/posts/${slug}/publish`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ slug, published: true }),
-      })
-    })
 
     await modal.locator('button:has-text("Publish")').click()
     await page.waitForURL(`**/posts/${slug}`)
@@ -130,6 +159,15 @@ test.describe('Post Management UI', () => {
       })
     })
 
+    // Mock delete success - set up BEFORE clicking delete
+    await page.route(`**/api/posts/${slug}`, async route => {
+      if (route.request().method() === 'DELETE') {
+        await route.fulfill({ status: 204 })
+      } else {
+        await route.continue()
+      }
+    })
+
     await page.goto('/my-posts')
 
     // Click Delete button in the table row
@@ -139,15 +177,6 @@ test.describe('Post Management UI', () => {
     const modal = page.locator('role=alertdialog')
     await expect(modal).toBeVisible()
     await expect(modal).toContainText('Are you sure you want to delete')
-
-    // Mock delete success
-    await page.route(`**/api/posts/${slug}`, async route => {
-      if (route.request().method() === 'DELETE') {
-        await route.fulfill({ status: 204 })
-      } else {
-        await route.continue()
-      }
-    })
 
     await modal.locator('button:has-text("Delete")').click()
 
