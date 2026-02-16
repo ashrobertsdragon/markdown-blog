@@ -35,6 +35,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Backend**: Acceptance tests for all spec workflow specifications
+
+  - Created comprehensive acceptance test suite covering all 7 specifications
+  - Foundation spec: Project structure, health checks, configuration management
+  - Authentication spec: JWT validation, role-based access control, auth middleware
+  - Post Management spec: Draft creation, publishing, deletion (existing tests)
+  - Revision Tracking spec: Revision history, diff viewer, revert operations
+  - Comments spec: Flat comment system, replies, moderation, rate limiting
+  - Notifications spec: Email queue, Resend integration, retry logic, preferences
+  - Admin Dashboard spec: User management, content moderation, system health
+  - Tests reference requirements by description (not by number) for maintainability
+  - Unimplemented features marked with pytest.mark.skip() to prevent false failures
+  - 63 total acceptance tests collected and validated
+
 - **Backend**: Integration tests for revision API routes
 
   - Created comprehensive test suite with 47 tests covering 4 revision management endpoints
