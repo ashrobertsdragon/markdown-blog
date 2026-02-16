@@ -137,16 +137,19 @@ test.describe('Authentication Flow', () => {
 
     await page.goto('/login')
     await page.goBack()
+    await page.waitForURL(initialUrl)
 
     expect(page.url()).toBe(initialUrl)
   })
 
   test('rapid navigation between protected routes handled', async ({ page }) => {
-    const navigationPromise1 = page.goto('/admin')
-    const navigationPromise2 = page.goto('/author')
+    // First navigation will be aborted by second - catch and ignore abort error
+    page.goto('/admin').catch(() => {
+      // Expected: first navigation aborted
+    })
 
-    await navigationPromise1
-    await navigationPromise2
+    // Second navigation should complete
+    await page.goto('/author')
 
     await expect(page).toHaveURL(/\/(login|author|admin)/)
   })
@@ -264,6 +267,7 @@ test.describe('Authentication Flow', () => {
 
     await page.goto('/login')
     await page.goBack()
+    await page.waitForURL(currentUrl)
 
     expect(page.url()).toBe(currentUrl)
   })
