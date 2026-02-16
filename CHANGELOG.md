@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Frontend**: Added environment guard to test mode authentication bypass
+
+  - Test mode now requires `import.meta.env.MODE === 'test'` in addition to `window.__CLERK_TEST_MOCK__`
+  - Prevents production users from spoofing authentication by setting window variables
+  - Blocks potential privilege escalation via browser console manipulation
+  - Addresses critical security vulnerability identified in PR review
+
+### Fixed
+
+- **Frontend**: Fixed API mock URL patterns in acceptance tests
+
+  - Added missing `/api` prefix to all route mocks in post-management.ts
+  - Ensures Playwright tests correctly intercept frontend API requests
+  - Aligns with Vite proxy configuration and actual request patterns
+
+- **Backend**: Improved test reliability and clarity
+
+  - Replaced conditional `pytest.skip()` with `@pytest.mark.xfail` decorator in revision tracking tests
+  - Renamed `test_post_revision_table_schema` to `test_create_post_triggers_github_commit` for clarity
+  - Made configuration test flexible for local/test environments (accepts TEST\_/MOCK\_ prefixed env vars)
+  - Fixed CHANGELOG file path reference for E2E tests (pointed to wrong directory)
+
+- **Frontend**: Extracted role derivation helper to reduce code duplication
+
+  - Created `deriveRoleFromMetadata()` helper function
+  - Eliminates duplicate role parsing logic between ClerkAuthProvider and MockAuthProvider
+  - Ensures consistent role handling across authentication providers
+
 ### Changed
 
 - **Backend**: Refactored PostRevision aggregate to use int IDs for consistency
