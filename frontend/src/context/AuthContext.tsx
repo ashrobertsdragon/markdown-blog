@@ -20,8 +20,20 @@ export interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { user, isLoaded, isSignedIn } = useUser()
-  const { getToken } = useClerkAuth()
+  // Check if we're using a test mock (set by e2e tests via window.__CLERK_TEST_MOCK__)
+  const testMock =
+    typeof window !== 'undefined'
+      ? (window as { __CLERK_TEST_MOCK__?: UserType }).__CLERK_TEST_MOCK__
+      : undefined
+
+  // Use test mock if available, otherwise use real Clerk hooks
+  const { user: clerkUser, isLoaded: clerkIsLoaded, isSignedIn: clerkIsSignedIn } = useUser()
+  const { getToken: clerkGetToken } = useClerkAuth()
+
+  const user = testMock || clerkUser
+  const isLoaded = testMock ? true : clerkIsLoaded
+  const isSignedIn = testMock ? true : clerkIsSignedIn
+  const getToken = testMock ? async () => 'mock_token_123' : clerkGetToken
 
   const roleValue = user?.publicMetadata?.role
   const role: AuthContextType['role'] =

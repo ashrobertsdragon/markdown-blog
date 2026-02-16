@@ -48,6 +48,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Input validation (invalid SHA format, empty values)
   - Response structure validation (metadata, diff_lines, revision data)
   - Edge cases (empty lists, identical revisions, non-existent revisions)
+
+- **Frontend**: End-to-end tests for revision tracking workflow
+
+  - Created comprehensive Playwright E2E test suite with 33 tests covering revision management UI
+  - Revision timeline display and pagination (6 tests)
+  - Revision detail view with metadata and content (6 tests)
+  - Diff viewer with syntax highlighting for additions/deletions/context (6 tests)
+  - Revert workflow with confirmation modal and error handling (7 tests)
+  - Permission boundaries for author/admin/reader roles (4 tests)
+  - Error handling and edge cases (empty state, API failures, loading states) (4 tests)
+  - Tests validate complete user workflows from revision viewing to reverting posts
+  - Mock data generators ensure test independence and maintainability
   - All tests mocked dependencies with proper fixtures for auth, users, and revisions
   - File: `backend/tests/integration/api/test_revisions_routes.py`
 

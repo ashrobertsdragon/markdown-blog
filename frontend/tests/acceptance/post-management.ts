@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
+import { mockClerkAuth } from './fixtures/clerk-mock'
 import { waitForAuthToLoad } from './fixtures/helpers'
 
 /**
- * Acceptance tests for Post Management UI based on requirements.md.
+ * Acceptance tests for Post Management UI.
  *
  * These tests verify the frontend implementation of the post management lifecycle,
  * covering form interactions, real-time updates, and state transitions.
@@ -10,44 +11,14 @@ import { waitForAuthToLoad } from './fixtures/helpers'
 
 test.describe('Post Management UI', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock Clerk auth state to simulate a logged-in author
-    await page.route('**/v1/client?**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          client: {
-            sessions: [
-              {
-                id: 'sess_123',
-                status: 'active',
-                user: { id: 'user_123', public_metadata: { role: 'author' } },
-              },
-            ],
-          },
-        }),
-      })
-    })
-
-    // Mock backend user profile
-    await page.route('**/api/auth/me', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 10,
-          clerk_user_id: 'user_123',
-          email: 'author@example.com',
-          role: 'author',
-        }),
-      })
-    })
+    // Mock Clerk authentication to simulate a logged-in author
+    await mockClerkAuth(page, { role: 'author' })
 
     await page.goto('/')
     await waitForAuthToLoad(page)
   })
 
-  test('Requirement 1 & 8: New Post form and slug normalization', async ({ page }) => {
+  test('New Post form and slug normalization', async ({ page }) => {
     // Navigate to New Post page
     await page.goto('/new-post')
 
@@ -57,7 +28,6 @@ test.describe('Post Management UI', () => {
     await expect(titleInput).toBeVisible()
     await expect(slugInput).toBeVisible()
 
-    // Requirement 8: Slug normalization
     await slugInput.fill('My New Post!')
     // Expect spaces to hyphens, lowercase, special chars removed
     await expect(slugInput).toHaveValue('my-new-post')
@@ -79,7 +49,7 @@ test.describe('Post Management UI', () => {
     await expect(page).toHaveURL(/\/edit\/my-new-post/)
   })
 
-  test('Requirement 2 & 3: Markdown Editor and Preview', async ({ page }) => {
+  test('Markdown Editor and Preview', async ({ page }) => {
     const slug = 'test-post'
     // Mock get draft
     await page.route(`**/api/posts/${slug}`, async route => {
@@ -101,8 +71,6 @@ test.describe('Post Management UI', () => {
     const editor = page.locator('.w-md-editor')
     await expect(editor).toBeVisible()
 
-    // Requirement 3: Preview rendered markdown
-    // Mock preview endpoint if needed, or check client-side rendering
     const previewTab = page.locator('button:has-text("Preview")')
     if (await previewTab.isVisible()) {
       await previewTab.click()
@@ -111,7 +79,6 @@ test.describe('Post Management UI', () => {
       await expect(previewPane.locator('h1')).toBeVisible()
     }
 
-    // Requirement 2: Real-time updates (simulated by typing and checking preview)
     const textarea = page.locator('.w-md-editor-text-input')
     await textarea.fill('# Updated Title')
 
@@ -128,7 +95,7 @@ test.describe('Post Management UI', () => {
     expect(saveRequest).toBeDefined()
   })
 
-  test('Requirement 4 & 5: Publish/Unpublish flow with modals', async ({ page }) => {
+  test('Publish/Unpublish flow with modals', async ({ page }) => {
     const slug = 'publish-me'
     await page.route(`**/api/posts/${slug}`, async route => {
       await route.fulfill({
@@ -158,13 +125,11 @@ test.describe('Post Management UI', () => {
     })
 
     await modal.locator('button:has-text("Confirm")').click()
-
-    // Requirement 4: Redirected to published post view
     await page.waitForURL(`**/posts/${slug}`)
     await expect(page).toHaveURL(new RegExp(`/posts/${slug}`))
   })
 
-  test('Requirement 6: Delete Draft Post', async ({ page }) => {
+  test('Delete Draft Post', async ({ page }) => {
     const slug = 'delete-me'
     await page.route(`**/api/posts/${slug}`, async route => {
       await route.fulfill({
@@ -194,13 +159,11 @@ test.describe('Post Management UI', () => {
     })
 
     await modal.locator('button:has-text("Delete")').click()
-
-    // Requirement 6: Redirected to drafts list
     await page.waitForURL('**/my-posts')
     await expect(page).toHaveURL(/\/my-posts/)
   })
 
-  test('Requirement 7: List Author Drafts and Filtering', async ({ page }) => {
+  test('List Author Drafts and Filtering', async ({ page }) => {
     // Mock list posts
     await page.route('**/api/posts/my-posts*', async route => {
       await route.fulfill({
@@ -241,8 +204,6 @@ test.describe('Post Management UI', () => {
     const filterSelect = page.locator('select[name="filter"]')
     if (await filterSelect.isVisible()) {
       await filterSelect.selectOption('drafts')
-      // In real app, this would trigger API call with ?filter=drafts
-      // We can verify the URL update or the API call
       await expect(page).toHaveURL(/filter=drafts/)
     }
   })

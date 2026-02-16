@@ -2,7 +2,10 @@ import type { Page } from '@playwright/test'
 
 declare global {
   interface Window {
-    Clerk?: unknown
+    Clerk?: {
+      loaded: boolean
+      user?: unknown
+    }
   }
 }
 
