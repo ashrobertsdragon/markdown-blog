@@ -23,8 +23,8 @@ test.describe('Post Management UI', () => {
 
   test('Markdown Editor and Preview', async ({ page }) => {
     const slug = 'test-post'
-    // Mock get draft and save draft
-    await page.route(`**/api/posts/${slug}`, async route => {
+    // Mock get draft and save draft - use backend URL pattern
+    await page.route(`**/posts/${slug}`, async route => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -69,7 +69,7 @@ test.describe('Post Management UI', () => {
     }
 
     const savePromise = page.waitForRequest(
-      request => request.url().includes('/api/posts/') && request.method() === 'PUT'
+      request => request.url().includes('/posts/') && request.method() === 'PUT'
     )
 
     await textarea.press('Control+s')
@@ -80,8 +80,8 @@ test.describe('Post Management UI', () => {
   test('Publish/Unpublish flow with modals', async ({ page }) => {
     const slug = 'publish-me'
 
-    // Mock get draft
-    await page.route(`**/api/posts/${slug}`, async route => {
+    // Mock get draft - use backend URL pattern
+    await page.route(`**/posts/${slug}`, async route => {
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -93,8 +93,8 @@ test.describe('Post Management UI', () => {
       }
     })
 
-    // Mock publish endpoint
-    await page.route(`**/api/posts/${slug}/publish`, async route => {
+    // Mock publish endpoint - use backend URL pattern
+    await page.route(`**/posts/${slug}/publish`, async route => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 200,
@@ -133,8 +133,8 @@ test.describe('Post Management UI', () => {
   test('Delete Draft Post', async ({ page }) => {
     const slug = 'delete-me'
 
-    // Mock list posts API to show the post we want to delete
-    await page.route('**/api/posts/my-posts*', async route => {
+    // Mock list posts API to show the post we want to delete - use backend URL pattern
+    await page.route('**/posts/my-posts**', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -149,14 +149,14 @@ test.describe('Post Management UI', () => {
           ],
           total_count: 1,
           total_pages: 1,
-          current_page: 1,
+          page: 1,
           limit: 20,
         }),
       })
     })
 
-    // Mock delete success - set up BEFORE clicking delete
-    await page.route(`**/api/posts/${slug}`, async route => {
+    // Mock delete success - set up BEFORE clicking delete, use backend URL pattern
+    await page.route(`**/posts/${slug}`, async route => {
       if (route.request().method() === 'DELETE') {
         await route.fulfill({ status: 204 })
       } else {
@@ -181,23 +181,8 @@ test.describe('Post Management UI', () => {
   })
 
   test('List Author Drafts and Filtering', async ({ page }) => {
-    // Capture JavaScript errors
-    const errors: string[] = []
-    page.on('pageerror', error => {
-      console.log('PAGE ERROR:', error.message)
-      errors.push(error.message)
-    })
-
-    // Enable console logging
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        console.log('CONSOLE ERROR:', msg.text())
-      }
-    })
-
-    // Mock list posts
-    await page.route('**/api/posts/my-posts*', async route => {
-      console.log('MOCK INTERCEPTED:', route.request().url())
+    // Mock list posts - match the actual backend URL pattern
+    await page.route('**/posts/my-posts**', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -218,7 +203,7 @@ test.describe('Post Management UI', () => {
           ],
           total_count: 2,
           total_pages: 1,
-          current_page: 1,
+          page: 1,
           limit: 20,
         }),
       })
@@ -227,38 +212,13 @@ test.describe('Post Management UI', () => {
     await page.goto('/my-posts')
     await page.waitForLoadState('networkidle')
 
-    // Debug: Check what's on the page
-    const bodyText = await page.textContent('body')
-    console.log('BODY TEXT LENGTH:', bodyText?.length)
-    console.log('BODY TEXT:', bodyText)
-    console.log('URL:', page.url())
-
-    // Check for error messages
-    const hasError = await page
-      .locator('text=Error')
-      .isVisible()
-      .catch(() => false)
-    console.log('HAS ERROR:', hasError)
-
-    // Check HTML structure
-    const html = await page.content()
-    console.log('HTML contains #root:', html.includes('id="root"'))
-
-    // Check for React root
-    const rootExists = await page.locator('#root').count()
-    console.log('ROOT EXISTS:', rootExists > 0)
-
-    const rootContent = await page
-      .locator('#root')
-      .textContent()
-      .catch(() => 'ERROR')
-    console.log('ROOT CONTENT LENGTH:', rootContent?.length)
-
     // Verify each entry SHALL show: title, status, slug
     await expect(page.locator('text=Draft 1')).toBeVisible()
     await expect(page.locator('text=Published 1')).toBeVisible()
-    await expect(page.locator('text=Draft')).toBeVisible()
-    await expect(page.locator('text=Published')).toBeVisible()
+
+    // Check for status badges (more specific than just "Draft"/"Published")
+    await expect(page.locator('.bg-gray-100:has-text("Draft")')).toBeVisible()
+    await expect(page.locator('.bg-green-100:has-text("Published")')).toBeVisible()
 
     // Filter by "drafts only" using filter buttons
     const draftsButton = page.locator('button:has-text("Drafts")')
