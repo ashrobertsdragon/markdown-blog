@@ -10,7 +10,6 @@ These tests follow TDD principles and will FAIL until routes are implemented.
 
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
-from uuid import UUID
 
 import pytest
 

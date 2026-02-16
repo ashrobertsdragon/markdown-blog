@@ -125,7 +125,8 @@ def test_get_revision_handler_returns_revision_with_content() -> None:
     mock_markdown_service = Mock()
     mock_sanitizer = Mock()
 
-    revision = PostRevision(id=uuid4(),
+    revision = PostRevision(
+        id=uuid4(),
         post_id=1,
         commit_sha=CommitSHA("abc123def456789012345678901234567890abcd"),
         author_id=2,
@@ -200,7 +201,8 @@ def test_compare_revisions_handler_returns_diff() -> None:
     mock_repo = Mock()
     mock_diff_service = Mock()
 
-    from_revision = PostRevision(id=uuid4(),
+    from_revision = PostRevision(
+        id=uuid4(),
         post_id=1,
         commit_sha=CommitSHA("abc123def456789012345678901234567890abcd"),
         author_id=2,
@@ -211,7 +213,8 @@ def test_compare_revisions_handler_returns_diff() -> None:
         is_revert=False,
     )
 
-    to_revision = PostRevision(id=uuid4(),
+    to_revision = PostRevision(
+        id=uuid4(),
         post_id=from_revision.post_id,
         commit_sha=CommitSHA("def456789012345678901234567890123456789a"),
         author_id=2,

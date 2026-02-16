@@ -254,7 +254,8 @@ def sample_post_fixture() -> Post:
 @pytest.fixture
 def sample_revision_fixture() -> PostRevision:
     """Fixture providing a sample PostRevision aggregate."""
-    return PostRevision(id=uuid4(),
+    return PostRevision(
+        id=uuid4(),
         post_id=1,
         commit_sha=CommitSHA("abc123def456789012345678901234567890abcd"),
         author_id=2,
