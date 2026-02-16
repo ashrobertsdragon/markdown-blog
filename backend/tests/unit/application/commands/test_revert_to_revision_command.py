@@ -18,7 +18,7 @@ Total: 24+ unit tests
 from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import Mock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 

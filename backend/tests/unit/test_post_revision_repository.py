@@ -37,7 +37,8 @@ def sample_revision_aggregate() -> PostRevision:
 @pytest.fixture
 def sample_revision_model() -> PostRevisionModel:
     """Sample PostRevisionModel for testing."""
-    return PostRevisionModel(id=uuid4(),
+    return PostRevisionModel(
+        id=uuid4(),
         post_id=1,
         commit_sha="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
         author_id=1,
@@ -143,7 +144,8 @@ class TestToDomain:
     def test_ensures_timezone_aware_datetimes(self, mock_session: Mock) -> None:
         """Test that naive datetimes are converted to UTC-aware."""
         naive_dt = datetime(2024, 1, 1, 12, 0, 0)
-        model = PostRevisionModel(id=uuid4(),
+        model = PostRevisionModel(
+            id=uuid4(),
             post_id=1,
             commit_sha="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
             author_id=1,
@@ -156,7 +158,7 @@ class TestToDomain:
         )
 
         repo = PostRevisionRepository(session=mock_session)
-        aggregate = repo._to_domain(sample_revision_model)
+        aggregate = repo._to_domain(model)
 
         assert aggregate.created_at.tzinfo is not None
         assert aggregate.updated_at.tzinfo is not None

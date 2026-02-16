@@ -1,7 +1,7 @@
 """Unit tests for PostRevision aggregate."""
 
 from datetime import UTC, datetime, timedelta
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
