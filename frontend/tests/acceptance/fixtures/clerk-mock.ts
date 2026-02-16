@@ -23,6 +23,33 @@ declare global {
 }
 
 /**
+ * Mock Clerk for unauthenticated state.
+ *
+ * This simulates a user who is NOT authenticated, ensuring auth loads
+ * properly without actually connecting to Clerk servers.
+ */
+export async function mockClerkUnauthenticated(page: Page): Promise<void> {
+  // Inject script that sets up unauthenticated state
+  await page.addInitScript(() => {
+    // Set empty mock to trigger MockAuthProvider but with unauthenticated state
+    window.__CLERK_TEST_MOCK__ = undefined
+
+    // Set window.Clerk for compatibility
+    window.Clerk = {
+      loaded: true,
+      user: undefined,
+      load: async () => Promise.resolve(),
+      session: undefined,
+    }
+  })
+
+  // Block all Clerk network requests
+  await page.route('**/*.clerk.accounts.dev/**', route => route.abort())
+  await page.route('**/clerk.*.js', route => route.abort())
+  await page.route('**/clerk-js/**', route => route.abort())
+}
+
+/**
  * Mock Clerk authentication for E2E tests.
  *
  * This injects a mock Clerk object to simulate an authenticated user

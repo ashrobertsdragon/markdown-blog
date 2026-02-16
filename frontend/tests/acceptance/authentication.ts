@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from './fixtures/clerk-mock'
+import { mockClerkAuth, mockClerkUnauthenticated } from './fixtures/clerk-mock'
 
 /**
  * Acceptance tests for Authentication spec - Frontend UI.
@@ -47,27 +47,25 @@ test.describe('Authentication - Frontend UI', () => {
     }
   })
 
-  test.skip('Protected routes redirect unauthenticated users', async ({ page }) => {
+  test('Protected routes redirect unauthenticated users', async ({ page }) => {
     /**
      * Acceptance Criteria:
-     * - Unauthenticated user visiting /admin redirects to Clerk sign-in
-     * - Authenticated user sees admin dashboard if authorized
-     * - User without author role sees 403 Forbidden page
+     * - Unauthenticated user visiting protected route redirects or shows forbidden
+     * - Authenticated user sees protected content if authorized
+     * - User without required role sees 403 Forbidden page
      * - User redirected back to originally requested page after login
-     *
-     * Note: Requires admin dashboard implementation
      */
-    // Without mock auth, visiting protected route should redirect or show login
-    await page.goto('/admin')
+    // Mock unauthenticated state
+    await mockClerkUnauthenticated(page)
 
-    // Should either redirect to login or show unauthorized message
+    // Visit protected route without authentication
+    await page.goto('/my-posts', { waitUntil: 'networkidle' })
+
+    // Should redirect to /login
+    await page.waitForURL(/\/login/, { timeout: 5000 }).catch(() => {})
+
     const url = page.url()
-    const unauthorizedText = page.locator('text=/unauthorized|forbidden|sign in/i').first()
-
-    const isRedirected = !url.includes('/admin')
-    const showsUnauthorized = await unauthorizedText.isVisible()
-
-    expect(isRedirected || showsUnauthorized).toBeTruthy()
+    expect(url).toContain('/login')
   })
 
   test('Protected routes allow authorized users', async ({ page }) => {

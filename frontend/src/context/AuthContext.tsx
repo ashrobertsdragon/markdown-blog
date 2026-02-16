@@ -46,6 +46,7 @@ function MockAuthProvider({ children }: AuthProviderProps) {
       ? (window as { __CLERK_TEST_MOCK__?: UserType }).__CLERK_TEST_MOCK__
       : undefined
 
+  const isSignedIn = testMock !== undefined && testMock !== null
   const roleValue = testMock?.publicMetadata?.role
   const role: AuthContextType['role'] =
     roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
@@ -55,23 +56,22 @@ function MockAuthProvider({ children }: AuthProviderProps) {
   const value: AuthContextType = {
     user: testMock,
     isLoaded: true,
-    isSignedIn: true,
+    isSignedIn,
     role,
-    getToken: async () => 'mock_token_123',
+    getToken: async () => (isSignedIn ? 'mock_token_123' : null),
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  // Check if we're using a test mock (set by e2e tests via window.__CLERK_TEST_MOCK__)
-  const testMock =
-    typeof window !== 'undefined'
-      ? (window as { __CLERK_TEST_MOCK__?: UserType }).__CLERK_TEST_MOCK__
-      : undefined
+  // Check if we're in test mode (property exists on window, even if undefined)
+  const isTestMode =
+    typeof window !== 'undefined' &&
+    '__CLERK_TEST_MOCK__' in (window as { __CLERK_TEST_MOCK__?: UserType })
 
   // Use different provider based on test mode
-  if (testMock) {
+  if (isTestMode) {
     return <MockAuthProvider>{children}</MockAuthProvider>
   }
 
