@@ -67,7 +67,6 @@ def mock_github():
         yield instance
 
 
-@pytest.mark.xfail(reason="Revision history endpoint not yet implemented")
 def test_display_post_revision_history(client, mock_clerk_auth, mock_github):
     """Test viewing revision timeline for a post.
 
