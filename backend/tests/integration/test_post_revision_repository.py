@@ -65,9 +65,9 @@ def test_post(
 def sample_revision() -> PostRevision:
     """Create sample PostRevision aggregate."""
     return PostRevision.create(
-        post_id=uuid4(),
+        post_id=1,
         commit_sha="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
-        author_id=uuid4(),
+        author_id=2,
         commit_message="Initial commit",
         markdown_content="# Test Post\n\nThis is test content.",
         is_revert=False,
@@ -141,11 +141,7 @@ class TestGetById:
         repo = PostRevisionRepository(session=session)
         repo.save(sample_revision, post_id, user_id)
 
-        fetched = repo.get_by_id(
-            sample_revision.id,
-            sample_revision.post_id,
-            sample_revision.author_id,
-        )
+        fetched = repo.get_by_id(sample_revision.id)
 
         assert fetched is not None
         assert fetched.id == sample_revision.id
@@ -157,9 +153,7 @@ class TestGetById:
         """Test that nonexistent ID returns None."""
         repo = PostRevisionRepository(session=session)
 
-        fetched = repo.get_by_id(
-            uuid4(), sample_revision.post_id, sample_revision.author_id
-        )
+        fetched = repo.get_by_id(uuid4())
 
         assert fetched is None
 
@@ -181,10 +175,7 @@ class TestGetByPostAndSha:
         repo.save(sample_revision, post_id, user_id)
 
         fetched = repo.get_by_post_and_sha(
-            post_id,
-            sample_revision.commit_sha.value,
-            sample_revision.post_id,
-            sample_revision.author_id,
+            post_id, sample_revision.commit_sha.value
         )
 
         assert fetched is not None
@@ -202,10 +193,7 @@ class TestGetByPostAndSha:
         repo = PostRevisionRepository(session=session)
 
         fetched = repo.get_by_post_and_sha(
-            post_id,
-            "nonexistent000000000000000000000000000000000000",
-            sample_revision.post_id,
-            sample_revision.author_id,
+            post_id, "nonexistent000000000000000000000000000000000000"
         )
 
         assert fetched is None
@@ -226,16 +214,16 @@ class TestListByPost:
         repo = PostRevisionRepository(session=session)
 
         rev1 = PostRevision.create(
-            post_id=uuid4(),
+            post_id=1,
             commit_sha="a" * 40,
-            author_id=uuid4(),
+            author_id=2,
             commit_message="First commit",
             markdown_content="# First",
         )
         rev2 = PostRevision.create(
-            post_id=uuid4(),
+            post_id=1,
             commit_sha="b" * 40,
-            author_id=uuid4(),
+            author_id=2,
             commit_message="Second commit",
             markdown_content="# Second",
         )
@@ -243,9 +231,7 @@ class TestListByPost:
         repo.save(rev1, post_id, user_id)
         repo.save(rev2, post_id, user_id)
 
-        revisions = repo.list_by_post(
-            post_id, rev1.post_id, rev1.author_id, skip=0, limit=10
-        )
+        revisions = repo.list_by_post(post_id, skip=0, limit=10)
 
         assert len(revisions) == 2
         assert revisions[0].commit_sha.value == "b" * 40
@@ -264,17 +250,15 @@ class TestListByPost:
 
         for i in range(5):
             rev = PostRevision.create(
-                post_id=uuid4(),
+                post_id=1,
                 commit_sha=f"{i}" * 40,
-                author_id=uuid4(),
+                author_id=2,
                 commit_message=f"Commit {i}",
                 markdown_content=f"# Content {i}",
             )
             repo.save(rev, post_id, user_id)
 
-        revisions = repo.list_by_post(
-            post_id, uuid4(), uuid4(), skip=2, limit=2
-        )
+        revisions = repo.list_by_post(post_id, skip=2, limit=2)
 
         assert len(revisions) == 2
 
@@ -297,11 +281,7 @@ class TestDelete:
 
         repo.delete(sample_revision.id)
 
-        fetched = repo.get_by_id(
-            sample_revision.id,
-            sample_revision.post_id,
-            sample_revision.author_id,
-        )
+        fetched = repo.get_by_id(sample_revision.id)
         assert fetched is None
 
     def test_delete_nonexistent_does_not_error(self, session: Session) -> None:

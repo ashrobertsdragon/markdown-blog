@@ -254,11 +254,10 @@ def sample_post_fixture() -> Post:
 @pytest.fixture
 def sample_revision_fixture() -> PostRevision:
     """Fixture providing a sample PostRevision aggregate."""
-    return PostRevision(
-        id=uuid4(),
-        post_id=UUID("12345678-1234-5678-1234-567812345678"),
+    return PostRevision(id=uuid4(),
+        post_id=1,
         commit_sha=CommitSHA("abc123def456789012345678901234567890abcd"),
-        author_id=UUID("87654321-4321-8765-4321-876543218765"),
+        author_id=2,
         commit_message="Original commit message",
         markdown_content="# Old Content\n\nThis is the old version.",
         created_at=datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC),

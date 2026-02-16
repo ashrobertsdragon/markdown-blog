@@ -132,9 +132,9 @@ def post_with_id() -> Post:
 def revision_1() -> PostRevision:
     """Return first revision for testing."""
     return PostRevision.create(
-        post_id=UUID("12345678-1234-5678-1234-567812345678"),
+        post_id=1,
         commit_sha="abc1234567890abcdef1234567890abcdef12345",
-        author_id=UUID(int=10),
+        author_id=2,
         commit_message="Initial commit",
         markdown_content="# Test Post\n\nInitial content",
         is_revert=False,
@@ -145,9 +145,9 @@ def revision_1() -> PostRevision:
 def revision_2() -> PostRevision:
     """Return second revision for testing diffs."""
     return PostRevision.create(
-        post_id=UUID("12345678-1234-5678-1234-567812345678"),
+        post_id=1,
         commit_sha="def4567890abcdef1234567890abcdef12345678",
-        author_id=UUID(int=10),
+        author_id=2,
         commit_message="Update content",
         markdown_content="# Test Post\n\nUpdated content\n\nMore updates",
         is_revert=False,
@@ -158,9 +158,9 @@ def revision_2() -> PostRevision:
 def revision_3() -> PostRevision:
     """Return third revision for testing pagination."""
     return PostRevision.create(
-        post_id=UUID("12345678-1234-5678-1234-567812345678"),
+        post_id=1,
         commit_sha="bcd7890abcdef1234567890abcdef12345678def",
-        author_id=UUID(int=10),
+        author_id=2,
         commit_message="Final update",
         markdown_content="# Test Post\n\nFinal content",
         is_revert=False,
@@ -2152,9 +2152,9 @@ class TestRevertEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         revert_revision = PostRevision.create(
-            post_id=UUID("12345678-1234-5678-1234-567812345678"),
+            post_id=1,
             commit_sha="abcdef1234567890abcdef1234567890abcdef12",
-            author_id=UUID(int=20),
+            author_id=2,
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
             is_revert=True,
@@ -2208,9 +2208,9 @@ class TestRevertEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         revert_revision = PostRevision.create(
-            post_id=UUID("12345678-1234-5678-1234-567812345678"),
+            post_id=1,
             commit_sha="abcdef1234567890abcdef1234567890abcdef12",
-            author_id=UUID(int=10),
+            author_id=2,
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
             is_revert=True,
@@ -2401,9 +2401,9 @@ class TestRevertEndpoint:
 
         new_sha = "abcdef1234567890abcdef1234567890abcdef12"
         revert_revision = PostRevision.create(
-            post_id=UUID("12345678-1234-5678-1234-567812345678"),
+            post_id=1,
             commit_sha=new_sha,
-            author_id=UUID(int=10),
+            author_id=2,
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
             is_revert=True,
@@ -2459,9 +2459,9 @@ class TestRevertEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         revert_revision = PostRevision.create(
-            post_id=UUID("12345678-1234-5678-1234-567812345678"),
+            post_id=1,
             commit_sha="abcdef1234567890abcdef1234567890abcdef12",
-            author_id=UUID(int=10),
+            author_id=2,
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
             is_revert=True,
@@ -2515,9 +2515,9 @@ class TestRevertEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         revert_revision = PostRevision.create(
-            post_id=UUID("12345678-1234-5678-1234-567812345678"),
+            post_id=1,
             commit_sha="abcdef1234567890abcdef1234567890abcdef12",
-            author_id=UUID(int=10),
+            author_id=2,
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
             is_revert=True,
@@ -2601,9 +2601,9 @@ class TestRevertEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         revert_revision = PostRevision.create(
-            post_id=UUID("12345678-1234-5678-1234-567812345678"),
+            post_id=1,
             commit_sha="abcdef1234567890abcdef1234567890abcdef12",
-            author_id=UUID(int=10),
+            author_id=2,
             commit_message="Revert to abc123",
             markdown_content="# Test Post\n\nInitial content",
             is_revert=True,
