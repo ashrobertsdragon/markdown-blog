@@ -49,6 +49,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Unimplemented features marked with pytest.mark.skip() to prevent false failures
   - 63 total acceptance tests collected and validated
 
+- **Frontend**: Acceptance tests for all spec workflow specifications
+
+  - Created comprehensive Playwright test suite covering all 7 specifications
+  - Foundation spec: React SPA routing, health check accessibility, asset optimization
+  - Authentication spec: Clerk integration, AuthContext, protected routes, role-based UI
+  - Post Management spec: Markdown editor, publish flow, draft management (existing tests)
+  - Revision Tracking spec: History timeline, diff viewer, revert with confirmation
+  - Comments spec: Post comments, replies with @mentions, moderation UI, real-time updates
+  - Notifications spec: User preferences, unsubscribe functionality, notification badges
+  - Admin Dashboard spec: User management UI, content moderation, system health monitoring
+  - Tests verify UI interactions, form validation, navigation, and user workflows
+  - Unimplemented features marked with test.skip() to prevent false failures
+  - All tests use mockClerkAuth fixture for consistent authentication testing
+
 - **Backend**: Integration tests for revision API routes
 
   - Created comprehensive test suite with 47 tests covering 4 revision management endpoints
