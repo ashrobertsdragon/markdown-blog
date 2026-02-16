@@ -19,6 +19,50 @@ export interface AuthProviderProps {
   children: ReactNode
 }
 
+function ClerkAuthProvider({ children }: AuthProviderProps) {
+  const { user: clerkUser, isLoaded: clerkIsLoaded, isSignedIn: clerkIsSignedIn } = useUser()
+  const { getToken: clerkGetToken } = useClerkAuth()
+
+  const roleValue = clerkUser?.publicMetadata?.role
+  const role: AuthContextType['role'] =
+    roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
+      ? roleValue
+      : 'authenticated'
+
+  const value: AuthContextType = {
+    user: clerkUser,
+    isLoaded: clerkIsLoaded,
+    isSignedIn: clerkIsSignedIn,
+    role,
+    getToken: clerkGetToken,
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+function MockAuthProvider({ children }: AuthProviderProps) {
+  const testMock =
+    typeof window !== 'undefined'
+      ? (window as { __CLERK_TEST_MOCK__?: UserType }).__CLERK_TEST_MOCK__
+      : undefined
+
+  const roleValue = testMock?.publicMetadata?.role
+  const role: AuthContextType['role'] =
+    roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
+      ? roleValue
+      : 'authenticated'
+
+  const value: AuthContextType = {
+    user: testMock,
+    isLoaded: true,
+    isSignedIn: true,
+    role,
+    getToken: async () => 'mock_token_123',
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   // Check if we're using a test mock (set by e2e tests via window.__CLERK_TEST_MOCK__)
   const testMock =
@@ -26,30 +70,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       ? (window as { __CLERK_TEST_MOCK__?: UserType }).__CLERK_TEST_MOCK__
       : undefined
 
-  // Use test mock if available, otherwise use real Clerk hooks
-  const { user: clerkUser, isLoaded: clerkIsLoaded, isSignedIn: clerkIsSignedIn } = useUser()
-  const { getToken: clerkGetToken } = useClerkAuth()
-
-  const user = testMock || clerkUser
-  const isLoaded = testMock ? true : clerkIsLoaded
-  const isSignedIn = testMock ? true : clerkIsSignedIn
-  const getToken = testMock ? async () => 'mock_token_123' : clerkGetToken
-
-  const roleValue = user?.publicMetadata?.role
-  const role: AuthContextType['role'] =
-    roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
-      ? roleValue
-      : 'authenticated'
-
-  const value: AuthContextType = {
-    user,
-    isLoaded,
-    isSignedIn,
-    role,
-    getToken,
+  // Use different provider based on test mode
+  if (testMock) {
+    return <MockAuthProvider>{children}</MockAuthProvider>
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return <ClerkAuthProvider>{children}</ClerkAuthProvider>
 }
 
 export function useAuth(): AuthContextType {

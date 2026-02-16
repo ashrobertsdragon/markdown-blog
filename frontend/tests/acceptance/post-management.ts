@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
 import { mockClerkAuth } from './fixtures/clerk-mock'
-import { waitForAuthToLoad } from './fixtures/helpers'
 
 /**
  * Acceptance tests for Post Management UI.
@@ -13,9 +12,6 @@ test.describe('Post Management UI', () => {
   test.beforeEach(async ({ page }) => {
     // Mock Clerk authentication to simulate a logged-in author
     await mockClerkAuth(page, { role: 'author' })
-
-    await page.goto('/')
-    await waitForAuthToLoad(page)
   })
 
   test.skip('New Post form and slug normalization', async ({ page }) => {
@@ -185,8 +181,23 @@ test.describe('Post Management UI', () => {
   })
 
   test('List Author Drafts and Filtering', async ({ page }) => {
+    // Capture JavaScript errors
+    const errors: string[] = []
+    page.on('pageerror', error => {
+      console.log('PAGE ERROR:', error.message)
+      errors.push(error.message)
+    })
+
+    // Enable console logging
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        console.log('CONSOLE ERROR:', msg.text())
+      }
+    })
+
     // Mock list posts
     await page.route('**/api/posts/my-posts*', async route => {
+      console.log('MOCK INTERCEPTED:', route.request().url())
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -214,6 +225,34 @@ test.describe('Post Management UI', () => {
     })
 
     await page.goto('/my-posts')
+    await page.waitForLoadState('networkidle')
+
+    // Debug: Check what's on the page
+    const bodyText = await page.textContent('body')
+    console.log('BODY TEXT LENGTH:', bodyText?.length)
+    console.log('BODY TEXT:', bodyText)
+    console.log('URL:', page.url())
+
+    // Check for error messages
+    const hasError = await page
+      .locator('text=Error')
+      .isVisible()
+      .catch(() => false)
+    console.log('HAS ERROR:', hasError)
+
+    // Check HTML structure
+    const html = await page.content()
+    console.log('HTML contains #root:', html.includes('id="root"'))
+
+    // Check for React root
+    const rootExists = await page.locator('#root').count()
+    console.log('ROOT EXISTS:', rootExists > 0)
+
+    const rootContent = await page
+      .locator('#root')
+      .textContent()
+      .catch(() => 'ERROR')
+    console.log('ROOT CONTENT LENGTH:', rootContent?.length)
 
     // Verify each entry SHALL show: title, status, slug
     await expect(page.locator('text=Draft 1')).toBeVisible()

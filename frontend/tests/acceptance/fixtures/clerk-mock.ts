@@ -13,6 +13,11 @@ declare global {
     Clerk?: {
       loaded: boolean
       user?: unknown
+      load?: () => Promise<void>
+      session?: {
+        id: string
+        status: string
+      }
     }
   }
 }
@@ -50,37 +55,27 @@ export async function mockClerkAuth(
       window.Clerk = {
         loaded: true,
         user: window.__CLERK_TEST_MOCK__,
+        load: async () => Promise.resolve(),
+        session: {
+          id: 'sess_test123',
+          status: 'active',
+        },
       }
     },
     { userId, email, role }
   )
 
-  // Mock Clerk's API endpoints to return authenticated session
+  // Block all Clerk network requests to prevent loading real Clerk SDK
   await page.route('**/*.clerk.accounts.dev/**', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        response: {
-          sessions: [
-            {
-              id: 'sess_test123',
-              status: 'active',
-              user: {
-                id: userId,
-                email_addresses: [{ email_address: email }],
-                public_metadata: { role },
-              },
-            },
-          ],
-          client: {
-            sessions: ['sess_test123'],
-            sign_in: null,
-            sign_up: null,
-          },
-        },
-      }),
-    })
+    await route.abort()
+  })
+
+  await page.route('**/clerk.*.js', async route => {
+    await route.abort()
+  })
+
+  await page.route('**/clerk-js/**', async route => {
+    await route.abort()
   })
 
   // Mock our backend's /api/auth/me endpoint

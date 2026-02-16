@@ -1,14 +1,5 @@
 import type { Page } from '@playwright/test'
 
-declare global {
-  interface Window {
-    Clerk?: {
-      loaded: boolean
-      user?: unknown
-    }
-  }
-}
-
 /**
  * Wait for Clerk authentication to load by checking for the presence of
  * the Clerk client object in the window.
