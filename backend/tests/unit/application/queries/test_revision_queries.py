@@ -14,7 +14,7 @@ Total: 20+ unit tests
 
 from datetime import UTC, datetime
 from unittest.mock import Mock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -56,7 +56,7 @@ def test_get_revision_history_query_dataclass_structure() -> None:
     assert hasattr(query, "post_id")
     assert hasattr(query, "skip")
     assert hasattr(query, "limit")
-    assert isinstance(query.post_id, UUID)
+    assert isinstance(query.post_id, int)
     assert isinstance(query.skip, int)
     assert isinstance(query.limit, int)
 
@@ -107,7 +107,7 @@ def test_get_revision_query_dataclass_structure() -> None:
 
     assert hasattr(query, "post_id")
     assert hasattr(query, "commit_sha")
-    assert isinstance(query.post_id, UUID)
+    assert isinstance(query.post_id, int)
     assert isinstance(query.commit_sha, str)
 
 
@@ -172,7 +172,7 @@ def test_compare_revisions_query_dataclass_structure() -> None:
     assert hasattr(query, "post_id")
     assert hasattr(query, "from_sha")
     assert hasattr(query, "to_sha")
-    assert isinstance(query.post_id, UUID)
+    assert isinstance(query.post_id, int)
     assert isinstance(query.from_sha, str)
     assert isinstance(query.to_sha, str)
 

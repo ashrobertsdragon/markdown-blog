@@ -111,11 +111,11 @@ class TestPostRevisionFieldValidation:
             )
 
     def test_post_revision_create_rejects_invalid_post_id_type(self) -> None:
-        """Raise TypeError if post_id is not UUID."""
+        """Raise TypeError if post_id is not int."""
         commit_sha_str = "f" * 40
         author_id = 2
 
-        with pytest.raises(TypeError, match="post_id must be a UUID"):
+        with pytest.raises(TypeError, match="post_id must be an int"):
             PostRevision.create(
                 post_id="not-a-uuid",  # type: ignore[arg-type]
                 commit_sha=commit_sha_str,
@@ -139,15 +139,15 @@ class TestPostRevisionFieldValidation:
             )
 
     def test_post_revision_create_rejects_invalid_author_id_type(self) -> None:
-        """Raise TypeError if author_id is not UUID."""
+        """Raise TypeError if author_id is not int."""
         commit_sha_str = "1" * 40
         post_id = 1
 
-        with pytest.raises(TypeError, match="author_id must be a UUID"):
+        with pytest.raises(TypeError, match="author_id must be an int"):
             PostRevision.create(
                 post_id=post_id,
                 commit_sha=commit_sha_str,
-                author_id=12345,  # type: ignore[arg-type]
+                author_id="not-an-int",  # type: ignore[arg-type]
                 commit_message="Test",
                 markdown_content="Content",
             )

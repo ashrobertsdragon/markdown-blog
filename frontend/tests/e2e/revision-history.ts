@@ -5,6 +5,7 @@ import type {
   RevisionDetail,
   RevisionListItem,
 } from '@/types/revision'
+import { mockClerkAuth } from '../acceptance/fixtures/clerk-mock'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
 
 /**
@@ -84,39 +85,18 @@ function createMockDiff(overrides?: Partial<DiffResponse>): DiffResponse {
  * Verifies timeline display, detail views, diff comparison, revert operations,
  * permission boundaries, and error handling for post revision history.
  */
-test.describe('Revision History E2E Tests', () => {
+test.describe.fixme('Revision History E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route('**/v1/client?**', async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          client: {
-            sessions: [
-              {
-                id: 'sess_123',
-                status: 'active',
-                user: {
-                  id: 'user_123',
-                  public_metadata: { role: 'author' },
-                },
-              },
-            ],
-          },
-        }),
-      })
-    })
+    await mockClerkAuth(page, { role: 'author', userId: 'user_123' })
 
-    await page.route('**/api/auth/me', async route => {
+    // Broad catch-all mock for all API requests to prevent 401s
+    await page.route('**/api/**', async route => {
+      // If there's a more specific mock later, it will override this one
+      // based on Playwright's last-matching-rule-wins behavior.
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          id: 10,
-          clerk_user_id: 'user_123',
-          email: 'author@example.com',
-          role: 'author',
-        }),
+        body: JSON.stringify({}),
       })
     })
 
@@ -125,11 +105,11 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 1: Revision Timeline Display', () => {
-    test.skip('1.1: Loads and displays revision list', async ({ page }) => {
-      const slug = 'test-post'
+    test('1.1: Loads and displays revision list', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(3)
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         const response: ListRevisionsResponse = {
           revisions: mockRevisions,
           total_count: 3,
@@ -142,7 +122,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const timelineList = page.locator('[data-testid="revision-timeline-list"]')
       await expect(timelineList).toBeVisible()
@@ -153,12 +133,12 @@ test.describe('Revision History E2E Tests', () => {
       }
     })
 
-    test.skip('1.2: Shows correct metadata (SHA, author, timestamp, message)', async ({ page }) => {
-      const slug = 'test-post'
+    test('1.2: Shows correct metadata (SHA, author, timestamp, message)', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(1)
       const revision = mockRevisions[0]
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -170,7 +150,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const shaElement = page.locator(`[data-testid="revision-sha-${revision.short_sha}"]`)
       await expect(shaElement).toContainText(revision.short_sha)
@@ -182,11 +162,11 @@ test.describe('Revision History E2E Tests', () => {
       await expect(item).toContainText(revision.commit_message)
     })
 
-    test.skip('1.3: Displays current badge on current revision', async ({ page }) => {
-      const slug = 'test-post'
+    test('1.3: Displays current badge on current revision', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(3)
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -198,7 +178,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const currentBadge = page.locator(
         `[data-testid="revision-current-badge-${mockRevisions[0].short_sha}"]`
@@ -212,11 +192,11 @@ test.describe('Revision History E2E Tests', () => {
       await expect(otherBadge).not.toBeVisible()
     })
 
-    test.skip('1.4: Displays revert badge on revert revisions', async ({ page }) => {
-      const slug = 'test-post'
+    test('1.4: Displays revert badge on revert revisions', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(3)
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -228,7 +208,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const revertBadge = page.locator(
         `[data-testid="revision-revert-badge-${mockRevisions[2].short_sha}"]`
@@ -242,11 +222,11 @@ test.describe('Revision History E2E Tests', () => {
       await expect(nonRevertBadge).not.toBeVisible()
     })
 
-    test.skip('1.5: Most recent revision appears first', async ({ page }) => {
-      const slug = 'test-post'
+    test('1.5: Most recent revision appears first', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(3)
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -258,14 +238,14 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const firstItem = page.locator('[data-testid="revision-timeline-list"] > li').first()
       await expect(firstItem).toContainText(mockRevisions[0].short_sha)
     })
 
-    test.skip('1.6: Pagination with Load More button', async ({ page }) => {
-      const slug = 'test-post'
+    test('1.6: Pagination with Load More button', async ({ page }) => {
+      const _slug = 'test-post'
       const firstBatch = createMockRevisions(3)
       const secondBatch = createMockRevisions(2).map((r, i) => ({
         ...r,
@@ -273,7 +253,7 @@ test.describe('Revision History E2E Tests', () => {
         commit_sha: `xyz${999 + i}e456789abcdef0123456789abcdef01234567`.slice(0, 40),
       }))
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         const url = new URL(route.request().url())
         const skip = parseInt(url.searchParams.get('skip') || '0', 10)
 
@@ -299,7 +279,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const loadMoreButton = page.locator('[data-testid="revision-timeline-load-more"]')
       await expect(loadMoreButton).toBeVisible()
@@ -314,12 +294,12 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 2: Revision Detail View', () => {
-    test.skip('2.1: Clicking revision opens detail view', async ({ page }) => {
-      const slug = 'test-post'
+    test('2.1: Clicking revision opens detail view', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(1)
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -331,18 +311,15 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.route(
-        `**/api/posts/${slug}/revisions/${mockRevisions[0].short_sha}*`,
-        async route => {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify(mockDetail),
-          })
-        }
-      )
+      await page.route(`**/api/posts/*/revisions/${mockRevisions[0].short_sha}*`, async route => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(mockDetail),
+        })
+      })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const revisionItem = page.locator(
         `[data-testid="revision-item-${mockRevisions[0].short_sha}"]`
@@ -353,11 +330,11 @@ test.describe('Revision History E2E Tests', () => {
       await expect(detailArticle).toBeVisible()
     })
 
-    test.skip('2.2: Detail shows commit message, author, timestamp', async ({ page }) => {
-      const slug = 'test-post'
+    test('2.2: Detail shows commit message, author, timestamp', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -365,7 +342,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const detail = page.locator('[data-testid="revision-detail"]')
       await expect(detail).toContainText(mockDetail.commit_message)
@@ -376,11 +353,11 @@ test.describe('Revision History E2E Tests', () => {
       expect(detailText).toContain('Date')
     })
 
-    test.skip('2.3: Detail shows SHA with full SHA in title attribute', async ({ page }) => {
-      const slug = 'test-post'
+    test('2.3: Detail shows SHA with full SHA in title attribute', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -388,18 +365,18 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const shaElement = page.locator('[data-testid="revision-detail-sha"]')
       await expect(shaElement).toContainText(mockDetail.short_sha)
       await expect(shaElement).toHaveAttribute('title', mockDetail.commit_sha)
     })
 
-    test.skip('2.4: Detail renders HTML content', async ({ page }) => {
-      const slug = 'test-post'
+    test('2.4: Detail renders HTML content', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -407,18 +384,18 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const contentDiv = page.locator('[data-testid="revision-detail-content"]')
       await expect(contentDiv).toContainText('Hello World')
       await expect(contentDiv).toContainText('This is a test post')
     })
 
-    test.skip('2.5: Revert button visible for authors', async ({ page }) => {
-      const slug = 'test-post'
+    test('2.5: Revert button visible for authors', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -426,38 +403,19 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await expect(revertButton).toBeVisible()
     })
 
-    test.skip('2.6: Revert button hidden for non-authors', async ({ page }) => {
-      const slug = 'test-post'
+    test('2.6: Revert button hidden for non-authors', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route('**/v1/client?**', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            client: {
-              sessions: [
-                {
-                  id: 'sess_456',
-                  status: 'active',
-                  user: {
-                    id: 'user_456',
-                    public_metadata: { role: 'reader' },
-                  },
-                },
-              ],
-            },
-          }),
-        })
-      })
+      await mockClerkAuth(page, { role: 'authenticated', userId: 'user_456' })
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -465,7 +423,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
       await waitForAuthToLoad(page)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
@@ -474,11 +432,11 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 3: Diff Viewer', () => {
-    test.skip('3.1: Diff displays additions in green (bg-green-50)', async ({ page }) => {
-      const slug = 'test-post'
+    test('3.1: Diff displays additions in green (bg-green-50)', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDiff = createMockDiff()
 
-      await page.route(`**/api/posts/${slug}/revisions/*/diff/**`, async route => {
+      await page.route(`**/api/posts/*/revisions/*/diff/**`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -486,17 +444,17 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/abc123d/diff/older789`)
+      await page.goto(`/posts/test-post/revisions/abc123d/diff/older789`)
 
       const additionLine = page.locator('[data-testid="diff-line-addition-3"]')
       await expect(additionLine).toHaveClass(/bg-green-50/)
     })
 
-    test.skip('3.2: Diff displays deletions in red (bg-red-50)', async ({ page }) => {
-      const slug = 'test-post'
+    test('3.2: Diff displays deletions in red (bg-red-50)', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDiff = createMockDiff()
 
-      await page.route(`**/api/posts/${slug}/revisions/*/diff/**`, async route => {
+      await page.route(`**/api/posts/*/revisions/*/diff/**`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -504,17 +462,17 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/abc123d/diff/older789`)
+      await page.goto(`/posts/test-post/revisions/abc123d/diff/older789`)
 
       const deletionLine = page.locator('[data-testid="diff-line-deletion-2"]')
       await expect(deletionLine).toHaveClass(/bg-red-50/)
     })
 
-    test.skip('3.3: Diff displays context in gray (bg-gray-50)', async ({ page }) => {
-      const slug = 'test-post'
+    test('3.3: Diff displays context in gray (bg-gray-50)', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDiff = createMockDiff()
 
-      await page.route(`**/api/posts/${slug}/revisions/*/diff/**`, async route => {
+      await page.route(`**/api/posts/*/revisions/*/diff/**`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -522,17 +480,17 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/abc123d/diff/older789`)
+      await page.goto(`/posts/test-post/revisions/abc123d/diff/older789`)
 
       const contextLine = page.locator('[data-testid="diff-line-context-1"]')
       await expect(contextLine).toHaveClass(/bg-gray-50/)
     })
 
-    test.skip('3.4: Line numbers display correctly', async ({ page }) => {
-      const slug = 'test-post'
+    test('3.4: Line numbers display correctly', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDiff = createMockDiff()
 
-      await page.route(`**/api/posts/${slug}/revisions/*/diff/**`, async route => {
+      await page.route(`**/api/posts/*/revisions/*/diff/**`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -540,7 +498,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/abc123d/diff/older789`)
+      await page.goto(`/posts/test-post/revisions/abc123d/diff/older789`)
 
       for (const line of mockDiff.diff_lines) {
         if (line.lineNumber !== undefined) {
@@ -550,13 +508,13 @@ test.describe('Revision History E2E Tests', () => {
       }
     })
 
-    test.skip('3.5: No changes detected for empty diff', async ({ page }) => {
-      const slug = 'test-post'
+    test('3.5: No changes detected for empty diff', async ({ page }) => {
+      const _slug = 'test-post'
       const emptyDiff = createMockDiff({
         diff_lines: [],
       })
 
-      await page.route(`**/api/posts/${slug}/revisions/*/diff/**`, async route => {
+      await page.route(`**/api/posts/*/revisions/*/diff/**`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -564,16 +522,16 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/abc123d/diff/abc123d`)
+      await page.goto(`/posts/test-post/revisions/abc123d/diff/abc123d`)
 
       await expect(page.getByText('No changes detected')).toBeVisible()
     })
 
-    test.skip('3.6: Copy button functionality', async ({ page }) => {
-      const slug = 'test-post'
+    test('3.6: Copy button functionality', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDiff = createMockDiff()
 
-      await page.route(`**/api/posts/${slug}/revisions/*/diff/**`, async route => {
+      await page.route(`**/api/posts/*/revisions/*/diff/**`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -581,7 +539,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/abc123d/diff/older789`)
+      await page.goto(`/posts/test-post/revisions/abc123d/diff/older789`)
 
       const copyButton = page.getByRole('button', { name: /Copy/ })
 
@@ -594,11 +552,11 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 4: Revert Workflow', () => {
-    test.skip('4.1: Clicking revert button opens confirmation modal', async ({ page }) => {
-      const slug = 'test-post'
+    test('4.1: Clicking revert button opens confirmation modal', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -606,7 +564,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await revertButton.click()
@@ -615,14 +573,14 @@ test.describe('Revision History E2E Tests', () => {
       await expect(modal).toBeVisible()
     })
 
-    test.skip('4.2: Modal shows revision SHA and commit message', async ({ page }) => {
-      const slug = 'test-post'
+    test('4.2: Modal shows revision SHA and commit message', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail({
         short_sha: 'abc123d',
         commit_message: 'Important update',
       })
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -630,7 +588,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await revertButton.click()
@@ -640,11 +598,11 @@ test.describe('Revision History E2E Tests', () => {
       await expect(modal).toContainText('Important update')
     })
 
-    test.skip('4.3: Modal shows warning text', async ({ page }) => {
-      const slug = 'test-post'
+    test('4.3: Modal shows warning text', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -652,7 +610,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await revertButton.click()
@@ -662,11 +620,11 @@ test.describe('Revision History E2E Tests', () => {
       await expect(modal).toContainText('cannot be undone')
     })
 
-    test.skip('4.4: Successful revert operation', async ({ page }) => {
+    test('4.4: Successful revert operation', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -674,7 +632,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.route(`**/api/posts/${slug}/revert`, async route => {
+      await page.route(`**/api/posts/*/revert`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -687,7 +645,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await revertButton.click()
@@ -698,11 +656,11 @@ test.describe('Revision History E2E Tests', () => {
       await page.waitForURL(`**/edit/${slug}`)
     })
 
-    test.skip('4.5: Revert creates new commit', async ({ page }) => {
+    test('4.5: Revert creates new commit', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -711,7 +669,7 @@ test.describe('Revision History E2E Tests', () => {
       })
 
       let revertCalled = false
-      await page.route(`**/api/posts/${slug}/revert`, async route => {
+      await page.route(`**/api/posts/*/revert`, async route => {
         revertCalled = true
         const body = JSON.parse(route.request().postData() || '{}')
         expect(body.target_sha).toBe(mockDetail.commit_sha)
@@ -728,7 +686,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await revertButton.click()
@@ -739,11 +697,11 @@ test.describe('Revision History E2E Tests', () => {
       await page.waitForFunction(() => revertCalled)
     })
 
-    test.skip('4.6: Error handling for failed revert (403 Forbidden)', async ({ page }) => {
-      const slug = 'test-post'
+    test('4.6: Error handling for failed revert (403 Forbidden)', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -751,7 +709,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.route(`**/api/posts/${slug}/revert`, async route => {
+      await page.route(`**/api/posts/*/revert`, async route => {
         await route.fulfill({
           status: 403,
           contentType: 'application/json',
@@ -761,7 +719,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await revertButton.click()
@@ -772,11 +730,11 @@ test.describe('Revision History E2E Tests', () => {
       await expect(page.getByRole('alert')).toBeVisible()
     })
 
-    test.skip('4.7: Reverting... state during operation', async ({ page }) => {
+    test('4.7: Reverting... state during operation', async ({ page }) => {
       const slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -785,7 +743,7 @@ test.describe('Revision History E2E Tests', () => {
       })
 
       let revertStarted = false
-      await page.route(`**/api/posts/${slug}/revert`, async route => {
+      await page.route(`**/api/posts/*/revert`, async route => {
         revertStarted = true
         await new Promise(resolve => setTimeout(resolve, 500))
         await route.fulfill({
@@ -800,7 +758,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await revertButton.click()
@@ -815,11 +773,11 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 5: Permissions', () => {
-    test.skip('5.1: Authors can select revisions', async ({ page }) => {
-      const slug = 'test-post'
+    test('5.1: Authors can select revisions', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(2)
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -831,7 +789,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const revisionItem = page.locator(
         `[data-testid="revision-item-${mockRevisions[1].short_sha}"]`
@@ -840,32 +798,13 @@ test.describe('Revision History E2E Tests', () => {
       await expect(revisionItem).toHaveAttribute('tabindex', '0')
     })
 
-    test.skip('5.2: Non-authors cannot select revisions (read-only)', async ({ page }) => {
-      const slug = 'test-post'
+    test('5.2: Non-authors cannot select revisions (read-only)', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(2)
 
-      await page.route('**/v1/client?**', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            client: {
-              sessions: [
-                {
-                  id: 'sess_456',
-                  status: 'active',
-                  user: {
-                    id: 'user_456',
-                    public_metadata: { role: 'reader' },
-                  },
-                },
-              ],
-            },
-          }),
-        })
-      })
+      await mockClerkAuth(page, { role: 'authenticated', userId: 'user_456' })
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -877,7 +816,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
       await waitForAuthToLoad(page)
 
       const revisionItem = page.locator(
@@ -887,32 +826,13 @@ test.describe('Revision History E2E Tests', () => {
       await expect(revisionItem).not.toHaveAttribute('tabindex', '0')
     })
 
-    test.skip('5.3: Admins can revert posts', async ({ page }) => {
-      const slug = 'test-post'
+    test('5.3: Admins can revert posts', async ({ page }) => {
+      const _slug = 'test-post'
       const mockDetail = createMockRevisionDetail()
 
-      await page.route('**/v1/client?**', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            client: {
-              sessions: [
-                {
-                  id: 'sess_admin',
-                  status: 'active',
-                  user: {
-                    id: 'user_admin',
-                    public_metadata: { role: 'admin' },
-                  },
-                },
-              ],
-            },
-          }),
-        })
-      })
+      await mockClerkAuth(page, { role: 'admin', userId: 'user_admin' })
 
-      await page.route(`**/api/posts/${slug}/revisions/${mockDetail.short_sha}*`, async route => {
+      await page.route(`**/api/posts/*/revisions/${mockDetail.short_sha}*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -920,39 +840,20 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions/${mockDetail.short_sha}`)
+      await page.goto(`/posts/test-post/revisions/${mockDetail.short_sha}`)
       await waitForAuthToLoad(page)
 
       const revertButton = page.locator('[data-testid="revision-detail-revert-button"]')
       await expect(revertButton).toBeVisible()
     })
 
-    test.skip('5.4: Revision timeline visible to all authenticated users', async ({ page }) => {
-      const slug = 'test-post'
+    test('5.4: Revision timeline visible to all authenticated users', async ({ page }) => {
+      const _slug = 'test-post'
       const mockRevisions = createMockRevisions(2)
 
-      await page.route('**/v1/client?**', async route => {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            client: {
-              sessions: [
-                {
-                  id: 'sess_reader',
-                  status: 'active',
-                  user: {
-                    id: 'user_reader',
-                    public_metadata: { role: 'reader' },
-                  },
-                },
-              ],
-            },
-          }),
-        })
-      })
+      await mockClerkAuth(page, { role: 'authenticated', userId: 'user_reader' })
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -964,7 +865,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
       await waitForAuthToLoad(page)
 
       const timelineList = page.locator('[data-testid="revision-timeline-list"]')
@@ -978,10 +879,10 @@ test.describe('Revision History E2E Tests', () => {
   })
 
   test.describe('Test Group 6: Error Handling & Edge Cases', () => {
-    test.skip('6.1: Empty revision history shows "No revisions yet"', async ({ page }) => {
+    test('6.1: Empty revision history shows "No revisions yet"', async ({ page }) => {
       const slug = 'empty-post'
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -1000,10 +901,10 @@ test.describe('Revision History E2E Tests', () => {
       await expect(emptyState).toContainText('No revisions yet')
     })
 
-    test.skip('6.2: API error shows error message and retry button', async ({ page }) => {
-      const slug = 'test-post'
+    test('6.2: API error shows error message and retry button', async ({ page }) => {
+      const _slug = 'test-post'
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await route.fulfill({
           status: 500,
           contentType: 'application/json',
@@ -1013,7 +914,7 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const errorState = page.locator('[data-testid="revision-timeline-error"]')
       await expect(errorState).toBeVisible()
@@ -1022,10 +923,10 @@ test.describe('Revision History E2E Tests', () => {
       await expect(retryButton).toBeVisible()
     })
 
-    test.skip('6.3: Loading states display skeletons', async ({ page }) => {
-      const slug = 'test-post'
+    test('6.3: Loading states display skeletons', async ({ page }) => {
+      const _slug = 'test-post'
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         await new Promise(resolve => setTimeout(resolve, 1000))
         await route.fulfill({
           status: 200,
@@ -1038,17 +939,17 @@ test.describe('Revision History E2E Tests', () => {
         })
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const loadingSkeleton = page.locator('[data-testid="revision-timeline-loading"]')
       await expect(loadingSkeleton).toBeVisible()
     })
 
-    test.skip('6.4: Retry button refetches data', async ({ page }) => {
-      const slug = 'test-post'
+    test('6.4: Retry button refetches data', async ({ page }) => {
+      const _slug = 'test-post'
       let callCount = 0
 
-      await page.route(`**/api/posts/${slug}/revisions*`, async route => {
+      await page.route(`**/api/posts/*/revisions*`, async route => {
         callCount++
         if (callCount === 1) {
           await route.fulfill({
@@ -1071,7 +972,7 @@ test.describe('Revision History E2E Tests', () => {
         }
       })
 
-      await page.goto(`/posts/${slug}/revisions`)
+      await page.goto(`/posts/test-post/revisions`)
 
       const errorState = page.locator('[data-testid="revision-timeline-error"]')
       await expect(errorState).toBeVisible()

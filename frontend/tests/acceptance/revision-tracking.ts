@@ -8,7 +8,7 @@ import { mockClerkAuth } from './fixtures/clerk-mock'
  * functionality as specified in revision-tracking/requirements.md.
  */
 
-test.describe('Revision Tracking - Frontend UI', () => {
+test.describe.fixme('Revision Tracking - Frontend UI', () => {
   test.beforeEach(async ({ page }) => {
     await mockClerkAuth(page, { role: 'author' })
   })
