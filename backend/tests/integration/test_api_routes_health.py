@@ -6,48 +6,48 @@ Tests health monitoring API endpoints for application and dependency health.
 from unittest.mock import MagicMock, patch
 
 from requests.exceptions import RequestException
-from sqlmodel import Session
 
 
 def test_health_endpoint_returns_200(client):
-    """GET /health should return 200 OK with healthy status."""
-    response = client.get("/health")
+    """GET /api/health should return 200 OK with healthy status."""
+    response = client.get("/api/health")
 
     assert response.status_code == 200
     assert response.json == {"status": "healthy"}
 
 
 def test_health_endpoint_returns_json(client):
-    """GET /health should return JSON content type."""
-    response = client.get("/health")
+    """GET /api/health should return JSON content type."""
+    response = client.get("/api/health")
 
     assert response.content_type == "application/json"
 
 
 def test_health_db_success_returns_200(client, dev_settings):
-    """GET /health/db should return 200 when database is reachable."""
-    mock_session = MagicMock(spec=Session)
-    mock_session.exec.return_value = MagicMock()
+    """GET /api/health/db should return 200 when database is reachable."""
+    mock_engine = MagicMock()
 
     with patch(
-        "backend.api.routes.health.get_db", return_value=iter([mock_session])
+        "backend.api.routes.health.get_engine", return_value=mock_engine
     ):
-        response = client.get("/health/db")
+        response = client.get("/api/health/db")
 
     assert response.status_code == 200
     assert response.json == {"status": "healthy", "database": "connected"}
-    mock_session.exec.assert_called_once()
+    mock_engine.connect.assert_called_once()
 
 
 def test_health_db_failure_returns_503(client):
-    """GET /health/db should return 503 when database is unreachable."""
-    mock_session = MagicMock(spec=Session)
-    mock_session.exec.side_effect = Exception("Connection refused")
+    """GET /api/health/db should return 503 when database is unreachable."""
+    mock_engine = MagicMock()
+    mock_engine.connect.return_value.__enter__.side_effect = Exception(
+        "Connection refused"
+    )
 
     with patch(
-        "backend.api.routes.health.get_db", return_value=iter([mock_session])
+        "backend.api.routes.health.get_engine", return_value=mock_engine
     ):
-        response = client.get("/health/db")
+        response = client.get("/api/health/db")
 
     assert response.status_code == 503
     assert response.json["status"] == "unhealthy"
@@ -56,26 +56,25 @@ def test_health_db_failure_returns_503(client):
 
 
 def test_health_db_returns_json(client, dev_settings):
-    """GET /health/db should return JSON content type."""
-    mock_session = MagicMock(spec=Session)
-    mock_session.exec.return_value = MagicMock()
+    """GET /api/health/db should return JSON content type."""
+    mock_engine = MagicMock()
 
     with patch(
-        "backend.api.routes.health.get_db", return_value=iter([mock_session])
+        "backend.api.routes.health.get_engine", return_value=mock_engine
     ):
-        response = client.get("/health/db")
+        response = client.get("/api/health/db")
 
     assert response.content_type == "application/json"
 
 
 def test_health_github_success_returns_200(client):
-    """GET /health/github should return 200 when GitHub API is reachable."""
+    """GET /api/health/github should return 200 when GitHub API is reachable."""
     mock_response = MagicMock()
     mock_response.status_code = 200
 
     with patch("backend.api.routes.health.requests.get") as mock_get:
         mock_get.return_value = mock_response
-        response = client.get("/health/github")
+        response = client.get("/api/health/github")
 
     assert response.status_code == 200
     assert response.json == {"status": "healthy", "github": "reachable"}
@@ -85,10 +84,10 @@ def test_health_github_success_returns_200(client):
 
 
 def test_health_github_failure_returns_503(client):
-    """GET /health/github should return 503 when GitHub API is unreachable."""
+    """GET /api/health/github should return 503 when GitHub API unreachable."""
     with patch("backend.api.routes.health.requests.get") as mock_get:
         mock_get.side_effect = RequestException("Connection timeout")
-        response = client.get("/health/github")
+        response = client.get("/api/health/github")
 
     assert response.status_code == 503
     assert response.json["status"] == "unhealthy"
@@ -97,7 +96,7 @@ def test_health_github_failure_returns_503(client):
 
 
 def test_health_github_non_200_response_returns_503(client):
-    """GET /health/github returns 503 when GitHub API returns non-200."""
+    """GET /api/health/github returns 503 when GitHub API returns non-200."""
     mock_response = MagicMock()
     mock_response.status_code = 500
     mock_response.raise_for_status.side_effect = RequestException(
@@ -106,7 +105,7 @@ def test_health_github_non_200_response_returns_503(client):
 
     with patch("backend.api.routes.health.requests.get") as mock_get:
         mock_get.return_value = mock_response
-        response = client.get("/health/github")
+        response = client.get("/api/health/github")
 
     assert response.status_code == 503
     assert response.json["status"] == "unhealthy"
@@ -115,25 +114,25 @@ def test_health_github_non_200_response_returns_503(client):
 
 
 def test_health_github_returns_json(client):
-    """GET /health/github should return JSON content type."""
+    """GET /api/health/github should return JSON content type."""
     mock_response = MagicMock()
     mock_response.status_code = 200
 
     with patch("backend.api.routes.health.requests.get") as mock_get:
         mock_get.return_value = mock_response
-        response = client.get("/health/github")
+        response = client.get("/api/health/github")
 
     assert response.content_type == "application/json"
 
 
 def test_health_github_uses_timeout(client):
-    """GET /health/github should use reasonable timeout for external call."""
+    """GET /api/health/github should use a reasonable timeout."""
     mock_response = MagicMock()
     mock_response.status_code = 200
 
     with patch("backend.api.routes.health.requests.get") as mock_get:
         mock_get.return_value = mock_response
-        client.get("/health/github")
+        client.get("/api/health/github")
 
     call_kwargs = mock_get.call_args[1]
     assert "timeout" in call_kwargs

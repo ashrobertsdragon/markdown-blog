@@ -9,9 +9,8 @@ import logging
 import requests
 from flask import Blueprint, Response, jsonify
 from sqlalchemy import text
-from sqlmodel import select
 
-from backend.infrastructure.persistence.database import get_db
+from backend.infrastructure.persistence.database import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +39,8 @@ def health_db() -> tuple[Response, int]:
         - 503 Service Unavailable if database connection fails
     """
     try:
-        db = next(get_db())
-        statement = select(text("SELECT 1"))
-        db.exec(statement)
+        with get_engine().connect() as conn:
+            conn.execute(text("SELECT 1"))
         return jsonify({"status": "healthy", "database": "connected"}), 200
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
