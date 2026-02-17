@@ -6,6 +6,7 @@ import '@/index.css'
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const isTestMockPresent =
+  import.meta.env.MODE === 'test' &&
   typeof window !== 'undefined' &&
   '__CLERK_TEST_MOCK__' in (window as { __CLERK_TEST_MOCK__?: unknown })
 

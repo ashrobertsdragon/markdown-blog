@@ -67,6 +67,7 @@ function MockAuthProvider({ children }: AuthProviderProps) {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const isTestMockPresent =
+    import.meta.env.MODE === 'test' &&
     typeof window !== 'undefined' &&
     '__CLERK_TEST_MOCK__' in (window as { __CLERK_TEST_MOCK__?: UserType })
 
