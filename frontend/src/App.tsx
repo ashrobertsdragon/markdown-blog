@@ -11,6 +11,8 @@ import MyPosts from '@/pages/MyPosts'
 import NotFound from '@/pages/NotFound'
 import PostEditor from '@/pages/PostEditor'
 import PublicPost from '@/pages/PublicPost'
+import RevisionDetailPage from '@/pages/RevisionDetailPage'
+import RevisionHistory from '@/pages/RevisionHistory'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +47,22 @@ export function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/forbidden" element={<Forbidden />} />
       <Route path="/posts/:slug" element={<PublicPost />} />
+      <Route
+        path="/posts/:slug/revisions"
+        element={
+          <ProtectedRoute requireRole="authenticated">
+            <RevisionHistory />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/posts/:slug/revisions/:sha"
+        element={
+          <ProtectedRoute requireRole="authenticated">
+            <RevisionDetailPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin routes - require admin role */}
       <Route

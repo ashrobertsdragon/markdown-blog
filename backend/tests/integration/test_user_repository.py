@@ -30,12 +30,12 @@ def db_session(test_settings):
 
     SQLModel.metadata.create_all(engine)
 
-    with Session(engine) as session:
-        yield session
-        session.rollback()
-
-    SQLModel.metadata.drop_all(engine)
-    engine.dispose()
+    try:
+        with Session(engine) as session:
+            yield session
+            session.rollback()
+    finally:
+        engine.dispose()
 
 
 def test_save_and_find_by_clerk_id_roundtrip(db_session):

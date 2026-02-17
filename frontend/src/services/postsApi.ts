@@ -54,7 +54,8 @@ export type PostFilter = 'all' | 'drafts' | 'published'
 /**
  * API client instance
  */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const vBase = import.meta.env.VITE_API_BASE_URL
+const API_BASE_URL = typeof vBase === 'string' && vBase.trim() !== '' ? vBase : '/api'
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

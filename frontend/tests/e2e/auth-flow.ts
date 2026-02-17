@@ -37,6 +37,13 @@ test.describe('Authentication Flow', () => {
   test('public routes accessible without authentication', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveURL('/')
+
+    // Wait for loading spinner to disappear
+    const loadingSpinner = page.locator('[role="status"]')
+    if (await loadingSpinner.isVisible()) {
+      await loadingSpinner.waitFor({ state: 'hidden', timeout: 10000 })
+    }
+
     await expect(page.locator('h1')).toBeVisible()
   })
 
@@ -155,7 +162,7 @@ test.describe('Authentication Flow', () => {
   })
 
   test('API health check endpoint returns 200', async ({ page }) => {
-    const response = await page.request.get('http://localhost:5555/health')
+    const response = await page.request.get('http://localhost:5555/api/health')
     expect(response.ok()).toBeTruthy()
     expect(response.status()).toBe(200)
 
@@ -165,12 +172,12 @@ test.describe('Authentication Flow', () => {
   })
 
   test('API database health endpoint accessible', async ({ page }) => {
-    const response = await page.request.get('http://localhost:5555/health/db')
+    const response = await page.request.get('http://localhost:5555/api/health/db')
     expect([200, 503]).toContain(response.status())
   })
 
   test('API GitHub health endpoint accessible', async ({ page }) => {
-    const response = await page.request.get('http://localhost:5555/health/github')
+    const response = await page.request.get('http://localhost:5555/api/health/github')
     expect([200, 503]).toContain(response.status())
   })
 
@@ -373,7 +380,7 @@ test.describe('Performance and Reliability', () => {
     const requests = []
 
     for (let i = 0; i < 5; i++) {
-      requests.push(page.request.get('/health'))
+      requests.push(page.request.get('/api/health'))
     }
 
     const responses = await Promise.all(requests)

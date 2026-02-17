@@ -28,7 +28,7 @@ export default defineConfig({
     },
     {
       command: 'cd ../backend && uv run dev_flask',
-      url: 'http://localhost:5555/health',
+      url: 'http://localhost:5555/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },

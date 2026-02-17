@@ -3,7 +3,7 @@ import { useRevisionHistory } from '@/hooks/useRevisions'
 import type { RevisionListItem } from '@/services/revisionsApi'
 
 export interface RevisionTimelineProps {
-  postId: string
+  slug: string
   currentSha: string
   onSelectRevision: (sha: string) => void
   isAuthor: boolean
@@ -217,13 +217,13 @@ function RevisionTimelineContent({
  * revision and revert operations. Only allows selection when user is the author.
  */
 export function RevisionTimeline({
-  postId,
+  slug,
   currentSha,
   onSelectRevision,
   isAuthor,
 }: RevisionTimelineProps) {
   const [skip, setSkip] = useState(0)
-  const { data, isLoading, isError, error, refetch } = useRevisionHistory(postId, skip, 20)
+  const { data, isLoading, isError, error, refetch } = useRevisionHistory(slug, skip, 20)
 
   const handleLoadMore = () => {
     if (data?.revisions.length) {

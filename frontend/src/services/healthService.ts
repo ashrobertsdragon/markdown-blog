@@ -27,8 +27,11 @@ export interface GitHubHealthResponse extends HealthResponse {
  * Provides methods to check health status of the application,
  * database, and GitHub API connectivity.
  */
+const vBase = import.meta.env.VITE_API_BASE_URL
+const API_BASE_URL = typeof vBase === 'string' && vBase.trim() !== '' ? vBase : '/api'
+
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: API_BASE_URL,
 })
 
 /**

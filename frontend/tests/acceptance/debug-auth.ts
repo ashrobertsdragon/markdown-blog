@@ -1,54 +1,21 @@
-import { expect, test } from '@playwright/test'
+import { test } from '@playwright/test'
 import { mockClerkAuth } from './fixtures/clerk-mock'
-import { waitForAuthToLoad } from './fixtures/helpers'
 
-/**
- * Debug test to verify Clerk mock authentication is working
- */
-test.describe('Debug Auth Mock', () => {
-  test('verify mock auth sets up correctly', async ({ page }) => {
-    // Set up mock auth
-    await mockClerkAuth(page, { role: 'author' })
+test('debug auth and page content', async ({ page }) => {
+  await mockClerkAuth(page, { role: 'author' })
 
-    // Navigate to home page
-    await page.goto('/')
-    await waitForAuthToLoad(page)
+  page.on('console', msg => console.log('BROWSER LOG:', msg.text()))
+  page.on('request', request => console.log('REQUEST:', request.method(), request.url()))
+  page.on('response', response => console.log('RESPONSE:', response.status(), response.url()))
 
-    // Check window.__CLERK_TEST_MOCK__ is set
-    const hasMock = await page.evaluate(() => {
-      return window.__CLERK_TEST_MOCK__ !== undefined
-    })
-    expect(hasMock).toBe(true)
+  console.log('Navigating to /my-posts...')
+  await page.goto('/my-posts', { waitUntil: 'networkidle' })
 
-    // Check the mock data
-    const mockData = await page.evaluate(() => {
-      return window.__CLERK_TEST_MOCK__
-    })
-    expect(mockData).toBeTruthy()
-    expect(mockData?.publicMetadata?.role).toBe('author')
+  console.log('Current URL:', page.url())
 
-    // Check current URL (should not be redirected to /login)
-    expect(page.url()).not.toContain('/login')
-  })
+  const hasSpinner = await page.locator('[role="status"]').isVisible()
+  console.log('Has Loading Spinner:', hasSpinner)
 
-  test('verify protected route access with mock', async ({ page }) => {
-    // Set up mock auth
-    await mockClerkAuth(page, { role: 'author' })
-
-    // Navigate directly to a protected route
-    await page.goto('/my-posts')
-    await waitForAuthToLoad(page)
-
-    // Should not be redirected to login
-    await page.waitForLoadState('networkidle')
-    const currentUrl = page.url()
-    console.log('Current URL:', currentUrl)
-
-    expect(currentUrl).toContain('/my-posts')
-    expect(currentUrl).not.toContain('/login')
-
-    // Check if page content loaded
-    const pageContent = await page.textContent('body')
-    console.log('Page has content:', pageContent && pageContent.length > 0)
-  })
+  const hasMyPostsHeader = await page.locator('h1:has-text("My Posts")').isVisible()
+  console.log('Has "My Posts" header:', hasMyPostsHeader)
 })

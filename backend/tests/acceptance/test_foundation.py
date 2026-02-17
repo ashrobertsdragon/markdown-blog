@@ -48,10 +48,13 @@ def test_flask_application_with_wsgi_entry_point(client):
     - Non-API routes serve index.html (SPA catch-all)
     """
     response = client.get("/")
-    assert response.status_code in (200, 404)
+    try:
+        assert response.status_code in (200, 404)
+    finally:
+        response.close()
 
 
-def test_database_connectivity():
+def test_database_connectivity(test_env):
     """Test database connection is established.
 
     Acceptance Criteria:
@@ -68,19 +71,19 @@ def test_health_check_endpoints(client):
     """Test health check endpoints for monitoring.
 
     Acceptance Criteria:
-    - GET /health returns 200 OK with {"status": "healthy"}
-    - GET /health/db tests database connectivity
-    - GET /health/github tests GitHub API connectivity
+    - GET /api/health returns 200 OK with {"status": "healthy"}
+    - GET /api/health/db tests database connectivity
+    - GET /api/health/github tests GitHub API connectivity
     - Unavailable dependencies return 503 Service Unavailable
     """
-    response = client.get("/health")
+    response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json["status"] == "healthy"
 
-    db_response = client.get("/health/db")
+    db_response = client.get("/api/health/db")
     assert db_response.status_code in (200, 503)
 
-    github_response = client.get("/health/github")
+    github_response = client.get("/api/health/github")
     assert github_response.status_code in (200, 503)
 
 
@@ -113,7 +116,7 @@ def test_pre_commit_hooks():
     pass
 
 
-def test_configuration_management():
+def test_configuration_management(test_env):
     """Test centralized configuration from environment variables.
 
     Acceptance Criteria:

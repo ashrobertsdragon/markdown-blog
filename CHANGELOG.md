@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Backend**: Fixed `SELECT SELECT 1` bug in `/api/health/db` endpoint
+
+  - `sqlmodel.select(text("SELECT 1"))` generated invalid SQL; replaced with `get_engine().connect()` and raw `text("SELECT 1")` via SQLAlchemy directly
+  - Updated test mocks from `get_db`/`Session` to `get_engine`
+  - Corrected health route URLs from `/health` to `/api/health` in integration and passenger WSGI tests
+
 - **Frontend**: Skipped all revision tracking tests pending full spec implementation
 
   - `tests/e2e/revision-history.ts` and `tests/acceptance/revision-tracking.ts` — `test.describe.fixme`

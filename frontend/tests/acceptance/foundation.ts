@@ -46,7 +46,7 @@ test.describe('Foundation - Frontend Infrastructure', () => {
      * - GET /health/db tests database connectivity
      * - GET /health/github tests GitHub API connectivity
      */
-    const healthResponse = await page.request.get('http://localhost:5555/health')
+    const healthResponse = await page.request.get('http://localhost:5555/api/health')
     expect([200]).toContain(healthResponse.status())
 
     if (healthResponse.status() === 200) {

@@ -13,8 +13,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="TODO: Refactor integration tests")
-
 from backend.application.queries.compare_revisions_query import (
     CompareRevisionsResponse,
 )
@@ -216,11 +214,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[revision_2, revision_1],
-            total_count=2,
-            has_more=False,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[revision_2, revision_1],
+                total_count=2,
+                has_more=False,
+            )
         )
 
         with (
@@ -233,12 +232,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -273,11 +272,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[revision_1],
-            total_count=1,
-            has_more=False,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[revision_1],
+                total_count=1,
+                has_more=False,
+            )
         )
 
         with (
@@ -290,12 +290,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -304,8 +304,8 @@ class TestListRevisionsEndpoint:
             )
 
         assert response.status_code == 200
-        mock_query_handler.handle.assert_called_once()
-        call_args = mock_query_handler.handle.call_args[0][0]
+        mock_query_handler.assert_called_once()
+        call_args = mock_query_handler.call_args[0][0]
         assert call_args.skip == 0
         assert call_args.limit == 10
 
@@ -327,11 +327,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[revision_1],
-            total_count=1,
-            has_more=False,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[revision_1],
+                total_count=1,
+                has_more=False,
+            )
         )
 
         with (
@@ -344,12 +345,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -358,7 +359,7 @@ class TestListRevisionsEndpoint:
             )
 
         assert response.status_code == 200
-        call_args = mock_query_handler.handle.call_args[0][0]
+        call_args = mock_query_handler.call_args[0][0]
         assert call_args.skip == 5
         assert call_args.limit == 20
 
@@ -373,7 +374,7 @@ class TestListRevisionsEndpoint:
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError(
+        mock_query_handler.side_effect = ValueError(
             "skip must be between 0 and 10000"
         )
 
@@ -387,8 +388,8 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -410,7 +411,7 @@ class TestListRevisionsEndpoint:
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError(
+        mock_query_handler.side_effect = ValueError(
             "limit must be between 1 and 100"
         )
 
@@ -424,8 +425,8 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -447,7 +448,7 @@ class TestListRevisionsEndpoint:
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError(
+        mock_query_handler.side_effect = ValueError(
             "limit must be between 1 and 100"
         )
 
@@ -461,8 +462,8 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -490,11 +491,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[],
-            total_count=0,
-            has_more=False,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[],
+                total_count=0,
+                has_more=False,
+            )
         )
 
         with (
@@ -507,12 +509,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -543,11 +545,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[revision_1],
-            total_count=1,
-            has_more=False,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[revision_1],
+                total_count=1,
+                has_more=False,
+            )
         )
 
         with (
@@ -560,12 +563,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -602,11 +605,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[revision_3, revision_2, revision_1],
-            total_count=3,
-            has_more=False,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[revision_3, revision_2, revision_1],
+                total_count=3,
+                has_more=False,
+            )
         )
 
         with (
@@ -619,12 +623,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -657,11 +661,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[revision_1],
-            total_count=25,
-            has_more=True,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[revision_1],
+                total_count=25,
+                has_more=True,
+            )
         )
 
         with (
@@ -674,12 +679,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -718,7 +723,7 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
         ):
@@ -749,11 +754,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[revision_1],
-            total_count=1,
-            has_more=False,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[revision_1],
+                total_count=1,
+                has_more=False,
+            )
         )
 
         with (
@@ -766,12 +772,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -799,11 +805,12 @@ class TestListRevisionsEndpoint:
         mock_post_repo = MagicMock()
         mock_post_repo.find_by_slug.return_value = post_with_id
 
-        mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionHistoryResponse(
-            revisions=[revision_1],
-            total_count=1,
-            has_more=False,
+        mock_query_handler = MagicMock(
+            return_value=GetRevisionHistoryResponse(
+                revisions=[revision_1],
+                total_count=1,
+                has_more=False,
+            )
         )
 
         with (
@@ -816,12 +823,12 @@ class TestListRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_history_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_history_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -883,7 +890,7 @@ class TestGetSingleRevisionEndpoint:
         mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionResponse(
+        mock_query_handler.return_value = GetRevisionResponse(
             revision=revision_1,
             markdown_content=revision_1.markdown_content,
             html_content="<h1>Test Post</h1><p>Initial content</p>",
@@ -899,16 +906,16 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_repository",
+                "backend.api.routes.revisions.get_revision_repository",
                 return_value=mock_revision_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -945,7 +952,7 @@ class TestGetSingleRevisionEndpoint:
         mock_query_handler = MagicMock()
         markdown = "# Test Post\n\nInitial content"
         html = "<h1>Test Post</h1><p>Initial content</p>"
-        mock_query_handler.handle.return_value = GetRevisionResponse(
+        mock_query_handler.return_value = GetRevisionResponse(
             revision=revision_1,
             markdown_content=markdown,
             html_content=html,
@@ -961,16 +968,16 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_repository",
+                "backend.api.routes.revisions.get_revision_repository",
                 return_value=mock_revision_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1000,7 +1007,7 @@ class TestGetSingleRevisionEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError("Revision not found")
+        mock_query_handler.side_effect = ValueError("Revision not found")
 
         with (
             patch(
@@ -1012,12 +1019,12 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1046,7 +1053,7 @@ class TestGetSingleRevisionEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError("Invalid SHA format")
+        mock_query_handler.side_effect = ValueError("Invalid SHA format")
 
         with (
             patch(
@@ -1058,12 +1065,12 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1124,7 +1131,7 @@ class TestGetSingleRevisionEndpoint:
 
         mock_query_handler = MagicMock()
         safe_html = "<h1>Test Post</h1><p>Content</p>"
-        mock_query_handler.handle.return_value = GetRevisionResponse(
+        mock_query_handler.return_value = GetRevisionResponse(
             revision=revision_1,
             markdown_content=revision_1.markdown_content,
             html_content=safe_html,
@@ -1140,16 +1147,16 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_repository",
+                "backend.api.routes.revisions.get_revision_repository",
                 return_value=mock_revision_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1182,7 +1189,7 @@ class TestGetSingleRevisionEndpoint:
         mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionResponse(
+        mock_query_handler.return_value = GetRevisionResponse(
             revision=revision_1,
             markdown_content=revision_1.markdown_content,
             html_content="<h1>Test</h1>",
@@ -1198,16 +1205,16 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_repository",
+                "backend.api.routes.revisions.get_revision_repository",
                 return_value=mock_revision_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1242,7 +1249,7 @@ class TestGetSingleRevisionEndpoint:
         mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionResponse(
+        mock_query_handler.return_value = GetRevisionResponse(
             revision=revision_1,
             markdown_content=revision_1.markdown_content,
             html_content="<h1>Test</h1>",
@@ -1258,16 +1265,16 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_repository",
+                "backend.api.routes.revisions.get_revision_repository",
                 return_value=mock_revision_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1305,7 +1312,7 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
         ):
@@ -1340,7 +1347,7 @@ class TestGetSingleRevisionEndpoint:
         mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionResponse(
+        mock_query_handler.return_value = GetRevisionResponse(
             revision=revision_1,
             markdown_content=revision_1.markdown_content,
             html_content="<h1>Test</h1>",
@@ -1356,16 +1363,16 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_repository",
+                "backend.api.routes.revisions.get_revision_repository",
                 return_value=mock_revision_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1397,7 +1404,7 @@ class TestGetSingleRevisionEndpoint:
         mock_revision_repo.find_by_post_id.return_value = ([revision_1], 1)
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = GetRevisionResponse(
+        mock_query_handler.return_value = GetRevisionResponse(
             revision=revision_1,
             markdown_content=revision_1.markdown_content,
             html_content="<h1>Test</h1>",
@@ -1413,16 +1420,16 @@ class TestGetSingleRevisionEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_repository",
+                "backend.api.routes.revisions.get_revision_repository",
                 return_value=mock_revision_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revision_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.get_revision_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1489,7 +1496,7 @@ class TestCompareRevisionsEndpoint:
             {"line": "Initial content", "type": "removed"},
             {"line": "Updated content", "type": "added"},
         ]
-        mock_query_handler.handle.return_value = CompareRevisionsResponse(
+        mock_query_handler.return_value = CompareRevisionsResponse(
             from_revision=revision_1,
             to_revision=revision_2,
             diff_lines=diff_lines,
@@ -1505,12 +1512,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1544,7 +1551,7 @@ class TestCompareRevisionsEndpoint:
 
         mock_query_handler = MagicMock()
         diff_lines = [{"line": "test", "type": "added"}]
-        mock_query_handler.handle.return_value = CompareRevisionsResponse(
+        mock_query_handler.return_value = CompareRevisionsResponse(
             from_revision=revision_1,
             to_revision=revision_2,
             diff_lines=diff_lines,
@@ -1560,12 +1567,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1596,9 +1603,7 @@ class TestCompareRevisionsEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError(
-            "Source revision not found"
-        )
+        mock_query_handler.side_effect = ValueError("Source revision not found")
 
         with (
             patch(
@@ -1610,12 +1615,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1644,9 +1649,7 @@ class TestCompareRevisionsEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError(
-            "Target revision not found"
-        )
+        mock_query_handler.side_effect = ValueError("Target revision not found")
 
         with (
             patch(
@@ -1658,12 +1661,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1692,9 +1695,7 @@ class TestCompareRevisionsEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError(
-            "Invalid from_sha format"
-        )
+        mock_query_handler.side_effect = ValueError("Invalid from_sha format")
 
         with (
             patch(
@@ -1706,12 +1707,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1740,9 +1741,7 @@ class TestCompareRevisionsEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.side_effect = ValueError(
-            "Invalid to_sha format"
-        )
+        mock_query_handler.side_effect = ValueError("Invalid to_sha format")
 
         with (
             patch(
@@ -1754,12 +1753,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1789,7 +1788,7 @@ class TestCompareRevisionsEndpoint:
         mock_post_repo.find_by_slug.return_value = post_with_id
 
         mock_query_handler = MagicMock()
-        mock_query_handler.handle.return_value = CompareRevisionsResponse(
+        mock_query_handler.return_value = CompareRevisionsResponse(
             from_revision=revision_1,
             to_revision=revision_1,
             diff_lines=[],
@@ -1805,12 +1804,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1845,7 +1844,7 @@ class TestCompareRevisionsEndpoint:
             {"line": "Initial content", "type": "removed"},
             {"line": "Updated content", "type": "added"},
         ]
-        mock_query_handler.handle.return_value = CompareRevisionsResponse(
+        mock_query_handler.return_value = CompareRevisionsResponse(
             from_revision=revision_1,
             to_revision=revision_2,
             diff_lines=diff_lines,
@@ -1861,12 +1860,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1905,7 +1904,7 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
         ):
@@ -1939,7 +1938,7 @@ class TestCompareRevisionsEndpoint:
 
         mock_query_handler = MagicMock()
         diff_lines = [{"line": "test", "type": "added"}]
-        mock_query_handler.handle.return_value = CompareRevisionsResponse(
+        mock_query_handler.return_value = CompareRevisionsResponse(
             from_revision=revision_1,
             to_revision=revision_2,
             diff_lines=diff_lines,
@@ -1955,12 +1954,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -1991,7 +1990,7 @@ class TestCompareRevisionsEndpoint:
 
         mock_query_handler = MagicMock()
         diff_lines = [{"line": "test", "type": "added"}]
-        mock_query_handler.handle.return_value = CompareRevisionsResponse(
+        mock_query_handler.return_value = CompareRevisionsResponse(
             from_revision=revision_1,
             to_revision=revision_2,
             diff_lines=diff_lines,
@@ -2007,12 +2006,12 @@ class TestCompareRevisionsEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_compare_handler",
-                return_value=mock_query_handler,
+                "backend.api.routes.revisions.compare_revisions_handler",
+                new=mock_query_handler,
             ),
         ):
             response = client.get(
@@ -2081,7 +2080,7 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
         ):
@@ -2121,7 +2120,7 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
         ):
@@ -2162,7 +2161,7 @@ class TestRevertEndpoint:
         )
 
         mock_handler = MagicMock()
-        mock_handler.handle.return_value = revert_revision
+        mock_handler.return_value = revert_revision
 
         with (
             patch(
@@ -2174,12 +2173,12 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(
@@ -2218,7 +2217,7 @@ class TestRevertEndpoint:
         )
 
         mock_handler = MagicMock()
-        mock_handler.handle.return_value = revert_revision
+        mock_handler.return_value = revert_revision
 
         with (
             patch(
@@ -2230,12 +2229,12 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(
@@ -2257,7 +2256,7 @@ class TestRevertEndpoint:
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
         mock_handler = MagicMock()
-        mock_handler.handle.side_effect = ValueError("Revision not found")
+        mock_handler.side_effect = ValueError("Revision not found")
 
         with (
             patch(
@@ -2269,8 +2268,8 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(
@@ -2293,7 +2292,7 @@ class TestRevertEndpoint:
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
         mock_handler = MagicMock()
-        mock_handler.handle.side_effect = ValueError("Post not found")
+        mock_handler.side_effect = ValueError("Post not found")
 
         with (
             patch(
@@ -2305,8 +2304,8 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(
@@ -2329,7 +2328,7 @@ class TestRevertEndpoint:
         mock_user_repo.find_by_clerk_user_id.return_value = author_user
 
         mock_handler = MagicMock()
-        mock_handler.handle.side_effect = ValueError("Invalid SHA format")
+        mock_handler.side_effect = ValueError("Invalid SHA format")
 
         with (
             patch(
@@ -2341,8 +2340,8 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(
@@ -2411,7 +2410,7 @@ class TestRevertEndpoint:
         )
 
         mock_handler = MagicMock()
-        mock_handler.handle.return_value = revert_revision
+        mock_handler.return_value = revert_revision
 
         with (
             patch(
@@ -2423,12 +2422,12 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(
@@ -2469,7 +2468,7 @@ class TestRevertEndpoint:
         )
 
         mock_handler = MagicMock()
-        mock_handler.handle.return_value = revert_revision
+        mock_handler.return_value = revert_revision
 
         with (
             patch(
@@ -2481,12 +2480,12 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(
@@ -2525,7 +2524,7 @@ class TestRevertEndpoint:
         )
 
         mock_handler = MagicMock()
-        mock_handler.handle.return_value = revert_revision
+        mock_handler.return_value = revert_revision
 
         with (
             patch(
@@ -2537,12 +2536,12 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(
@@ -2611,7 +2610,7 @@ class TestRevertEndpoint:
         )
 
         mock_handler = MagicMock()
-        mock_handler.handle.return_value = revert_revision
+        mock_handler.return_value = revert_revision
 
         with (
             patch(
@@ -2623,12 +2622,12 @@ class TestRevertEndpoint:
                 return_value=mock_user_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_post_repository",
+                "backend.api.routes.revisions.get_post_repository",
                 return_value=mock_post_repo,
             ),
             patch(
-                "backend.api.routes.revisions._get_revert_handler",
-                return_value=mock_handler,
+                "backend.api.routes.revisions.revert_to_revision_handler",
+                new=mock_handler,
             ),
         ):
             response = client.post(

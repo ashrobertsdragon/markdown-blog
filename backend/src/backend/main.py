@@ -58,7 +58,7 @@ def create_app() -> Flask:
     if flask_env in [FlaskEnv.TESTING, FlaskEnv.DEVELOPMENT]:
         CORS(app)
 
-    app.register_blueprint(health_bp, url_prefix="")
+    app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(posts_bp, url_prefix="/api/posts")
