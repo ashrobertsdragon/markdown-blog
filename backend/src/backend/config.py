@@ -125,6 +125,7 @@ class Settings(BaseSettings):
         default=..., alias="CLERK_PUBLISHABLE_KEY"
     )
     clerk_secret_key: str = Field(default=..., alias="CLERK_SECRET_KEY")
+    clerk_jwks_url: str | None = Field(default=None, alias="CLERK_JWKS_URL")
     environment: str | None = None
 
 

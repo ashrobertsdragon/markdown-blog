@@ -21,14 +21,21 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'npm run dev',
-      url: 'http://localhost:5556',
+      command: 'node tests/fixtures/jwks-server.js',
+      url: 'http://127.0.0.1:5557/.well-known/jwks.json',
+      reuseExistingServer: !process.env.CI,
+      timeout: 10000,
+    },
+    {
+      command:
+        'cd ../backend && FLASK_ENV=TESTING CLERK_JWKS_URL=http://127.0.0.1:5557/.well-known/jwks.json uv run dev_flask',
+      url: 'http://localhost:5555/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },
     {
-      command: 'cd ../backend && uv run dev_flask',
-      url: 'http://localhost:5555/api/health',
+      command: 'npm run dev',
+      url: 'http://localhost:5556',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },

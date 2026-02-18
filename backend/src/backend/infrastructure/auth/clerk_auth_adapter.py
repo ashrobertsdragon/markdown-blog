@@ -193,12 +193,15 @@ class ClerkAuthAdapter:
     def _construct_jwks_url(self) -> str:
         """Construct JWKS endpoint URL from Clerk configuration.
 
-        Extracts the Clerk domain from the publishable key and constructs
-        the standard JWKS endpoint URL.
+        Returns the override URL when CLERK_JWKS_URL is set (e.g. for tests),
+        otherwise derives the URL from the publishable key.
 
         Returns:
             JWKS endpoint URL string
         """
+        if self.config.clerk_jwks_url:
+            return self.config.clerk_jwks_url
+
         pub_key = self.config.clerk_publishable_key
 
         if pub_key.startswith("pk_test_"):

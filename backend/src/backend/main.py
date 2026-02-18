@@ -18,6 +18,7 @@ from backend.api.routes.auth import auth_bp
 from backend.api.routes.health import health_bp
 from backend.api.routes.posts import posts_bp
 from backend.api.routes.revisions import revisions_bp
+from backend.api.routes.test import test_bp
 from backend.api.routes.users import users_bp
 from backend.config import FlaskEnv, FlaskSettings
 from backend.exceptions import AuthenticationError, AuthorizationError
@@ -63,6 +64,7 @@ def create_app() -> Flask:
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(posts_bp, url_prefix="/api/posts")
     app.register_blueprint(revisions_bp, url_prefix="/api/posts")
+    app.register_blueprint(test_bp, url_prefix="/api/test")
 
     @app.errorhandler(AuthenticationError)
     def handle_authentication_error(
