@@ -8,13 +8,17 @@ import pytest
 from sqlalchemy.engine import Engine
 from sqlmodel import Session
 
-from backend.infrastructure.persistence.database import get_db, get_engine
+from backend.infrastructure.persistence.database import (
+    dispose_engine,
+    get_db,
+    get_engine,
+)
 
 
 @pytest.fixture
 def engine(dev_settings):
     """Fixture to clear get_engine cache and return Engine."""
-    get_engine.cache_clear()
+    dispose_engine()
     return get_engine()
 
 
@@ -40,7 +44,7 @@ def test_engine_has_pool_pre_ping(engine):
 
 def test_get_engine_is_cached(engine):
     """get_engine should return same instance on repeated calls."""
-    get_engine.cache_clear()
+    dispose_engine()
     engine1 = get_engine()
     engine2 = get_engine()
     assert engine1 is engine2

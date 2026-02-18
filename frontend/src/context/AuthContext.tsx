@@ -19,25 +19,63 @@ export interface AuthProviderProps {
   children: ReactNode
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
-  const { user, isLoaded, isSignedIn } = useUser()
-  const { getToken } = useClerkAuth()
-
+function deriveRoleFromMetadata(
+  user?: { publicMetadata?: { role?: AuthContextType['role'] | string } } | null
+): AuthContextType['role'] {
   const roleValue = user?.publicMetadata?.role
-  const role: AuthContextType['role'] =
-    roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
-      ? roleValue
-      : 'authenticated'
+  return roleValue === 'admin' || roleValue === 'author' || roleValue === 'authenticated'
+    ? (roleValue as AuthContextType['role'])
+    : 'authenticated'
+}
+
+function ClerkAuthProvider({ children }: AuthProviderProps) {
+  const { user: clerkUser, isLoaded: clerkIsLoaded, isSignedIn: clerkIsSignedIn } = useUser()
+  const { getToken: clerkGetToken } = useClerkAuth()
+
+  const role = deriveRoleFromMetadata(clerkUser)
 
   const value: AuthContextType = {
-    user,
-    isLoaded,
-    isSignedIn,
+    user: clerkUser,
+    isLoaded: clerkIsLoaded,
+    isSignedIn: clerkIsSignedIn,
     role,
-    getToken,
+    getToken: clerkGetToken,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+function MockAuthProvider({ children }: AuthProviderProps) {
+  const testMock =
+    typeof window !== 'undefined'
+      ? (window as { __CLERK_TEST_MOCK__?: UserType }).__CLERK_TEST_MOCK__
+      : undefined
+
+  const isSignedIn = testMock !== undefined && testMock !== null
+  const role = deriveRoleFromMetadata(testMock)
+
+  const value: AuthContextType = {
+    user: testMock,
+    isLoaded: true,
+    isSignedIn,
+    role,
+    getToken: async () => (isSignedIn ? 'mock_token_123' : null),
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+  const isTestMockPresent =
+    import.meta.env.MODE === 'test' &&
+    typeof window !== 'undefined' &&
+    '__CLERK_TEST_MOCK__' in (window as { __CLERK_TEST_MOCK__?: UserType })
+
+  if (isTestMockPresent) {
+    return <MockAuthProvider>{children}</MockAuthProvider>
+  }
+
+  return <ClerkAuthProvider>{children}</ClerkAuthProvider>
 }
 
 export function useAuth(): AuthContextType {

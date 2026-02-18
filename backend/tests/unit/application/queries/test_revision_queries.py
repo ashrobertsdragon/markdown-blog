@@ -14,7 +14,7 @@ Total: 20+ unit tests
 
 from datetime import UTC, datetime
 from unittest.mock import Mock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -51,12 +51,12 @@ except ImportError:
 
 def test_get_revision_history_query_dataclass_structure() -> None:
     """Verify GetRevisionHistoryQuery has required fields."""
-    query = GetRevisionHistoryQuery(post_id=uuid4(), skip=0, limit=10)
+    query = GetRevisionHistoryQuery(post_id=1, skip=0, limit=10)
 
     assert hasattr(query, "post_id")
     assert hasattr(query, "skip")
     assert hasattr(query, "limit")
-    assert isinstance(query.post_id, UUID)
+    assert isinstance(query.post_id, int)
     assert isinstance(query.skip, int)
     assert isinstance(query.limit, int)
 
@@ -64,19 +64,19 @@ def test_get_revision_history_query_dataclass_structure() -> None:
 def test_get_revision_history_query_validates_skip_range() -> None:
     """Verify query rejects skip outside valid range 0-10000."""
     with pytest.raises(ValueError, match="skip.*0.*10000"):
-        GetRevisionHistoryQuery(post_id=uuid4(), skip=-1, limit=10)
+        GetRevisionHistoryQuery(post_id=1, skip=-1, limit=10)
 
     with pytest.raises(ValueError, match="skip.*0.*10000"):
-        GetRevisionHistoryQuery(post_id=uuid4(), skip=10001, limit=10)
+        GetRevisionHistoryQuery(post_id=1, skip=10001, limit=10)
 
 
 def test_get_revision_history_query_validates_limit_range() -> None:
     """Verify query rejects limit outside valid range 1-100."""
     with pytest.raises(ValueError, match="limit.*1.*100"):
-        GetRevisionHistoryQuery(post_id=uuid4(), skip=0, limit=0)
+        GetRevisionHistoryQuery(post_id=1, skip=0, limit=0)
 
     with pytest.raises(ValueError, match="limit.*1.*100"):
-        GetRevisionHistoryQuery(post_id=uuid4(), skip=0, limit=101)
+        GetRevisionHistoryQuery(post_id=1, skip=0, limit=101)
 
 
 def test_get_revision_history_handler_returns_paginated_results() -> None:
@@ -84,7 +84,7 @@ def test_get_revision_history_handler_returns_paginated_results() -> None:
     mock_repo = Mock()
     mock_repo.find_by_post_id.return_value = ([], 0)
 
-    query = GetRevisionHistoryQuery(post_id=uuid4(), skip=0, limit=10)
+    query = GetRevisionHistoryQuery(post_id=1, skip=0, limit=10)
 
     response = get_revision_history_handler(
         query=query, revision_repo=mock_repo
@@ -102,12 +102,12 @@ def test_get_revision_history_handler_returns_paginated_results() -> None:
 def test_get_revision_query_dataclass_structure() -> None:
     """Verify GetRevisionQuery has required fields."""
     query = GetRevisionQuery(
-        post_id=uuid4(), commit_sha="abc123def456789012345678901234567890abcd"
+        post_id=1, commit_sha="abc123def456789012345678901234567890abcd"
     )
 
     assert hasattr(query, "post_id")
     assert hasattr(query, "commit_sha")
-    assert isinstance(query.post_id, UUID)
+    assert isinstance(query.post_id, int)
     assert isinstance(query.commit_sha, str)
 
 
@@ -116,7 +116,7 @@ def test_get_revision_query_validates_commit_sha_length() -> None:
     long_sha = "a" * 101
 
     with pytest.raises(ValueError, match="commit_sha.*100.*characters"):
-        GetRevisionQuery(post_id=uuid4(), commit_sha=long_sha)
+        GetRevisionQuery(post_id=1, commit_sha=long_sha)
 
 
 def test_get_revision_handler_returns_revision_with_content() -> None:
@@ -127,9 +127,9 @@ def test_get_revision_handler_returns_revision_with_content() -> None:
 
     revision = PostRevision(
         id=uuid4(),
-        post_id=uuid4(),
+        post_id=1,
         commit_sha=CommitSHA("abc123def456789012345678901234567890abcd"),
-        author_id=uuid4(),
+        author_id=2,
         commit_message="Test commit",
         markdown_content="# Test",
         created_at=datetime.now(UTC),
@@ -164,7 +164,7 @@ def test_get_revision_handler_returns_revision_with_content() -> None:
 def test_compare_revisions_query_dataclass_structure() -> None:
     """Verify CompareRevisionsQuery has required fields."""
     query = CompareRevisionsQuery(
-        post_id=uuid4(),
+        post_id=1,
         from_sha="abc123def456789012345678901234567890abcd",
         to_sha="def456789012345678901234567890123456789a",
     )
@@ -172,7 +172,7 @@ def test_compare_revisions_query_dataclass_structure() -> None:
     assert hasattr(query, "post_id")
     assert hasattr(query, "from_sha")
     assert hasattr(query, "to_sha")
-    assert isinstance(query.post_id, UUID)
+    assert isinstance(query.post_id, int)
     assert isinstance(query.from_sha, str)
     assert isinstance(query.to_sha, str)
 
@@ -183,14 +183,14 @@ def test_compare_revisions_query_validates_sha_lengths() -> None:
 
     with pytest.raises(ValueError, match="from_sha.*100.*characters"):
         CompareRevisionsQuery(
-            post_id=uuid4(),
+            post_id=1,
             from_sha=long_sha,
             to_sha="abc123def456789012345678901234567890abcd",
         )
 
     with pytest.raises(ValueError, match="to_sha.*100.*characters"):
         CompareRevisionsQuery(
-            post_id=uuid4(),
+            post_id=1,
             from_sha="abc123def456789012345678901234567890abcd",
             to_sha=long_sha,
         )
@@ -203,9 +203,9 @@ def test_compare_revisions_handler_returns_diff() -> None:
 
     from_revision = PostRevision(
         id=uuid4(),
-        post_id=uuid4(),
+        post_id=1,
         commit_sha=CommitSHA("abc123def456789012345678901234567890abcd"),
-        author_id=uuid4(),
+        author_id=2,
         commit_message="From commit",
         markdown_content="# Old",
         created_at=datetime.now(UTC),
@@ -217,7 +217,7 @@ def test_compare_revisions_handler_returns_diff() -> None:
         id=uuid4(),
         post_id=from_revision.post_id,
         commit_sha=CommitSHA("def456789012345678901234567890123456789a"),
-        author_id=uuid4(),
+        author_id=2,
         commit_message="To commit",
         markdown_content="# New",
         created_at=datetime.now(UTC),

@@ -82,7 +82,7 @@ def test_application_handles_basic_request(flask_test_client):
     Flask's test client, which simulates WSGI environ/start_response.
     """
     with patch("os.execl"):
-        response = flask_test_client.get("/health")
+        response = flask_test_client.get("/api/health")
 
         assert response.status_code in (
             200,
@@ -100,7 +100,7 @@ def test_health_endpoint_via_wsgi(flask_test_client):
     through the WSGI interface.
     """
     with patch("os.execl"):
-        response = flask_test_client.get("/health")
+        response = flask_test_client.get("/api/health")
 
         assert response.status_code == 200, "health endpoint should return 200"
         assert response.json is not None, "health endpoint should return JSON"

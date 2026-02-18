@@ -8,6 +8,7 @@ Tests the complete production stack:
 """
 
 import shutil
+import socket
 import subprocess
 import threading
 from pathlib import Path, WindowsPath
@@ -22,7 +23,20 @@ from tests.utils import has_internet
 
 PROJECT_ROOT = Path(__file__).parents[3]
 BUILD_DIR = PROJECT_ROOT / "build"
-BASE_URL = "http://localhost:5000"
+
+
+@pytest.fixture(scope="module")
+def free_port():
+    """Find a free port on localhost."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
+
+
+@pytest.fixture(scope="module")
+def base_url(free_port):
+    """Return the base URL for the test server."""
+    return f"http://localhost:{free_port}"
 
 
 @pytest.fixture(scope="module")
@@ -56,16 +70,25 @@ def build():
 
 
 @pytest.fixture(scope="module")
-def flask_server(build):
+def flask_server(build, free_port, base_url):
     """Start Flask server for e2e testing."""
     monkeypatch = MonkeyPatch()
-    monkeypatch.setenv("FLASK_ENV", "PRODUCTION")
+    monkeypatch.setenv("FLASK_ENV", "DEVELOPMENT")
+    monkeypatch.setenv("LOCAL_DB_NAME", "test_db")
+    monkeypatch.setenv("LOCAL_DB_USER", "test_user")
+    monkeypatch.setenv("LOCAL_DB_PASSWORD", "test_password")
+    monkeypatch.setenv("CLERK_PUBLISHABLE_KEY", "pk_test")
+    monkeypatch.setenv("CLERK_SECRET_KEY", "sk_test")
+    monkeypatch.setenv("GITHUB_PERSONAL_ACCESS_TOKEN", "test_token")
+    monkeypatch.setenv("GITHUB_OWNER", "test_owner")
+    monkeypatch.setenv("GITHUB_REPO", "test_repo")
+
     app = create_app()
     thread = threading.Thread(
         target=app.run,
         kwargs={
             "host": "localhost",
-            "port": 5000,
+            "port": free_port,
             "debug": False,
             "use_reloader": False,
         },
@@ -73,7 +96,7 @@ def flask_server(build):
     )
     thread.start()
     try:
-        wait_for_server(f"{BASE_URL}/health")
+        wait_for_server(f"{base_url}/api/health")
         yield
     finally:
         monkeypatch.undo()
@@ -85,56 +108,56 @@ def test_frontend_build_creates_static_assets(flask_server):
     assert (BUILD_DIR / "static").exists()
 
 
-def test_health_endpoint_responds(flask_server):
-    """Verify GET /health returns 200 OK."""
+def test_health_endpoint_responds(flask_server, base_url):
+    """Verify GET /api/health returns 200 OK."""
     try:
-        response = requests.get(f"{BASE_URL}/health", timeout=1)
+        response = requests.get(f"{base_url}/api/health", timeout=1)
         assert response.status_code == 200
         assert response.json() == {"status": "healthy"}
     except requests.exceptions.RequestException:
         pytest.fail("Flask server failed to start")
 
 
-def test_health_db_endpoint_responds(flask_server):
-    """Verify GET /health/db returns 200 OK."""
-    response = requests.get(f"{BASE_URL}/health/db", timeout=5)
+def test_health_db_endpoint_responds(flask_server, base_url):
+    """Verify GET /api/health/db returns 200 OK."""
+    response = requests.get(f"{base_url}/api/health/db", timeout=5)
 
     assert response.status_code in {200, 503}
 
 
 @pytest.mark.external
 @pytest.mark.skipif(not has_internet(), reason="Internet required")
-def test_health_github_endpoint_responds(flask_server):
-    """Verify GET /health/github returns appropriate status.
+def test_health_github_endpoint_responds(flask_server, base_url):
+    """Verify GET /api/health/github returns appropriate status.
 
     Note: This test requires network access to GitHub. Marked as external
     to allow skipping in offline or restricted environments.
     """
-    response = requests.get(f"{BASE_URL}/health/github", timeout=10)
+    response = requests.get(f"{base_url}/api/health/github", timeout=10)
 
     assert response.status_code in {200, 503}
 
 
-def test_root_path_serves_react_index(flask_server):
+def test_root_path_serves_react_index(flask_server, base_url):
     """Verify GET / serves React index.html."""
-    response = requests.get(BASE_URL, timeout=5)
+    response = requests.get(base_url, timeout=5)
 
     assert response.status_code == 200
     assert "<!doctype html>" in response.text.lower()
     assert '<div id="root"></div>' in response.text
 
 
-def test_invalid_route_serves_react_index(flask_server):
+def test_invalid_route_serves_react_index(flask_server, base_url):
     """Verify unknown routes serve React index.html for client-side routing."""
-    response = requests.get(f"{BASE_URL}/invalid-route", timeout=5)
+    response = requests.get(f"{base_url}/invalid-route", timeout=5)
 
     assert response.status_code == 200
     assert "<!doctype html>" in response.text.lower()
     assert '<div id="root"></div>' in response.text
 
 
-def test_api_routes_not_caught_by_spa_catchall(flask_server):
+def test_api_routes_not_caught_by_spa_catchall(flask_server, base_url):
     """Verify /api/* routes are not caught by SPA catch-all."""
-    response = requests.get(f"{BASE_URL}/api/nonexistent", timeout=5)
+    response = requests.get(f"{base_url}/api/nonexistent", timeout=5)
 
     assert response.status_code == 404

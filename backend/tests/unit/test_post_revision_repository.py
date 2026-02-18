@@ -25,9 +25,9 @@ def mock_session() -> Mock:
 def sample_revision_aggregate() -> PostRevision:
     """Sample PostRevision domain aggregate for testing."""
     return PostRevision.create(
-        post_id=uuid4(),
+        post_id=1,
         commit_sha="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
-        author_id=uuid4(),
+        author_id=2,
         commit_message="Initial commit",
         markdown_content="# Test Post\n\nThis is test content.",
         is_revert=False,
@@ -114,8 +114,6 @@ class TestToDomain:
 
         aggregate = repo._to_domain(
             sample_revision_model,
-            post_uuid=uuid4(),
-            author_uuid=uuid4(),
         )
 
         assert aggregate.id == sample_revision_model.id
@@ -135,8 +133,6 @@ class TestToDomain:
 
         aggregate = repo._to_domain(
             sample_revision_model,
-            post_uuid=uuid4(),
-            author_uuid=uuid4(),
         )
 
         assert isinstance(aggregate.commit_sha, CommitSHA)
@@ -162,9 +158,7 @@ class TestToDomain:
         )
 
         repo = PostRevisionRepository(session=mock_session)
-        aggregate = repo._to_domain(
-            model, post_uuid=uuid4(), author_uuid=uuid4()
-        )
+        aggregate = repo._to_domain(model)
 
         assert aggregate.created_at.tzinfo is not None
         assert aggregate.updated_at.tzinfo is not None
@@ -182,8 +176,6 @@ class TestToDomain:
         repo = PostRevisionRepository(session=mock_session)
         aggregate = repo._to_domain(
             sample_revision_model,
-            post_uuid=uuid4(),
-            author_uuid=uuid4(),
         )
 
         assert aggregate.created_at == utc_dt

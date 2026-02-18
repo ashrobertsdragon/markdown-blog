@@ -3,6 +3,7 @@
 import pytest
 
 from backend.config import DevDBSettings, TestDBSettings
+from backend.infrastructure.persistence.database import dispose_engine
 from backend.main import create_app
 
 
@@ -73,6 +74,8 @@ def test_env(clean_env):
     clean_env.setenv("LOCAL_DB_PASSWORD", "test_password")
     clean_env.setenv("CLERK_PUBLISHABLE_KEY", "pk_test_fake_key_for_testing")
     clean_env.setenv("CLERK_SECRET_KEY", "sk_test_fake_secret_for_testing")
+    clean_env.setenv("GITHUB_PERSONAL_ACCESS_TOKEN", "test_token_for_testing")
+    clean_env.setenv("RESEND_API_KEY", "re_test_fake_key_for_testing")
     return clean_env
 
 
@@ -127,3 +130,15 @@ def client(test_settings, test_build_dir, monkeypatch, tmp_path):
     SQLModel.metadata.create_all(engine)
 
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def dispose_engine_after_test():
+    """Ensure engine is disposed after every test to free resources."""
+    yield
+    dispose_engine()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Clean up resources after all tests in the session have run."""
+    dispose_engine()

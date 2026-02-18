@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider, type UseMutationResult } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { RevertButton } from '@/components/revision/RevertButton'
@@ -140,7 +140,9 @@ describe('RevertButton', () => {
     await user.click(screen.getByRole('button', { name: /confirm/i }))
 
     const mutateCall = mockMutate.mock.calls[0][1]
-    mutateCall.onSuccess()
+    await act(async () => {
+      mutateCall.onSuccess()
+    })
 
     expect(onSuccess).toHaveBeenCalled()
   })
@@ -153,7 +155,9 @@ describe('RevertButton', () => {
     await user.click(screen.getByRole('button', { name: /confirm/i }))
 
     const mutateCall = mockMutate.mock.calls[0][1]
-    mutateCall.onSuccess()
+    await act(async () => {
+      mutateCall.onSuccess()
+    })
 
     await waitFor(() => {
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()

@@ -8,9 +8,7 @@ from pathlib import Path
 def fix_save_draft_command(content: str) -> str:
     """Add author_id and user_role to SaveDraftCommand."""
     pattern = r"(SaveDraftCommand\s*\(\s*slug=[^,]+,\s*content=[^,)]+)(\s*\))"
-    replacement = (
-        r'\1,\n        author_id=1,\n        user_role="author",\n    \2'
-    )
+    replacement = r'\1,\n        author_id=1,\n        user_role="author",\n    \2'
     return re.sub(pattern, replacement, content)
 
 

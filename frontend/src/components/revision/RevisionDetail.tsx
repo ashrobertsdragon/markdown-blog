@@ -1,10 +1,11 @@
 import { useRevisionDetail } from '@/hooks/useRevisions'
+import { RevertButton } from './RevertButton'
 
 export interface RevisionDetailProps {
-  postId: string
+  slug: string
   revisionSha: string
   isAuthor: boolean
-  onRevertClick?: () => void
+  onRevertSuccess?: () => void
 }
 
 /**
@@ -15,12 +16,12 @@ export interface RevisionDetailProps {
  * shows a revert button for authors.
  */
 export function RevisionDetail({
-  postId,
+  slug,
   revisionSha,
   isAuthor,
-  onRevertClick,
+  onRevertSuccess,
 }: RevisionDetailProps) {
-  const { data, isLoading, isError, error } = useRevisionDetail(postId, revisionSha)
+  const { data, isLoading, isError, error } = useRevisionDetail(slug, revisionSha)
 
   if (isLoading) {
     return (
@@ -116,16 +117,14 @@ export function RevisionDetail({
         dangerouslySetInnerHTML={{ __html: data.html_content }}
       />
 
-      {isAuthor && onRevertClick && (
+      {isAuthor && (
         <div className="pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            data-testid="revision-detail-revert-button"
-            onClick={onRevertClick}
-            className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Revert to This Version
-          </button>
+          <RevertButton
+            slug={slug}
+            targetSha={data.commit_sha}
+            commitMessage={data.commit_message}
+            onSuccess={onRevertSuccess || (() => {})}
+          />
         </div>
       )}
     </article>

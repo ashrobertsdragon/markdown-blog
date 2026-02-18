@@ -15,11 +15,13 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: 3000,
+    port: 5556,
+    strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5555',
         changeOrigin: true,
+        rewrite: path => path,
       },
     },
   },

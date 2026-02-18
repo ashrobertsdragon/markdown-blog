@@ -5,7 +5,7 @@ import socket
 
 def has_internet():
     try:
-        socket.create_connection(("github.com", 443), timeout=2)
-        return True
+        with socket.create_connection(("github.com", 443), timeout=2):
+            return True
     except OSError:
         return False
