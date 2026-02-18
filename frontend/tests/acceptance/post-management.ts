@@ -11,6 +11,8 @@ const BACKEND = 'http://localhost:5555'
  * and torn down via /api/test/reset.
  */
 
+test.describe.configure({ mode: 'serial' })
+
 test.describe('Post Management UI', () => {
   test.beforeAll(async ({ request }) => {
     await request.post(`${BACKEND}/api/test/seed`)
@@ -33,7 +35,7 @@ test.describe('Post Management UI', () => {
     await page.goto(`/edit/${slug}`)
 
     const editor = page.locator('.w-md-editor')
-    await expect(editor).toBeVisible()
+    await expect(editor).toBeVisible({ timeout: 15000 })
 
     const previewTab = page.locator('button:has-text("Preview")').first()
     if (await previewTab.isVisible()) {

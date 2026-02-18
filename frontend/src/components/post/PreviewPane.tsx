@@ -7,13 +7,9 @@ import { cn } from '@/lib/utils'
  * Props for the PreviewPane component
  */
 interface PreviewPaneProps {
-  /** Raw markdown content to render */
   markdown: string
-  /** Optional loading state */
   isLoading?: boolean
-  /** Optional error message to display */
   error?: string | null
-  /** Optional CSS classes to apply to container */
   className?: string
 }
 

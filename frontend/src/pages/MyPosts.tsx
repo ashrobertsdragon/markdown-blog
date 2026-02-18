@@ -39,29 +39,19 @@ export default function MyPosts() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [slugToDelete, setSlugToDelete] = useState<string | null>(null)
 
-  // Hooks
   const { data, isLoading, error } = useMyPosts(filter, page)
   const deleteDraft = useDeleteDraft()
 
-  /**
-   * Handle filter button click
-   */
   const handleFilterChange = useCallback((newFilter: PostFilter) => {
     setFilter(newFilter)
     setPage(1)
   }, [])
 
-  /**
-   * Open delete confirmation dialog
-   */
   const handleDeleteClick = useCallback((slug: string) => {
     setSlugToDelete(slug)
     setDeleteConfirmOpen(true)
   }, [])
 
-  /**
-   * Confirm deletion
-   */
   const handleDeleteConfirm = useCallback(async () => {
     if (!slugToDelete) return
 
@@ -75,9 +65,6 @@ export default function MyPosts() {
     }
   }, [slugToDelete, deleteDraft])
 
-  /**
-   * Memoized filter button configuration
-   */
   const filterButtons = useMemo(
     () => [
       { label: 'All', value: 'all' as const },
@@ -87,12 +74,10 @@ export default function MyPosts() {
     []
   )
 
-  // Loading state
   if (isLoading) {
     return <LoadingSpinner message="Loading posts..." className="min-h-screen" />
   }
 
-  // Error state
   if (error) {
     const userFriendlyError = error.message?.toLowerCase().includes('network')
       ? 'Network error. Please check your connection and try again.'
@@ -108,7 +93,6 @@ export default function MyPosts() {
     )
   }
 
-  // Empty state
   if (!data || data.posts.length === 0) {
     return (
       <div className="flex min-h-screen flex-col bg-gray-50">

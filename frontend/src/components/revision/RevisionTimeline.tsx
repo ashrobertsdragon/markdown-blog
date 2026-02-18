@@ -231,7 +231,6 @@ export function RevisionTimeline({
     }
   }
 
-  // Special case: when loading more pages without data (test scenario)
   if (isLoading && skip > 0 && !data) {
     return (
       <div data-testid="revision-timeline-load-more-loading" className="text-center py-2">
@@ -240,7 +239,6 @@ export function RevisionTimeline({
     )
   }
 
-  // Determine view state based on data and loading state
   const hasRevisions = !!data?.revisions?.length
   let viewState: ViewState
 

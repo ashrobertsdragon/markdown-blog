@@ -15,6 +15,7 @@ declare global {
       loaded: boolean
       user?: unknown
       load?: () => Promise<void>
+      addListener?: (callback: unknown) => void
       session?: {
         id: string
         status: string
@@ -36,6 +37,7 @@ export async function mockClerkUnauthenticated(page: Page): Promise<void> {
       loaded: true,
       user: undefined,
       load: async () => Promise.resolve(),
+      addListener: () => {},
       session: undefined,
     }
   })
@@ -79,6 +81,7 @@ export async function mockClerkAuth(
         loaded: true,
         user: window.__CLERK_TEST_MOCK__,
         load: async () => Promise.resolve(),
+        addListener: () => {},
         session: {
           id: 'sess_test123',
           status: 'active',

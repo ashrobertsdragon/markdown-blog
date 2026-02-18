@@ -35,28 +35,23 @@ export default function PostEditor() {
   const navigate = useNavigate()
   const isEditMode = Boolean(slug)
 
-  // State
   const [content, setContent] = useState('')
   const [showPreview, setShowPreview] = useState(false)
   const [showPublishDialog, setShowPublishDialog] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
 
-  // Refs
   const successAlertRef = useRef<HTMLDivElement>(null)
 
-  // Hooks - only fetch draft in edit mode (useDraft has enabled: Boolean(slug))
   const { data: draft, isLoading, error } = useDraft(isEditMode ? slug || '' : '')
   const saveDraft = useSaveDraft()
   const publishPost = usePublishPost()
 
-  // Sync content from draft data in edit mode
   useEffect(() => {
     if (isEditMode && draft?.content) {
       setContent(draft.content)
     }
   }, [draft, isEditMode])
 
-  // Auto-dismiss save success message and focus alert
   useEffect(() => {
     if (saveSuccess) {
       successAlertRef.current?.focus()
@@ -65,13 +60,8 @@ export default function PostEditor() {
     }
   }, [saveSuccess])
 
-  /**
-   * Save draft content
-   */
   const handleSave = async () => {
     if (!isEditMode) {
-      // Create mode - show user they need to create a post first
-      // In a full implementation, this would call a createDraft API
       return
     }
 
@@ -81,16 +71,12 @@ export default function PostEditor() {
       await saveDraft.mutateAsync({ slug, content })
       setSaveSuccess(true)
     } catch {
-      // Error handled by mutation error state
     }
   }
 
-  /**
-   * Publish draft to database
-   */
+
   const handlePublish = async () => {
     if (!isEditMode) {
-      // Create mode - show user they need to save first
       return
     }
 
@@ -101,17 +87,14 @@ export default function PostEditor() {
       setShowPublishDialog(false)
       navigate(`/posts/${slug}`)
     } catch {
-      // Error handled by mutation error state
       setShowPublishDialog(false)
     }
   }
 
-  // Loading state - only in edit mode
   if (isEditMode && isLoading) {
     return <LoadingSpinner message="Loading draft..." className="min-h-screen" />
   }
 
-  // Error state - only in edit mode
   if (isEditMode && (error || !draft)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -125,7 +108,6 @@ export default function PostEditor() {
     )
   }
 
-  // In create mode, use placeholder draft data
   const displayDraft =
     isEditMode && draft
       ? draft

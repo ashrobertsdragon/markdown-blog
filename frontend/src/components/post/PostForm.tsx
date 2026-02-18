@@ -5,16 +5,12 @@ import { cn } from '@/lib/utils'
  * Props for the PostForm component
  */
 interface PostFormProps {
-  /** Callback invoked when form is submitted with valid data */
   onSubmit: (data: { slug: string; title: string }) => void
-  /** Optional initial values for form fields */
   initialValues?: {
     slug?: string
     title?: string
   }
-  /** Optional callback invoked whenever form values change */
   onChange?: (data: { slug: string; title: string }) => void
-  /** Optional CSS class name to apply to the form container */
   className?: string
 }
 

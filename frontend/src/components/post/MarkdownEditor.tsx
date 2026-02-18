@@ -6,13 +6,9 @@ import { cn } from '@/lib/utils'
  * Props for the MarkdownEditor component
  */
 interface MarkdownEditorProps {
-  /** The markdown content to display in the editor */
   value: string
-  /** Callback function invoked when the content changes */
   onChange: (content: string) => void
-  /** Optional callback function invoked when Ctrl+S or Cmd+S is pressed */
   onSave?: () => void | Promise<void>
-  /** Optional CSS class name to apply to the container */
   className?: string
 }
 

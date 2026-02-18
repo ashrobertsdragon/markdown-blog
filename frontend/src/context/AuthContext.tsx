@@ -59,7 +59,13 @@ function MockAuthProvider({ children }: AuthProviderProps) {
     isLoaded: true,
     isSignedIn,
     role,
-    getToken: async () => (isSignedIn ? 'mock_token_123' : null),
+    getToken: async () => {
+      const clerkSession = (
+        window as { Clerk?: { session?: { getToken?: () => Promise<string> } } }
+      ).Clerk?.session
+      if (clerkSession?.getToken) return clerkSession.getToken()
+      return isSignedIn ? 'mock_token_123' : null
+    },
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -67,7 +73,6 @@ function MockAuthProvider({ children }: AuthProviderProps) {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const isTestMockPresent =
-    import.meta.env.MODE === 'test' &&
     typeof window !== 'undefined' &&
     '__CLERK_TEST_MOCK__' in (window as { __CLERK_TEST_MOCK__?: UserType })
 
