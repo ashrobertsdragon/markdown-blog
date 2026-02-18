@@ -4,15 +4,29 @@ Only active when FLASK_ENV=TESTING. Returns 404 in all other environments.
 """
 
 import os
+from datetime import UTC, datetime
+from pathlib import Path
 
 from flask import Blueprint, Response, jsonify
 from sqlalchemy import delete
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from backend.infrastructure.persistence.database import get_engine
+from backend.infrastructure.persistence.filesystem_draft_repository import (
+    DraftFile,
+    FileSystemDraftRepository,
+)
 from backend.infrastructure.persistence.models import Post, User
 
 test_bp = Blueprint("test", __name__)
+
+_TEST_SLUGS = [
+    "test-post",
+    "publish-me",
+    "delete-me",
+    "draft-1",
+    "pub-1",
+]
 
 
 def _guard() -> tuple[Response, int] | None:
@@ -22,12 +36,20 @@ def _guard() -> tuple[Response, int] | None:
     return None
 
 
+def _get_draft_repo() -> FileSystemDraftRepository:
+    """Return a FileSystemDraftRepository for the configured DRAFTS_PATH."""
+    drafts_path = Path(
+        os.environ.get("DRAFTS_PATH", str(Path(__file__).parents[6] / "drafts"))
+    )
+    return FileSystemDraftRepository(drafts_path)
+
+
 @test_bp.route("/seed", methods=["POST"])
 def seed() -> tuple[Response, int]:
-    """Create test users and posts for acceptance tests.
+    """Create test users, posts, and draft files for acceptance tests.
 
-    Creates two users (author + admin) and a set of posts with
-    known slugs that the post-management acceptance tests expect.
+    Creates two users (author + admin), DB post records, and matching
+    filesystem draft files with known slugs that post-management tests expect.
 
     Returns:
         201 with seeded entity counts on success.
@@ -39,6 +61,14 @@ def seed() -> tuple[Response, int]:
 
     engine = get_engine()
     with Session(engine) as session:
+        existing = session.exec(
+            select(User).where(User.clerk_user_id == "user_test_author")
+        ).first()
+        if existing:
+            return jsonify(
+                {"status": "already_seeded", "users": 2, "posts": 5}
+            ), 201
+
         author = User(
             email="author@example.com",
             role="author",
@@ -53,6 +83,7 @@ def seed() -> tuple[Response, int]:
         session.add(admin)
         session.flush()
 
+        now = datetime.now(UTC)
         posts = [
             Post(
                 slug="test-post",
@@ -95,14 +126,35 @@ def seed() -> tuple[Response, int]:
 
         session.commit()
 
+    draft_repo = _get_draft_repo()
+    draft_specs = [
+        ("test-post", "Test Post", "# Initial Content\n\nTest content.", False),
+        ("publish-me", "Publish Me", "# Publish Me\n\nDraft content.", False),
+        ("delete-me", "Delete Me", "# Delete Me\n\nTo be deleted.", False),
+        ("draft-1", "Draft 1", "# Draft 1\n\nDraft content.", False),
+        ("pub-1", "Published 1", "# Published 1\n\nPublished content.", True),
+    ]
+    for slug, title, content, published in draft_specs:
+        draft_repo.save(
+            DraftFile(
+                slug=slug,
+                title=title,
+                author="user_test_author",
+                content=content,
+                published=published,
+                created_at=now,
+            )
+        )
+
     return jsonify({"status": "seeded", "users": 2, "posts": len(posts)}), 201
 
 
 @test_bp.route("/reset", methods=["DELETE"])
 def reset() -> tuple[Response, int]:
-    """Delete all test data from the database.
+    """Delete all test data from the database and filesystem.
 
-    Truncates Post and User tables so each test suite starts clean.
+    Truncates Post and User tables and removes test draft files so each
+    test suite starts clean.
 
     Returns:
         200 on success.
@@ -117,5 +169,9 @@ def reset() -> tuple[Response, int]:
         session.exec(delete(Post))
         session.exec(delete(User))
         session.commit()
+
+    draft_repo = _get_draft_repo()
+    for slug in _TEST_SLUGS:
+        draft_repo.delete(slug)
 
     return jsonify({"status": "reset"}), 200

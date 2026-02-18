@@ -6,7 +6,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: [
     ['html'],
     ['json', { outputFile: 'test-results/results.json' }],
@@ -21,14 +21,14 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'node tests/fixtures/jwks-server.js',
+      command: 'npx tsx tests/fixtures/jwks-server.ts',
       url: 'http://127.0.0.1:5557/.well-known/jwks.json',
       reuseExistingServer: !process.env.CI,
       timeout: 10000,
     },
     {
       command:
-        'cd ../backend && FLASK_ENV=TESTING CLERK_JWKS_URL=http://127.0.0.1:5557/.well-known/jwks.json uv run dev_flask',
+        'cd ../backend && FLASK_ENV=TESTING CLERK_JWKS_URL=http://127.0.0.1:5557/.well-known/jwks.json DRAFTS_PATH=/tmp/test-drafts GITHUB_PERSONAL_ACCESS_TOKEN=test GITHUB_OWNER=test-owner GITHUB_REPO=test-repo uv run dev_flask',
       url: 'http://localhost:5555/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,

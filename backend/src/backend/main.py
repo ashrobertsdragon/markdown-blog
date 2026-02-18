@@ -14,14 +14,17 @@ from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response as WerkzeugResponse
 
-from backend.api.routes.auth import auth_bp
-from backend.api.routes.health import health_bp
-from backend.api.routes.posts import posts_bp
-from backend.api.routes.revisions import revisions_bp
-from backend.api.routes.test import test_bp
-from backend.api.routes.users import users_bp
+from backend.api.routes import (
+    auth_bp,
+    health_bp,
+    posts_bp,
+    revisions_bp,
+    test_bp,
+    users_bp,
+)
 from backend.config import FlaskEnv, FlaskSettings
 from backend.exceptions import AuthenticationError, AuthorizationError
+from scripts.create_schema import create_schema
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +61,7 @@ def create_app() -> Flask:
 
     if flask_env in [FlaskEnv.TESTING, FlaskEnv.DEVELOPMENT]:
         CORS(app)
+        create_schema()
 
     app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
