@@ -43,6 +43,7 @@ build-backend = "uv_build"
 
 [tool.mypy]
 check_untyped_defs = true
+explicit_package_bases = true
 follow_imports = "silent"
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 plugins = ["pydantic.mypy"]
