@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Tests**: Post-management acceptance tests now pass reliably
+
+  - Added dummy `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_PERSONAL_ACCESS_TOKEN` env vars to the Playwright Flask command so `GitHubSettings()` initialises without raising `ValidationError`; GitHub calls log a 401 warning and continue
+  - Seed endpoint now creates filesystem draft files under `DRAFTS_PATH=/tmp/test-drafts` so the publish handler can find draft content; reset deletes those files
+  - Set `workers: 1` to eliminate Flask contention between parallel Playwright workers
+  - Replaced CSS-class locators (`.bg-gray-100`, `.bg-green-100`) with `getByRole('cell')` assertions; Tailwind v4 does not emit those classes in the dev build
+
 ### Changed
 
 - **Tests**: Acceptance tests now exercise the real backend instead of mocking it
