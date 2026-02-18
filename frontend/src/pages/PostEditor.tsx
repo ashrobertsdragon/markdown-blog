@@ -70,10 +70,8 @@ export default function PostEditor() {
     try {
       await saveDraft.mutateAsync({ slug, content })
       setSaveSuccess(true)
-    } catch {
-    }
+    } catch {}
   }
-
 
   const handlePublish = async () => {
     if (!isEditMode) {

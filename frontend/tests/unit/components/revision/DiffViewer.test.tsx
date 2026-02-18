@@ -1,8 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { DiffLine } from '@/types/revision'
 import { DiffViewer } from '@/components/revision/DiffViewer'
+import type { DiffLine } from '@/types/revision'
 
 describe('DiffViewer', () => {
   const mockDiffLines: DiffLine[] = [
