@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Tests**: Acceptance tests now exercise the real backend instead of mocking it
+
+  - Added local JWKS server (port 5557) serving a committed test RSA key pair as a Playwright webServer
+  - Flask starts with `FLASK_ENV=TESTING` and `CLERK_JWKS_URL` pointing to the local JWKS server during Playwright runs
+  - `clerk-mock.ts` now generates real RS256 JWTs via `jose`; `session.getToken()` returns a signed token the backend can verify
+  - Removed all `page.route()` backend mocks from `post-management.ts`; added `beforeAll`/`afterAll` seed/reset hooks
+  - Added `POST /api/test/seed` and `DELETE /api/test/reset` endpoints (404 outside `FLASK_ENV=TESTING`) to create test users and posts
+  - Added `CLERK_JWKS_URL` override to `Settings` and `ClerkAuthAdapter._construct_jwks_url()`
+  - Only external dependencies (Clerk.js, GitHub API) remain mocked
+
 ### Security
 
 - **Frontend**: Added environment guard to test mode authentication bypass
