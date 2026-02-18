@@ -96,8 +96,8 @@ test.describe('Post Management UI', () => {
     await expect(page.locator('text=Draft 1')).toBeVisible()
     await expect(page.locator('text=Published 1')).toBeVisible()
 
-    await expect(page.locator('.bg-gray-100:has-text("Draft")')).toBeVisible()
-    await expect(page.locator('.bg-green-100:has-text("Published")')).toBeVisible()
+    await expect(page.getByRole('cell', { name: 'Draft', exact: true }).first()).toBeVisible()
+    await expect(page.getByRole('cell', { name: 'Published', exact: true }).first()).toBeVisible()
 
     const draftsButton = page.locator('button:has-text("Drafts")')
     if (await draftsButton.isVisible()) {
