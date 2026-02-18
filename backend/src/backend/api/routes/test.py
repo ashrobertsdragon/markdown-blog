@@ -5,12 +5,12 @@ Only active when FLASK_ENV=TESTING. Returns 404 in all other environments.
 
 import os
 from datetime import UTC, datetime
-from pathlib import Path
 
 from flask import Blueprint, Response, jsonify
 from sqlalchemy import delete
-from sqlmodel import Session, select
+from sqlmodel import Session, SQLModel, select
 
+from backend.config import FileSystemSettings
 from backend.infrastructure.persistence.database import get_engine
 from backend.infrastructure.persistence.filesystem_draft_repository import (
     DraftFile,
@@ -38,18 +38,18 @@ def _guard() -> tuple[Response, int] | None:
 
 def _get_draft_repo() -> FileSystemDraftRepository:
     """Return a FileSystemDraftRepository for the configured DRAFTS_PATH."""
-    drafts_path = Path(
-        os.environ.get("DRAFTS_PATH", str(Path(__file__).parents[6] / "drafts"))
-    )
-    return FileSystemDraftRepository(drafts_path)
+    settings = FileSystemSettings()
+    return FileSystemDraftRepository(settings.DRAFTS_PATH)
 
 
 @test_bp.route("/seed", methods=["POST"])
 def seed() -> tuple[Response, int]:
     """Create test users, posts, and draft files for acceptance tests.
 
-    Creates two users (author + admin), DB post records, and matching
-    filesystem draft files with known slugs that post-management tests expect.
+    Drops and recreates all tables on every call to guarantee a clean
+    state regardless of prior test run outcome. Creates two users
+    (author + admin), DB post records, and matching filesystem draft
+    files with known slugs that post-management tests expect.
 
     Returns:
         201 with seeded entity counts on success.
@@ -60,15 +60,11 @@ def seed() -> tuple[Response, int]:
         return guard
 
     engine = get_engine()
-    with Session(engine) as session:
-        existing = session.exec(
-            select(User).where(User.clerk_user_id == "user_test_author")
-        ).first()
-        if existing:
-            return jsonify(
-                {"status": "already_seeded", "users": 2, "posts": 5}
-            ), 201
+    SQLModel.metadata.drop_all(engine)
+    SQLModel.metadata.create_all(engine)
 
+    now = datetime.now(UTC)
+    with Session(engine) as session:
         author = User(
             email="author@example.com",
             role="author",
@@ -83,7 +79,6 @@ def seed() -> tuple[Response, int]:
         session.add(admin)
         session.flush()
 
-        now = datetime.now(UTC)
         posts = [
             Post(
                 slug="test-post",
@@ -125,6 +120,8 @@ def seed() -> tuple[Response, int]:
             session.add(post)
 
         session.commit()
+        users_count = len(session.exec(select(User)).all())
+        posts_count = len(session.exec(select(Post)).all())
 
     draft_repo = _get_draft_repo()
     draft_specs = [
@@ -146,7 +143,9 @@ def seed() -> tuple[Response, int]:
             )
         )
 
-    return jsonify({"status": "seeded", "users": 2, "posts": len(posts)}), 201
+    return jsonify(
+        {"status": "seeded", "users": users_count, "posts": posts_count}
+    ), 201
 
 
 @test_bp.route("/reset", methods=["DELETE"])

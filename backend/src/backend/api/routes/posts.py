@@ -327,7 +327,12 @@ def get_draft(slug: str) -> tuple[Response, int]:
                 {"error": "Cannot access another author's post"}
             ), 403
 
-        return jsonify(post.to_dict()), 200
+        post_dict = post.to_dict()
+        draft_file = _get_draft_repository().find_by_slug(slug)
+        if draft_file is not None:
+            post_dict["content"] = draft_file.content
+
+        return jsonify(post_dict), 200
     except ValueError as e:
         error_msg = str(e).lower()
         if "not found" in error_msg:

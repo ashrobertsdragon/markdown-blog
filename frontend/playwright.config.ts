@@ -24,7 +24,7 @@ export default defineConfig({
       command: 'npx tsx tests/fixtures/jwks-server.ts',
       url: 'http://127.0.0.1:5557/.well-known/jwks.json',
       reuseExistingServer: !process.env.CI,
-      timeout: 10000,
+      timeout: 120000,
     },
     {
       command:

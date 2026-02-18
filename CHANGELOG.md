@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **API**: `GET /api/posts/<slug>` now includes markdown `content` from the filesystem so the editor loads with existing draft text
+
+- **API**: `DELETE /api/posts/<slug>` now removes the DB record; previously only the filesystem file and GitHub copy were deleted
+
+- **API**: Delete handler no longer raises `RuntimeError` on GitHub failure; logs a warning and continues (consistent with save/publish behaviour)
+
+- **Tests**: Seed endpoint drops and recreates all tables on every call, guaranteeing a clean DB state regardless of prior run outcome
+
+- **Tests**: Fixed `Delete Draft Post` locator — `/delete/i` matched all three row buttons when the post title contains "Delete"; narrowed to `/^delete post/i`
+
 - **Tests**: Post-management acceptance tests now pass reliably
 
   - Added dummy `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_PERSONAL_ACCESS_TOKEN` env vars to the Playwright Flask command so `GitHubSettings()` initialises without raising `ValidationError`; GitHub calls log a 401 warning and continue

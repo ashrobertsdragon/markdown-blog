@@ -69,30 +69,30 @@ def delete_draft_handler(
     draft_repo.delete(command.slug)
     logger.debug(f"Filesystem deletion completed: {command.slug}")
 
-    logger.debug(f"Committing deletion to GitHub: drafts/{post.slug}.md")
-    commit_message = f"Delete draft: {post.slug}"
+    if post.id is None:
+        raise ValueError(f"Post '{command.slug}' has no database ID")
 
+    logger.info(f"Deleting post record from database: {command.slug}")
+    post_repo.delete(post.id)
+    logger.debug(f"Database deletion completed: {command.slug}")
+
+    commit_message = f"Delete draft: {post.slug}"
     try:
         result = github_service.delete_file(
             path=f"drafts/{post.slug}.md",
             message=commit_message,
         )
-
         if not result:
-            logger.error(
-                f"GitHub delete_file returned False for '{command.slug}'"
+            logger.warning(
+                f"GitHub delete_file returned False for '{command.slug}', "
+                "continuing with local delete"
             )
-            raise RuntimeError(
-                f"GitHub delete failed for '{command.slug}' - "
-                "operation returned False"
+        else:
+            logger.info(
+                f"Successfully deleted draft '{command.slug}' from GitHub"
             )
-
-        logger.info(f"Successfully deleted draft '{command.slug}' from GitHub")
-
-    except RuntimeError:
-        raise
     except Exception as e:
-        logger.error(f"GitHub exception for '{command.slug}': {e}")
-        raise RuntimeError(
-            f"GitHub delete failed for '{command.slug}': {e}"
-        ) from e
+        logger.warning(
+            f"GitHub delete failed for '{command.slug}': {e}, "
+            "continuing with local delete"
+        )

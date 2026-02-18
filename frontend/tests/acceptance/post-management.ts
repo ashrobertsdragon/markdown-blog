@@ -79,14 +79,18 @@ test.describe('Post Management UI', () => {
   test('Delete Draft Post', async ({ page }) => {
     await page.goto('/my-posts')
 
-    await page.click('button:has-text("Delete")')
+    const draftRow = page.locator('tr', { hasText: 'Delete Me' })
+    await draftRow.getByRole('button', { name: /^delete post/i }).click()
 
-    const modal = page.locator('role=alertdialog')
+    const modal = page.getByRole('alertdialog')
     await expect(modal).toBeVisible()
     await expect(modal).toContainText('Are you sure you want to delete')
 
-    await modal.locator('button:has-text("Delete")').click()
+    await modal.getByRole('button', { name: /delete/i }).click()
     await expect(modal).not.toBeVisible()
+
+    await expect(page.getByText('Delete Me')).not.toBeVisible()
+    await expect(page.getByRole('table')).toBeVisible()
   })
 
   test('List Author Drafts and Filtering', async ({ page }) => {
