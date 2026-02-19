@@ -5,7 +5,7 @@ bridging between the domain layer and the database infrastructure layer.
 Handles conversion between SQLModel Post table and domain Post aggregate.
 """
 
-from datetime import UTC
+from datetime import UTC, datetime
 
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -72,14 +72,18 @@ class PostRepository:
 
         Uses indexed query on slug column for fast lookup.
         Converts database model to domain aggregate if found.
+        Soft-deleted posts are treated as non-existent.
 
         Args:
             slug: URL-safe post identifier
 
         Returns:
-            DomainPost aggregate if found, None otherwise
+            DomainPost aggregate if found and not deleted, None otherwise
         """
-        statement = select(PostModel).where(PostModel.slug == slug)
+        statement = select(PostModel).where(
+            PostModel.slug == slug,
+            PostModel.deleted_at == None,  # noqa: E711
+        )
 
         if self._session:
             post_model = self._session.exec(statement).first()
@@ -113,7 +117,10 @@ class PostRepository:
         """
         statement = (
             select(PostModel)
-            .where(PostModel.author_id == author_id)
+            .where(
+                PostModel.author_id == author_id,
+                PostModel.deleted_at == None,  # noqa: E711
+            )
             .order_by(col(PostModel.created_at).desc())
             .limit(limit)
             .offset(offset)
@@ -146,7 +153,10 @@ class PostRepository:
         """
         statement = (
             select(PostModel)
-            .where(PostModel.published)
+            .where(
+                PostModel.published == True,  # noqa: E712
+                PostModel.deleted_at == None,  # noqa: E711
+            )
             .order_by(col(PostModel.created_at).desc())
             .limit(limit)
             .offset(offset)
@@ -205,6 +215,23 @@ class PostRepository:
 
         raise RuntimeError("Failed to obtain database session")
 
+    def mark_deleted(self, post_id: int) -> bool:
+        """Soft-delete post by setting deleted_at timestamp.
+
+        Args:
+            post_id: Database primary key of post to mark deleted
+
+        Returns:
+            True if post was marked deleted, False if post not found
+        """
+        if self._session:
+            return self._mark_deleted_with_session(self._session, post_id)
+
+        for session in get_db():
+            return self._mark_deleted_with_session(session, post_id)
+
+        raise RuntimeError("Failed to obtain database session")
+
     def find_by_author_filtered(
         self,
         author_id: int,
@@ -259,12 +286,13 @@ class PostRepository:
         Returns:
             Tuple of (posts list, total count of matching posts)
         """
-        base_where = PostModel.author_id == author_id
+        not_deleted = PostModel.deleted_at == None  # noqa: E711
+        base_where = (PostModel.author_id == author_id) & not_deleted
 
         if filter_type == PostFilter.DRAFTS:
-            where_clause = base_where & (PostModel.published == False)  # noqa: E712 - SQLAlchemy requires explicit boolean comparison
+            where_clause = base_where & (PostModel.published == False)  # noqa: E712
         elif filter_type == PostFilter.PUBLISHED:
-            where_clause = base_where & (PostModel.published == True)  # noqa: E712 - SQLAlchemy requires explicit boolean comparison
+            where_clause = base_where & (PostModel.published == True)  # noqa: E712
         else:
             where_clause = base_where
 
@@ -285,6 +313,26 @@ class PostRepository:
         posts = [self._to_domain(model) for model in post_models]
 
         return posts, total_count
+
+    def _mark_deleted_with_session(
+        self, session: Session, post_id: int
+    ) -> bool:
+        """Internal soft-delete method with session handling.
+
+        Args:
+            session: SQLModel Session to use
+            post_id: Database primary key of post to mark deleted
+
+        Returns:
+            True if post was marked deleted, False if post not found
+        """
+        post_model = session.get(PostModel, post_id)
+        if not post_model:
+            return False
+
+        post_model.deleted_at = datetime.now(UTC)
+        session.commit()
+        return True
 
     def _delete_with_session(self, session: Session, post_id: int) -> bool:
         """Internal delete method with session handling.

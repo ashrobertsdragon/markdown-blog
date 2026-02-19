@@ -25,6 +25,7 @@ class Post(SQLModel, table=True):
     html_content: str
     published: bool = Field(default=False, index=True)
     published_at: datetime | None = Field(default=None, index=True)
+    deleted_at: datetime | None = Field(default=None, index=True)
     author_id: int | None = Field(
         default=None, foreign_key="user.id", index=True
     )

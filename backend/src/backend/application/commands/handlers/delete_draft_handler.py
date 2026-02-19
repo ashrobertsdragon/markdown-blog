@@ -72,9 +72,9 @@ def delete_draft_handler(
     if post.id is None:
         raise ValueError(f"Post '{command.slug}' has no database ID")
 
-    logger.info(f"Deleting post record from database: {command.slug}")
-    post_repo.delete(post.id)
-    logger.debug(f"Database deletion completed: {command.slug}")
+    logger.info(f"Soft-deleting post record in database: {command.slug}")
+    post_repo.mark_deleted(post.id)
+    logger.debug(f"Database soft-deletion completed: {command.slug}")
 
     commit_message = f"Delete draft: {post.slug}"
     try:
