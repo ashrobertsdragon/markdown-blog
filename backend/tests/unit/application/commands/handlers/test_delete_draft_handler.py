@@ -58,9 +58,11 @@ def mock_github_service() -> Mock:
 @pytest.fixture
 def draft_post() -> Post:
     """Fixture providing a draft Post aggregate (not published)."""
-    return Post.create_draft(
+    post = Post.create_draft(
         slug="test-post", title="Test Post Title", author_id=1
     )
+    post.id = 1
+    return post
 
 
 @pytest.fixture
@@ -69,6 +71,7 @@ def published_post() -> Post:
     post = Post.create_draft(
         slug="test-post", title="Test Post Title", author_id=1
     )
+    post.id = 1
     post.publish(html_content="<h1>Test Content</h1>")
     return post
 
@@ -314,18 +317,18 @@ def test_delete_propagates_filesystem_errors(
     mock_github_service.delete_file.assert_not_called()
 
 
-def test_delete_raises_exception_when_github_delete_fails(
+def test_delete_continues_when_github_delete_fails(
     draft_post: Post,
     mock_draft_repo: Mock,
     mock_post_repo: Mock,
     mock_github_service: Mock,
 ) -> None:
-    """Verify handler raises exception when GitHub delete fails.
+    """Verify handler does not raise when GitHub delete fails.
 
-    CRITICAL: GitHub sync is NOT best-effort for delete operations.
-    If github_service.delete_file() returns False or raises exception,
-    the handler MUST propagate the error. This ensures draft deletions
-    are properly version-controlled.
+    GitHub sync is best-effort for delete operations, consistent with
+    save and publish. If delete_file() returns False the local deletion
+    (filesystem + DB soft-delete) is still committed and no exception
+    is propagated.
     """
     mock_post_repo.find_by_slug.return_value = draft_post
     mock_github_service.delete_file.return_value = False
@@ -334,13 +337,16 @@ def test_delete_raises_exception_when_github_delete_fails(
         slug="test-post", author_id=1, user_role="author"
     )
 
-    with pytest.raises(RuntimeError, match="GitHub.*delete.*fail"):
-        delete_draft_handler(
-            command=command,
-            draft_repo=mock_draft_repo,
-            post_repo=mock_post_repo,
-            github_service=mock_github_service,
-        )
+    delete_draft_handler(
+        command=command,
+        draft_repo=mock_draft_repo,
+        post_repo=mock_post_repo,
+        github_service=mock_github_service,
+    )
+
+    mock_draft_repo.delete.assert_called_once_with("test-post")
+    mock_post_repo.mark_deleted.assert_called_once_with(1)
+    mock_github_service.delete_file.assert_called_once()
 
 
 def test_delete_checks_post_repository_before_deletion(
