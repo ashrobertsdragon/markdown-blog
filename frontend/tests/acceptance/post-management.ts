@@ -15,7 +15,8 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('Post Management UI', () => {
   test.beforeAll(async ({ request }) => {
-    await request.post(`${BACKEND}/api/test/seed`)
+    const res = await request.post(`${BACKEND}/api/test/seed`)
+    expect(res.ok()).toBeTruthy()
   })
 
   test.afterAll(async ({ request }) => {

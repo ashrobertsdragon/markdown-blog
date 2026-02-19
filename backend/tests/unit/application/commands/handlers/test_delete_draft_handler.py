@@ -1,8 +1,6 @@
 """Unit tests for delete_draft_handler.
 
-This module defines comprehensive unit tests for the delete_draft_handler
-following TDD Red phase principles. These tests will initially fail until
-the handler is implemented.
+This module defines comprehensive unit tests for the delete_draft_handler.
 
 CRITICAL REQUIREMENT: GitHub sync is NOT best-effort for delete operations.
 GitHub failures MUST propagate as exceptions after retry logic.
@@ -494,3 +492,61 @@ def test_filesystem_delete_blocked_when_post_doesnt_exist(
 
     mock_draft_repo.delete.assert_not_called()
     mock_github_service.delete_file.assert_not_called()
+
+
+def test_delete_draft_raises_when_draft_has_no_id(
+    mock_post_repo: Mock,
+    mock_draft_repo: Mock,
+    mock_github_service: Mock,
+) -> None:
+    """deleting a draft without a DB id should raise without side effects."""
+    draft_without_id = Post.create_draft(
+        slug="test-post", title="Test Post Title", author_id=1
+    )
+    draft_without_id.id = None
+    mock_post_repo.find_by_slug.return_value = draft_without_id
+
+    command = DeleteDraftCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
+
+    with pytest.raises(ValueError, match="has no database ID"):
+        delete_draft_handler(
+            command=command,
+            draft_repo=mock_draft_repo,
+            post_repo=mock_post_repo,
+            github_service=mock_github_service,
+        )
+
+    mock_draft_repo.delete.assert_called_once_with("test-post")
+    mock_post_repo.mark_deleted.assert_not_called()
+    mock_github_service.delete_file.assert_not_called()
+
+
+def test_delete_continues_when_github_delete_raises(
+    draft_post: Post,
+    mock_draft_repo: Mock,
+    mock_post_repo: Mock,
+    mock_github_service: Mock,
+) -> None:
+    """Verify handler does not raise when GitHub delete raises."""
+
+    # Arrange
+    mock_post_repo.find_by_slug.return_value = draft_post
+    mock_github_service.delete_file.side_effect = Exception("boom")
+
+    command = DeleteDraftCommand(
+        slug="test-post", author_id=1, user_role="author"
+    )
+
+    # Act
+    delete_draft_handler(
+        command=command,
+        draft_repo=mock_draft_repo,
+        post_repo=mock_post_repo,
+        github_service=mock_github_service,
+    )
+
+    # Assert
+    mock_draft_repo.delete.assert_called_once_with("test-post")
+    mock_post_repo.mark_deleted.assert_called_once_with(1)
