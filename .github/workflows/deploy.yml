@@ -1,9 +1,11 @@
 name: Deployment
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types:
+      - closed
   workflow_dispatch:
 
 jobs:
@@ -13,8 +15,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          path: monorepo
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -24,8 +24,8 @@ jobs:
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/blog_cicd
+          chmod 600 ~/.ssh/blog_cicd
 
       - name: Run Deployment Script
         working-directory: monorepo
@@ -34,11 +34,11 @@ jobs:
           PRODUCTION_DOMAIN: ${{ secrets.PRODUCTION_DOMAIN }}
           CPANEL_USERNAME: ${{ secrets.CPANEL_USERNAME }}
           SERVER_IP_ADDRESS: ${{ secrets.SERVER_IP_ADDRESS }}
-          SSH_PRIVATE_KEY_PATH: /home/runner/.ssh/id_rsa
+          SSH_PRIVATE_KEY_PATH: /home/runner/.ssh/blog_cicd
           SSH_PORT: ${{ secrets.SSH_PORT }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
