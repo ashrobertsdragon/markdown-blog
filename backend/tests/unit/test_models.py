@@ -16,7 +16,7 @@ def test_user_created_at_uses_default_factory():
     instance, preventing all users from sharing the same timestamp.
     """
     user1 = User(email="test1@example.com", role="authenticated")
-    time.sleep(0.01)  # 10ms delay to ensure different timestamps
+    time.sleep(0.01)
     user2 = User(email="test2@example.com", role="authenticated")
 
     assert isinstance(user1.created_at, datetime)
@@ -36,7 +36,7 @@ def test_post_created_at_uses_default_factory():
         title="Test Post 1",
         html_content="<p>Content</p>",
     )
-    time.sleep(0.01)  # 10ms delay to ensure different timestamps
+    time.sleep(0.01)
     post2 = Post(
         slug="test-post-2",
         title="Test Post 2",
@@ -60,7 +60,7 @@ def test_post_updated_at_uses_default_factory():
         title="Test Post 1",
         html_content="<p>Content</p>",
     )
-    time.sleep(0.01)  # 10ms delay to ensure different timestamps
+    time.sleep(0.01)
     post2 = Post(
         slug="test-post-2",
         title="Test Post 2",
@@ -85,10 +85,8 @@ def test_post_created_at_and_updated_at_are_same_on_creation():
         html_content="<p>Content</p>",
     )
 
-    # Should be very close (within 1ms) but may not be exactly equal
-    # due to the separate lambda calls
     time_diff = abs((post.updated_at - post.created_at).total_seconds())
-    assert time_diff < 0.001  # Less than 1ms difference
+    assert time_diff < 0.001
 
 
 def test_user_clerk_user_id_defaults_to_none():
@@ -155,8 +153,6 @@ def test_post_has_index_on_published_field():
     post_fields = Post.model_fields
     assert "published" in post_fields
 
-    # Verify index is defined on the model by checking SQLAlchemy metadata
-    # The index parameter in Field() creates a database index
     published_field_info = post_fields["published"]
     assert published_field_info.metadata is not None
 
@@ -167,7 +163,5 @@ def test_post_has_index_on_published_at_field():
     post_fields = Post.model_fields
     assert "published_at" in post_fields
 
-    # Verify index is defined on the model by checking SQLAlchemy metadata
-    # The index parameter in Field() creates a database index
     published_at_field_info = post_fields["published_at"]
     assert published_at_field_info.metadata is not None

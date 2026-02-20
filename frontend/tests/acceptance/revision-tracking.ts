@@ -104,7 +104,7 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
     const revertButton = page.locator('button:has-text("Revert")')
     await expect(revertButton).toBeVisible()
 
-    // Verify read-only (no editor)
+    
     const editor = page.locator('.w-md-editor-text-input')
     await expect(editor).not.toBeVisible()
   })
@@ -176,14 +176,14 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
     const revertButton = page.locator('button:has-text("Revert")')
     await revertButton.click()
 
-    // Confirmation modal should appear
+    
     const confirmationModal = page.locator('[role="alertdialog"]')
     await expect(confirmationModal).toBeVisible()
 
     const confirmButton = confirmationModal.locator('button:has-text("Confirm")')
     await confirmButton.click()
 
-    // Should redirect to edit page
+    
     await page.waitForURL(`/edit/${slug}`)
   })
 
@@ -230,6 +230,6 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
      * - Admin views any post: full history AND revert buttons available
      * - Non-authenticated user: revision timeline NOT displayed
      */
-    // This test would verify different UI based on user role
+    
   })
 })

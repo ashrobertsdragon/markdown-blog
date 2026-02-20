@@ -67,7 +67,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -89,7 +89,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -123,7 +123,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -162,7 +162,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -186,7 +186,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -212,7 +212,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -237,7 +237,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -264,7 +264,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -289,7 +289,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       const { container } = renderPublicPost()
@@ -313,7 +313,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -343,7 +343,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -370,7 +370,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -396,7 +396,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -423,7 +423,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -453,7 +453,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -479,7 +479,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -505,7 +505,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -533,7 +533,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -559,7 +559,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -597,7 +597,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -622,7 +622,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -647,7 +647,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -685,7 +685,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -710,7 +710,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -736,7 +736,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -762,7 +762,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       const { container } = renderPublicPost()
@@ -787,7 +787,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -826,7 +826,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       const { unmount } = renderPublicPost()
@@ -854,7 +854,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -890,7 +890,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       const { container } = renderPublicPost()
@@ -916,7 +916,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()
@@ -940,7 +940,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        // biome-ignore lint/suspicious/noExplicitAny: test mock requires any type
+        
       } as any)
 
       renderPublicPost()

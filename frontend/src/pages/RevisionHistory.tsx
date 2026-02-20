@@ -44,7 +44,7 @@ export default function RevisionHistory() {
 
         <RevisionTimeline
           slug={slug}
-          currentSha="abc123d" // Matches mock data in E2E tests
+          currentSha="abc123d"
           onSelectRevision={handleSelectRevision}
           isAuthor={role === 'author' || role === 'admin'}
         />

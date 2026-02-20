@@ -204,7 +204,7 @@ test.describe('Comments - Frontend UI', () => {
     if (await replyIndicator.isVisible()) {
       await replyIndicator.click()
 
-      // Should scroll to parent comment
+      
       const parentComment = page.locator('[data-comment-id]').first()
       await expect(parentComment).toBeInViewport()
     }

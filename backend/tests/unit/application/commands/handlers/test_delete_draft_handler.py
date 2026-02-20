@@ -531,7 +531,6 @@ def test_delete_continues_when_github_delete_raises(
 ) -> None:
     """Verify handler does not raise when GitHub delete raises."""
 
-    # Arrange
     mock_post_repo.find_by_slug.return_value = draft_post
     mock_github_service.delete_file.side_effect = Exception("boom")
 
@@ -539,7 +538,6 @@ def test_delete_continues_when_github_delete_raises(
         slug="test-post", author_id=1, user_role="author"
     )
 
-    # Act
     delete_draft_handler(
         command=command,
         draft_repo=mock_draft_repo,
@@ -547,6 +545,5 @@ def test_delete_continues_when_github_delete_raises(
         github_service=mock_github_service,
     )
 
-    # Assert
     mock_draft_repo.delete.assert_called_once_with("test-post")
     mock_post_repo.mark_deleted.assert_called_once_with(1)

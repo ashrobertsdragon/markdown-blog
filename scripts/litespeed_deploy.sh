@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+
 
 : <<'DOCSTRING'
 Production deployment script for blog application to cPanel hosting.

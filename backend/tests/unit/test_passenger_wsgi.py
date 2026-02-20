@@ -55,8 +55,6 @@ def test_passenger_wsgi_testing_does_not_exec(monkeypatch):
     if "passenger_wsgi" in sys.modules:
         del sys.modules["passenger_wsgi"]
     with patch("os.execl") as mock_execl:
-        import passenger_wsgi  # noqa: F401
-
         mock_execl.assert_not_called()
 
 

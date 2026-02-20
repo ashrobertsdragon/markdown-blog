@@ -37,7 +37,7 @@ export function MarkdownEditor({ value, onChange, onSave, className }: MarkdownE
   }
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: keyboard shortcut handler for Ctrl+S
+    
     <div
       onKeyDown={handleKeyDown}
       data-testid="markdown-editor-container"

@@ -50,7 +50,7 @@ def mock_post_repository() -> Mock:
     """Fixture providing mock PostRepository."""
     mock_repo = Mock()
     mock_repo.find_by_slug.return_value = None
-    mock_repo.save.return_value = None
+    mock_repo.save.side_effect = lambda post: post
     return mock_repo
 
 

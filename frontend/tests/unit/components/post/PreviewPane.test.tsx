@@ -183,8 +183,8 @@ describe('PreviewPane Component', () => {
   })
 
   it('passes rehypeSanitize plugin to MarkdownPreview', () => {
-    // This test verifies the component is configured correctly
-    // The actual sanitization is tested in the library itself
+    
+    
     const { container } = render(<PreviewPane markdown="# Test" />)
 
     const markdownPreview = container.querySelector('[data-testid="markdown-preview"]')

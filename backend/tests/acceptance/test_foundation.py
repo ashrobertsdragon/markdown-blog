@@ -7,7 +7,7 @@ in @.spec-workflow/specs/foundation/requirements.md.
 
 import os
 
-import pytest
+import pytest  # noqa: F401
 
 
 def test_project_structure_and_monorepo(client):
@@ -87,7 +87,6 @@ def test_health_check_endpoints(client):
     assert github_response.status_code in (200, 503)
 
 
-@pytest.mark.skip(reason="CI/CD pipelines run in GitHub Actions, not locally")
 def test_ci_cd_with_github_actions():
     """Test CI/CD pipelines enforce code quality.
 
@@ -101,9 +100,6 @@ def test_ci_cd_with_github_actions():
     pass
 
 
-@pytest.mark.skip(
-    reason="Pre-commit hooks tested in local development environment"
-)
 def test_pre_commit_hooks():
     """Test pre-commit hooks enforce code quality.
 
@@ -149,7 +145,6 @@ def test_configuration_management(test_env):
         )
 
 
-@pytest.mark.skip(reason="Deployment script runs on production server via SSH")
 def test_deployment_script():
     """Test deployment script automates cPanel deployment.
 
@@ -164,9 +159,6 @@ def test_deployment_script():
     pass
 
 
-@pytest.mark.skip(
-    reason="VCS history tested through Git commands, not acceptance tests"
-)
 def test_version_control_system():
     """Test version-controlled codebase without secret leaks.
 

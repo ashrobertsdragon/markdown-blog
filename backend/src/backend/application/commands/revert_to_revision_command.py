@@ -133,8 +133,8 @@ def revert_to_revision_handler(
         logger.error(f"Post '{command.slug}' has no ID")
         raise ValueError(f"Post '{command.slug}' has no ID")
 
-    post_id = post.id  # Type narrowing for mypy/ty
-    author_id = command.author_id  # Type narrowing
+    post_id = post.id
+    author_id = command.author_id
 
     if post.author_id != author_id and command.user_role != "admin":
         logger.warning(

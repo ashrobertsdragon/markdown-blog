@@ -154,7 +154,7 @@ class PostRepository:
         statement = (
             select(PostModel)
             .where(
-                PostModel.published == True,  # noqa: E712
+                PostModel.published,
                 PostModel.deleted_at == None,  # noqa: E711
             )
             .order_by(col(PostModel.created_at).desc())
@@ -290,9 +290,9 @@ class PostRepository:
         base_where = (PostModel.author_id == author_id) & not_deleted
 
         if filter_type == PostFilter.DRAFTS:
-            where_clause = base_where & (PostModel.published == False)  # noqa: E712
+            where_clause = base_where & (not PostModel.published)
         elif filter_type == PostFilter.PUBLISHED:
-            where_clause = base_where & (PostModel.published == True)  # noqa: E712
+            where_clause = base_where & (PostModel.published)
         else:
             where_clause = base_where
 

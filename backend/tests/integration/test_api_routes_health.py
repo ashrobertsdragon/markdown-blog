@@ -136,4 +136,4 @@ def test_health_github_uses_timeout(client):
 
     call_kwargs = mock_get.call_args[1]
     assert "timeout" in call_kwargs
-    assert call_kwargs["timeout"] <= 10  # Reasonable timeout
+    assert call_kwargs["timeout"] <= 10

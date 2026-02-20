@@ -93,8 +93,8 @@ describe('App', () => {
     it('should use BrowserRouter for client-side routing', () => {
       const { container } = render(<App />)
 
-      // BrowserRouter renders its children without additional wrapper div
-      // When React Router renders, it manages routes internally
+      
+      
       expect(container.firstChild).toBeTruthy()
     })
 
@@ -113,7 +113,7 @@ describe('App', () => {
      */
     it('should render with Routes component', () => {
       const { container } = render(<App />)
-      // Routes will render child route components
+      
       expect(container.firstChild).toBeTruthy()
     })
   })
@@ -126,7 +126,7 @@ describe('App', () => {
     it('should render Home page at root path', () => {
       render(<App />)
 
-      // Home component should be rendered
+      
       const homeElement = screen.queryByTestId('home-component')
       expect(homeElement).toBeInTheDocument()
     })
@@ -151,7 +151,7 @@ describe('App', () => {
     it('should have catch-all route configured', () => {
       const { container } = render(<App />)
 
-      // Route structure should include catch-all route
+      
       expect(container).toBeTruthy()
     })
 
@@ -162,7 +162,7 @@ describe('App', () => {
     it('should have valid route structure', () => {
       const { container } = render(<App />)
 
-      // Container should have valid React Router structure
+      
       expect(container.firstChild).toBeTruthy()
     })
   })
@@ -176,11 +176,11 @@ describe('App', () => {
       const { unmount: unmount1 } = render(<App />)
       unmount1()
 
-      // Second render should work without errors
+      
       const { unmount: unmount2 } = render(<App />)
       unmount2()
 
-      // No assertion needed - test passes if no errors thrown
+      
     })
 
     /**
@@ -215,11 +215,11 @@ describe('App', () => {
      * The application runs at root "/" not a subdirectory
      */
     it('should not use basename prop on BrowserRouter', () => {
-      // This test validates that BrowserRouter is used without basename
-      // If basename was set, routes would be prefixed (e.g., /app/home)
+      
+      
       render(<App />)
 
-      // Verify routes can be accessed from root
+      
       const homeElement = screen.queryByTestId('home-component')
       expect(homeElement).toBeInTheDocument()
     })
@@ -231,7 +231,7 @@ describe('App', () => {
     it('should have functional routing setup', () => {
       const { container } = render(<App />)
 
-      // Router should be initialized and rendering routes
+      
       expect(container.firstChild).toBeTruthy()
     })
   })
@@ -244,7 +244,7 @@ describe('App', () => {
     it('should be a functional component', () => {
       expect(typeof App).toBe('function')
 
-      // Should not require props
+      
       const { container } = render(<App />)
       expect(container.firstChild).toBeTruthy()
     })
@@ -256,7 +256,7 @@ describe('App', () => {
     it('should render in valid DOM structure', () => {
       const { container } = render(<App />)
 
-      // Container should have children from Router
+      
       expect(container.firstChild).toBeTruthy()
       expect(container.textContent).toBeTruthy()
     })
@@ -270,7 +270,7 @@ describe('App', () => {
         render(<App />)
       }).not.toThrow()
 
-      // Screen should have content immediately
+      
       const homeElement = screen.queryByTestId('home-component')
       expect(homeElement).toBeInTheDocument()
     })
@@ -284,7 +284,7 @@ describe('App', () => {
     it('should provide routing context to children', () => {
       const { container } = render(<App />)
 
-      // Router context should be established
+      
       expect(container).toBeTruthy()
     })
 
@@ -295,7 +295,7 @@ describe('App', () => {
     it('should have Routes as main route container', () => {
       render(<App />)
 
-      // Routes should render at least one Route
+      
       const homeElement = screen.queryByTestId('home-component')
       expect(homeElement).toBeInTheDocument()
     })
@@ -307,7 +307,7 @@ describe('App', () => {
     it('should render route components correctly', () => {
       render(<App />)
 
-      // Home route should be active at "/"
+      
       const homeComponent = screen.queryByTestId('home-component')
       expect(homeComponent).toBeInTheDocument()
     })

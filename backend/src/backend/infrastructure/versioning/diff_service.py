@@ -130,7 +130,7 @@ class DiffService:
                         if line.line_number_old
                         else ""
                     )
-                else:  # context
+                else:
                     prefix = " "
                     line_num = (
                         f"{line.line_number_old}"

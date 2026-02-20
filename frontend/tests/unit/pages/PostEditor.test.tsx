@@ -513,7 +513,7 @@ describe('PostEditor Component', () => {
         error: null,
       })
 
-      renderPostEditor(null) // explicitly null for create mode
+      renderPostEditor(null)
 
       expect(screen.getByText(/new post/i)).toBeInTheDocument()
 
@@ -529,7 +529,7 @@ describe('PostEditor Component', () => {
         error: null,
       })
 
-      renderPostEditor(null) // explicitly null for create mode
+      renderPostEditor(null)
 
       const saveButton = screen.getByRole('button', { name: /save/i })
       fireEvent.click(saveButton)
@@ -572,7 +572,7 @@ describe('PostEditor Component', () => {
         error: null,
       })
 
-      renderPostEditor(null) // explicitly null for create mode
+      renderPostEditor(null)
 
       const textarea = screen.getByTestId('markdown-textarea')
       fireEvent.change(textarea, { target: { value: '# My new post' } })

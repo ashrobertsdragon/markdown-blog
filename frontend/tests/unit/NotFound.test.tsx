@@ -34,7 +34,7 @@ describe('NotFound', () => {
       </BrowserRouter>
     )
 
-    // Check that container has some content
+    
     expect(container.firstChild).toBeTruthy()
   })
 })

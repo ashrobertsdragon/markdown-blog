@@ -17,10 +17,10 @@ test.describe('Foundation - Frontend Infrastructure', () => {
      */
     await page.goto('/')
 
-    // Should load without errors
+    
     await expect(page).toHaveTitle(/.+/)
 
-    // SPA should handle client-side routing
+    
     const currentUrl = page.url()
     expect(currentUrl).toMatch(/\/$/)
   })
@@ -34,7 +34,7 @@ test.describe('Foundation - Frontend Infrastructure', () => {
      * Note: This test verifies dev server is running during development.
      * In production, this would be skipped.
      */
-    // This test runs against the dev server (configured in playwright.config.ts)
+    
     await page.goto('/')
     await expect(page).toHaveTitle(/.+/)
   })
@@ -64,8 +64,8 @@ test.describe('Foundation - Frontend Infrastructure', () => {
      */
     await page.goto('/')
 
-    // Basic layout elements should be present
-    // (Adjust selectors based on actual layout implementation)
+    
+    
     const body = page.locator('body')
     await expect(body).toBeVisible()
   })

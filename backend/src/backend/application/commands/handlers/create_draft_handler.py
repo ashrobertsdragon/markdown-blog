@@ -86,7 +86,7 @@ def create_draft_handler(
         )
 
     try:
-        post_repo.save(post)
+        post = post_repo.save(post)
     except Exception:
         logger.error(
             f"Failed to save post '{post.slug}' to database, "

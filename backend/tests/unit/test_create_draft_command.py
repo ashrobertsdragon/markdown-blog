@@ -135,10 +135,10 @@ def test_command_fields_are_immutable() -> None:
         command.slug = "modified-slug"  # type: ignore[misc]
 
     with pytest.raises((AttributeError, TypeError)):
-        command.title = "Modified Title"  # type: ignore
+        command.title = "Modified Title"  # type: ignore[misc]
 
     with pytest.raises((AttributeError, TypeError)):
-        command.author_id = 999  # type: ignore
+        command.author_id = 999  # type: ignore[misc]
 
 
 def test_command_repr_shows_all_fields() -> None:

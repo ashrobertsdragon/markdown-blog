@@ -563,7 +563,7 @@ class TestDiffLineModel:
         """DiffLine should reject invalid types."""
         with pytest.raises(Exception):
             DiffLine(
-                type="invalid",  # type: ignore[arg-type]
+                type="invalid",
                 content="test",
                 line_number_old=1,
                 line_number_new=1,

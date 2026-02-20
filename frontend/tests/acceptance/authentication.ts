@@ -19,8 +19,8 @@ test.describe('Authentication - Frontend UI', () => {
      */
     await page.goto('/')
 
-    // Look for sign-in/sign-up UI elements
-    // (Adjust selectors based on actual Clerk UI implementation)
+    
+    
     const signInButton = page.locator('text=/sign in/i').first()
     if (await signInButton.isVisible()) {
       await expect(signInButton).toBeVisible()
@@ -39,8 +39,8 @@ test.describe('Authentication - Frontend UI', () => {
     await mockClerkAuth(page, { role: 'author' })
     await page.goto('/')
 
-    // With mock auth, user should be signed in
-    // Check for authenticated UI elements
+    
+    
     const authenticatedElement = page.locator('[data-testid="user-menu"]').first()
     if (await authenticatedElement.isVisible()) {
       await expect(authenticatedElement).toBeVisible()
@@ -55,13 +55,13 @@ test.describe('Authentication - Frontend UI', () => {
      * - User without required role sees 403 Forbidden page
      * - User redirected back to originally requested page after login
      */
-    // Mock unauthenticated state
+    
     await mockClerkUnauthenticated(page)
 
-    // Visit protected route without authentication
+    
     await page.goto('/my-posts', { waitUntil: 'networkidle' })
 
-    // Should redirect to /login
+    
     await page.waitForURL(/\/login/, { timeout: 5000 }).catch(() => {})
 
     const url = page.url()
@@ -77,8 +77,8 @@ test.describe('Authentication - Frontend UI', () => {
     await mockClerkAuth(page, { role: 'admin' })
     await page.goto('/admin')
 
-    // Admin users should be able to access admin dashboard
-    // (This will work once admin dashboard is implemented)
+    
+    
     const url = page.url()
     expect(url).toContain('/admin')
   })
@@ -93,7 +93,7 @@ test.describe('Authentication - Frontend UI', () => {
     await mockClerkAuth(page, { role: 'author' })
     await page.goto('/')
 
-    // Authors should see "My Posts" or similar navigation
+    
     const myPostsLink = page.locator('text=/my posts/i').first()
     if (await myPostsLink.isVisible()) {
       await expect(myPostsLink).toBeVisible()

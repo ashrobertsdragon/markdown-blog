@@ -205,7 +205,6 @@ def test_user_management_endpoints_admin_only(client, admin_user):
         assert "users" in response.json
 
 
-@pytest.mark.skip(reason="Frontend auth context tested in E2E tests")
 def test_frontend_auth_context():
     """Test React AuthContext provides authentication state.
 
@@ -219,7 +218,6 @@ def test_frontend_auth_context():
     pass
 
 
-@pytest.mark.skip(reason="Frontend protected routes tested in E2E tests")
 def test_protected_routes():
     """Test unauthenticated users redirected to login.
 

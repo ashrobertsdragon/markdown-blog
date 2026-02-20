@@ -89,10 +89,10 @@ test.describe.fixme('Revision History E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
     await mockClerkAuth(page, { role: 'author', userId: 'user_123' })
 
-    // Broad catch-all mock for all API requests to prevent 401s
+    
     await page.route('**/api/**', async route => {
-      // If there's a more specific mock later, it will override this one
-      // based on Playwright's last-matching-rule-wins behavior.
+      
+      
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

@@ -126,7 +126,7 @@ describe('MyPosts Component', () => {
     expect(screen.getByText(/loading posts/i)).toBeInTheDocument()
     const loadingContainer = screen.getByRole('status')
     expect(loadingContainer).toBeInTheDocument()
-    // Spinner is decorative (aria-hidden), so we check for the animated element by class
+    
     const spinner = loadingContainer.querySelector('.animate-spin')
     expect(spinner).toBeInTheDocument()
   })

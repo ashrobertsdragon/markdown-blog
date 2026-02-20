@@ -25,7 +25,7 @@ export function LoadingSpinner({ message, className, size = 'md' }: LoadingSpinn
   }
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: role="status" is appropriate for loading indicators
+    
     <div
       className={cn('flex flex-col items-center justify-center gap-2', className)}
       role="status"

@@ -73,9 +73,7 @@ def mock_github():
         yield instance
 
 
-def test_requirement_1_8_11_create_draft_and_validation(
-    client, mock_clerk_auth, mock_github
-):
+def test_create_draft_post(client, mock_clerk_auth, mock_github):
     """Test Requirement 1, 8, and 11.
 
     Create draft with validation and front matter.
@@ -89,7 +87,6 @@ def test_requirement_1_8_11_create_draft_and_validation(
     slug = "my-acceptance-test-post"
     title = "My Acceptance Test Post"
 
-    # 1. Create draft via API
     response = client.post(
         "/api/posts",
         headers={"Authorization": "Bearer author_token"},
@@ -98,7 +95,6 @@ def test_requirement_1_8_11_create_draft_and_validation(
 
     assert response.status_code == 201
 
-    # 2. Verify file creation and content (Requirement 1 & 11)
     drafts_path = os.environ["DRAFTS_PATH"]
     file_path = os.path.join(drafts_path, f"{slug}.md")
     assert os.path.exists(file_path)
@@ -115,14 +111,13 @@ def test_requirement_1_8_11_create_draft_and_validation(
         assert "created_at" in front_matter
         assert front_matter["author"] == "10"
 
-    # 3. Verify GitHub sync (Requirement 1 & 10)
     mock_github.commit_file.assert_called_once()
     _, kwargs = mock_github.commit_file.call_args
     assert slug in kwargs["path"]
     assert f"Create draft: {title}" in kwargs["message"]
 
 
-def test_requirement_2_edit_draft_post(client, mock_clerk_auth, mock_github):
+def test_edit_draft_post(client, mock_clerk_auth, mock_github):
     """Test Requirement 2: Edit draft content.
 
     Acceptance Criteria:
@@ -132,7 +127,6 @@ def test_requirement_2_edit_draft_post(client, mock_clerk_auth, mock_github):
     slug = "edit-test-post"
     title = "Edit Test Post"
 
-    # Create initial draft
     client.post(
         "/api/posts",
         headers={"Authorization": "Bearer author_token"},
@@ -141,7 +135,6 @@ def test_requirement_2_edit_draft_post(client, mock_clerk_auth, mock_github):
 
     new_content = "# Updated Content\n\nThis is a test."
 
-    # 2. Update draft via API
     response = client.put(
         f"/api/posts/{slug}",
         headers={"Authorization": "Bearer author_token"},
@@ -150,7 +143,6 @@ def test_requirement_2_edit_draft_post(client, mock_clerk_auth, mock_github):
 
     assert response.status_code == 200
 
-    # 3. Verify file content
     drafts_path = os.environ["DRAFTS_PATH"]
     file_path = os.path.join(drafts_path, f"{slug}.md")
 
@@ -158,14 +150,12 @@ def test_requirement_2_edit_draft_post(client, mock_clerk_auth, mock_github):
         content = f.read()
         assert new_content in content
 
-    # 4. Verify GitHub sync
-    # Once for create, once for update
     assert mock_github.commit_file.call_count == 2
     _, kwargs = mock_github.commit_file.call_args
     assert f"Update draft: {title}" in kwargs["message"]
 
 
-def test_requirement_3_preview_markdown(client, mock_clerk_auth):
+def test_preview_markdown(client, mock_clerk_auth):
     """Test Requirement 3: Preview rendered markdown.
 
     Acceptance Criteria:
@@ -174,7 +164,6 @@ def test_requirement_3_preview_markdown(client, mock_clerk_auth):
     """
     markdown = "# Header\n\n```python\nprint('hello')\n```"
 
-    # Requirement 3: Preview rendered markdown
     response = client.post(
         "/api/posts/preview",
         headers={"Authorization": "Bearer author_token"},
@@ -187,11 +176,10 @@ def test_requirement_3_preview_markdown(client, mock_clerk_auth):
         assert "highlight" in html
         assert "print" in html
     else:
-        # If not implemented yet, this is fine for TDD
         assert response.status_code in (404, 405, 501)
 
 
-def test_requirement_4_9_publish_post(client, mock_clerk_auth, mock_github):
+def test_publish_post(client, mock_clerk_auth, mock_github):
     """Test Requirement 4 and 9.
 
     Publish post with markdown conversion and sanitization.
@@ -209,7 +197,6 @@ def test_requirement_4_9_publish_post(client, mock_clerk_auth, mock_github):
         "<script>alert('xss')</script>\n<p>Safe paragraph</p>\n"
     )
 
-    # 1. Create and save draft
     client.post(
         "/api/posts",
         headers={"Authorization": "Bearer author_token"},
@@ -221,7 +208,6 @@ def test_requirement_4_9_publish_post(client, mock_clerk_auth, mock_github):
         json={"content": markdown_content},
     )
 
-    # 2. Publish post via API
     response = client.post(
         f"/api/posts/{slug}/publish",
         headers={"Authorization": "Bearer author_token"},
@@ -230,19 +216,17 @@ def test_requirement_4_9_publish_post(client, mock_clerk_auth, mock_github):
     assert response.status_code == 200
     assert response.json["published"] is True
 
-    # 3. Verify HTML rendering and sanitization (Requirement 9)
     public_response = client.get(f"/api/posts/{slug}/public")
     assert public_response.status_code == 200
     html = public_response.json["html_content"]
 
-    assert "<script>" not in html  # Sanitized
-    assert "alert('xss')" not in html  # Sanitized
-    assert "highlight" in html  # Pygments syntax highlighting class
+    assert "<script>" not in html
+    assert "alert('xss')" not in html
+    assert "highlight" in html
     assert "print" in html
     assert "hello" in html
     assert "<p>Safe paragraph</p>" in html
 
-    # 4. Verify front matter update (Requirement 4, 11)
     drafts_path = os.environ["DRAFTS_PATH"]
     file_path = os.path.join(drafts_path, f"{slug}.md")
 
@@ -254,7 +238,7 @@ def test_requirement_4_9_publish_post(client, mock_clerk_auth, mock_github):
         assert "published_at" in front_matter
 
 
-def test_requirement_5_unpublish_post(client, mock_clerk_auth, mock_github):
+def test_unpublish_post(client, mock_clerk_auth, mock_github):
     """Test Requirement 5: Unpublish a post.
 
     Acceptance Criteria:
@@ -264,7 +248,6 @@ def test_requirement_5_unpublish_post(client, mock_clerk_auth, mock_github):
     slug = "unpublish-test"
     title = "Unpublish Test"
 
-    # 1. Create and publish
     client.post(
         "/api/posts",
         headers={"Authorization": "Bearer author_token"},
@@ -275,7 +258,6 @@ def test_requirement_5_unpublish_post(client, mock_clerk_auth, mock_github):
         headers={"Authorization": "Bearer author_token"},
     )
 
-    # 2. Unpublish
     response = client.post(
         f"/api/posts/{slug}/unpublish",
         headers={"Authorization": "Bearer author_token"},
@@ -283,11 +265,9 @@ def test_requirement_5_unpublish_post(client, mock_clerk_auth, mock_github):
     assert response.status_code == 200
     assert response.json["published"] is False
 
-    # 3. Verify public 404
     public_response = client.get(f"/api/posts/{slug}/public")
     assert public_response.status_code == 404
 
-    # 4. Verify front matter
     drafts_path = os.environ["DRAFTS_PATH"]
     file_path = os.path.join(drafts_path, f"{slug}.md")
     with open(file_path) as f:
@@ -297,7 +277,7 @@ def test_requirement_5_unpublish_post(client, mock_clerk_auth, mock_github):
         assert front_matter["published"] is False
 
 
-def test_requirement_6_delete_draft(client, mock_clerk_auth, mock_github):
+def test_delete_draft_post(client, mock_clerk_auth, mock_github):
     """Test Requirement 6: Delete draft post.
 
     Acceptance Criteria:
@@ -315,13 +295,11 @@ def test_requirement_6_delete_draft(client, mock_clerk_auth, mock_github):
     file_path = os.path.join(drafts_path, f"{slug}.md")
     assert os.path.exists(file_path)
 
-    # Delete
     response = client.delete(
         f"/api/posts/{slug}", headers={"Authorization": "Bearer author_token"}
     )
     assert response.status_code == 204
 
-    # Verify deletion
     assert not os.path.exists(file_path)
     mock_github.delete_file.assert_called_once()
     delete_kwargs = mock_github.delete_file.call_args.kwargs
@@ -329,7 +307,7 @@ def test_requirement_6_delete_draft(client, mock_clerk_auth, mock_github):
     assert delete_kwargs["message"] == f"Delete draft: {slug}"
 
 
-def test_requirement_7_list_author_posts(client, mock_clerk_auth):
+def test_list_author_drafts(client, mock_clerk_auth):
     """Test Requirement 7: List author's posts."""
     client.post(
         "/api/posts",
@@ -353,19 +331,17 @@ def test_requirement_7_list_author_posts(client, mock_clerk_auth):
     assert "post-2" in slugs
 
 
-def test_requirement_8_slug_uniqueness(client, mock_clerk_auth):
+def test_slug_validation_and_uniqueness(client, mock_clerk_auth):
     """Test Requirement 8: Slug uniqueness."""
     slug = "unique-slug"
     title = "Title"
 
-    # Create first post
     client.post(
         "/api/posts",
         headers={"Authorization": "Bearer author_token"},
         json={"slug": slug, "title": title},
     )
 
-    # Try to create second post with same slug
     response = client.post(
         "/api/posts",
         headers={"Authorization": "Bearer author_token"},
@@ -376,7 +352,7 @@ def test_requirement_8_slug_uniqueness(client, mock_clerk_auth):
     assert "slug" in response.json["error"].lower()
 
 
-def test_requirement_12_author_authorization(client, mock_clerk_auth):
+def test_author_authorization(client, mock_clerk_auth):
     """Test Requirement 12: Author authorization."""
     other_author_payload = {
         "sub": "clerk_other_456",
@@ -393,14 +369,12 @@ def test_requirement_12_author_authorization(client, mock_clerk_auth):
 
     slug = "author-only-post"
 
-    # Create post as first author
     client.post(
         "/api/posts",
         headers={"Authorization": "Bearer author_token"},
         json={"slug": slug, "title": "Author Only"},
     )
 
-    # Try to edit as other author
     with (
         patch(
             "backend.api.middleware.auth_middleware._get_clerk_adapter"

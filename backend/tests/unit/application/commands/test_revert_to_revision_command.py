@@ -33,8 +33,8 @@ try:
         revert_to_revision_handler,
     )
 except ImportError:
-    RevertToRevisionCommand = None  # type: ignore[misc,assignment]
-    revert_to_revision_handler = None  # type: ignore[misc,assignment]
+    RevertToRevisionCommand = None  # type: ignore[misc, assignment]
+    revert_to_revision_handler = None  # type: ignore[assignment]
 
 
 def test_command_dataclass_structure() -> None:

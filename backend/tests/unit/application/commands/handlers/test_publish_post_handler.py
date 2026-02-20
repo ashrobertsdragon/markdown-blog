@@ -330,7 +330,7 @@ def test_publish_fails_when_draft_not_found(
     indicating the draft was not found. No other services should be called.
     """
     mock_draft_repo.find_by_slug.return_value = None
-    # Mock post_repo to return a valid post for authorization check
+
     mock_post = Mock()
     mock_post.author_id = 1
     mock_post_repo.find_by_slug.return_value = mock_post
