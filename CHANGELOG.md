@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **CI/CD**: Added GitHub Actions deployment workflow
+
+  - Automated deployment on merge to `main` branch
+  - Dynamic switching between standard and LiteSpeed deployment scripts via `LITESPEED` environment variable
+  - Secure handling of SSH keys and production secrets
+  - Integration with `uv` for backend dependency management
+
 ### Fixed
 
 - **API**: `GET /api/posts/<slug>` now includes markdown `content` from the filesystem so the editor loads with existing draft text

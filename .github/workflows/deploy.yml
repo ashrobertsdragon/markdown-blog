@@ -1,0 +1,54 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          path: monorepo
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Run Deployment Script
+        working-directory: monorepo
+        env:
+          DOMAIN: ${{ secrets.DOMAIN }}
+          PRODUCTION_DOMAIN: ${{ secrets.PRODUCTION_DOMAIN }}
+          CPANEL_USERNAME: ${{ secrets.CPANEL_USERNAME }}
+          SERVER_IP_ADDRESS: ${{ secrets.SERVER_IP_ADDRESS }}
+          SSH_PRIVATE_KEY_PATH: /home/runner/.ssh/id_rsa
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.GITHUB_PERSONAL_ACCESS_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          VENV_PATH: ${{ secrets.VENV_PATH }}
+          LITESPEED: ${{ vars.LITESPEED || secrets.LITESPEED }}
+        run: |
+          if [ "$LITESPEED" = "true" ]; then
+            echo "Using LiteSpeed deployment script..."
+            bash scripts/litespeed_deploy.sh
+          else
+            echo "Using standard deployment script..."
+            bash scripts/deploy.sh
+          fi
