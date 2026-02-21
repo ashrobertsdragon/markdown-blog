@@ -9,15 +9,50 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
-    name: Deploy to Production
+  build-frontend:
+    name: Build Frontend
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22.18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        run: |
+          chmod +x scripts/build.sh
+          scripts/build.sh
+        env:
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          VITE_API_BASE_URL: https://${{ secrets.DOMAIN }}/api
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: frontend-build
+          path: build/
+
+  deploy:
+    name: Deploy to Production
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v6
+        with:
+          name: frontend-build
+          path: build/
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
@@ -28,7 +63,6 @@ jobs:
           chmod 600 ~/.ssh/blog_cicd
 
       - name: Run Deployment Script
-        working-directory: monorepo
         env:
           DOMAIN: ${{ secrets.DOMAIN }}
           PRODUCTION_DOMAIN: ${{ secrets.PRODUCTION_DOMAIN }}
@@ -47,8 +81,8 @@ jobs:
         run: |
           if [ "$LITESPEED" = "true" ]; then
             echo "Using LiteSpeed deployment script..."
-            bash scripts/litespeed_deploy.sh
+            scripts/litespeed_deploy.sh
           else
             echo "Using standard deployment script..."
-            bash scripts/deploy.sh
+            scripts/deploy.sh
           fi
