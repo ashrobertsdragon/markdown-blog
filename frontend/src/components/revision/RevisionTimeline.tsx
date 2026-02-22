@@ -172,7 +172,7 @@ function RevisionTimelineContent({
   const showFooter = data.has_more || (isLoading && skip > 0)
 
   return (
-    <div data-testid="revision-timeline-container" className="revision-timeline space-y-4">
+    <div data-testid="revision-timeline" className="revision-timeline space-y-4">
       <ul data-testid="revision-timeline-list" className="space-y-3">
         {data.revisions.map((revision, index) => (
           <RevisionItem

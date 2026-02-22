@@ -53,7 +53,8 @@ export interface DiffRevisionMeta {
 export interface DiffLine {
   type: 'context' | 'addition' | 'deletion'
   content: string
-  lineNumber?: number
+  line_number_old?: number
+  line_number_new?: number
 }
 
 /**

@@ -36,7 +36,7 @@ describe('Revision Workflow Integration Tests', () => {
         id: '1',
         commit_sha: 'abc123def456',
         short_sha: 'abc123d',
-        author: { id: '42', name: 'Test Author' },
+        author_id: '42',
         timestamp: '2026-02-15T10:00:00Z',
         relative_time: '2 hours ago',
         commit_message: 'Initial commit',
@@ -46,7 +46,7 @@ describe('Revision Workflow Integration Tests', () => {
         id: '2',
         commit_sha: '789ghi012jkl',
         short_sha: '789ghi0',
-        author: { id: '42', name: 'Test Author' },
+        author_id: '42',
         timestamp: '2026-02-15T09:00:00Z',
         relative_time: '3 hours ago',
         commit_message: 'Updated content',
@@ -56,7 +56,7 @@ describe('Revision Workflow Integration Tests', () => {
         id: '3',
         commit_sha: 'def456abc789',
         short_sha: 'def456a',
-        author: { id: '43', name: 'Other Author' },
+        author_id: '43',
         timestamp: '2026-02-15T08:00:00Z',
         relative_time: '4 hours ago',
         commit_message: 'Revert to previous version',
@@ -71,7 +71,7 @@ describe('Revision Workflow Integration Tests', () => {
     id: '2',
     commit_sha: '789ghi012jkl',
     short_sha: '789ghi0',
-    author: { id: '42', name: 'Test Author' },
+    author_id: '42',
     timestamp: '2026-02-15T09:00:00Z',
     commit_message: 'Updated content',
     markdown_content: '# Updated Post\n\nThis is the updated content.',
@@ -180,7 +180,7 @@ describe('Revision Workflow Integration Tests', () => {
           }
         )
 
-        const timeline = screen.getByTestId('revision-timeline-container')
+        const timeline = screen.getByTestId('revision-timeline')
         expect(timeline).toBeInTheDocument()
 
         const revisionItem = screen.getByTestId('revision-item-789ghi0')
@@ -265,7 +265,7 @@ describe('Revision Workflow Integration Tests', () => {
           }
         )
 
-        const timeline = screen.getByTestId('revision-timeline-container')
+        const timeline = screen.getByTestId('revision-timeline')
         expect(timeline).toBeInTheDocument()
 
         const revertButton = screen.getByTestId('revision-detail-revert-button')
@@ -352,7 +352,7 @@ describe('Revision Workflow Integration Tests', () => {
           }
         )
 
-        const timeline = screen.getByTestId('revision-timeline-container')
+        const timeline = screen.getByTestId('revision-timeline')
         expect(timeline).toBeInTheDocument()
 
         const revertButton = screen.getByTestId('revision-detail-revert-button')
@@ -393,7 +393,7 @@ describe('Revision Workflow Integration Tests', () => {
         }
       )
 
-      const timeline = screen.getByTestId('revision-timeline-container')
+      const timeline = screen.getByTestId('revision-timeline')
       expect(timeline).toBeInTheDocument()
 
       expect(screen.getByTestId('revision-item-abc123d')).toBeInTheDocument()

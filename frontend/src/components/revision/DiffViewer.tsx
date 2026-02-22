@@ -51,26 +51,26 @@ export function DiffViewer({ diffLines, isLoading, error }: DiffViewerProps) {
   }
 
   return (
-    <section aria-label="Diff viewer" className="font-mono text-sm">
+    <section data-testid="diff-viewer" aria-label="Diff viewer" className="font-mono text-sm">
       <div className="space-y-0 border border-gray-200 bg-white">
         {diffLines.map((line, index) => {
-          const lineNumber = line.lineNumber ?? index + 1
+          const displayNumber = line.line_number_new ?? line.line_number_old ?? index + 1
           const bgColor =
             line.type === 'addition'
-              ? 'bg-green-50'
+              ? 'bg-green-100'
               : line.type === 'deletion'
-                ? 'bg-red-50'
+                ? 'bg-red-100'
                 : 'bg-gray-50'
           const prefix = line.type === 'addition' ? '+' : line.type === 'deletion' ? '-' : ' '
 
           return (
             <div
-              key={`${line.type}-${lineNumber}`}
-              data-testid={`diff-line-${line.type}-${lineNumber}`}
+              key={index}
+              data-testid={`diff-line-${line.type}-${displayNumber}`}
               className={`${bgColor} flex whitespace-pre`}
             >
               <span className="w-12 select-none bg-gray-100 px-2 py-1 text-right text-gray-500">
-                {lineNumber}
+                {displayNumber}
               </span>
               <span className="px-2 py-1">
                 <span className="select-none">{prefix}</span>

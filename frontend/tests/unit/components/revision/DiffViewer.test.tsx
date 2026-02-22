@@ -6,9 +6,9 @@ import type { DiffLine } from '@/types/revision'
 
 describe('DiffViewer', () => {
   const mockDiffLines: DiffLine[] = [
-    { type: 'context', content: 'unchanged line', lineNumber: 1 },
-    { type: 'deletion', content: 'removed line', lineNumber: 2 },
-    { type: 'addition', content: 'added line', lineNumber: 3 },
+    { type: 'context', content: 'unchanged line', line_number_new: 1 },
+    { type: 'deletion', content: 'removed line', line_number_new: 2 },
+    { type: 'addition', content: 'added line', line_number_new: 3 },
   ]
 
   it('renders diff lines with correct content', () => {
@@ -20,23 +20,29 @@ describe('DiffViewer', () => {
   })
 
   it('renders addition lines with green background and plus prefix', () => {
-    render(<DiffViewer diffLines={[{ type: 'addition', content: 'new content', lineNumber: 1 }]} />)
+    render(
+      <DiffViewer diffLines={[{ type: 'addition', content: 'new content', line_number_new: 1 }]} />
+    )
 
     const line = screen.getByTestId('diff-line-addition-1')
-    expect(line).toHaveClass('bg-green-50')
+    expect(line).toHaveClass('bg-green-100')
     expect(within(line).getByText('+')).toBeInTheDocument()
   })
 
   it('renders deletion lines with red background and minus prefix', () => {
-    render(<DiffViewer diffLines={[{ type: 'deletion', content: 'old content', lineNumber: 1 }]} />)
+    render(
+      <DiffViewer diffLines={[{ type: 'deletion', content: 'old content', line_number_new: 1 }]} />
+    )
 
     const line = screen.getByTestId('diff-line-deletion-1')
-    expect(line).toHaveClass('bg-red-50')
+    expect(line).toHaveClass('bg-red-100')
     expect(within(line).getByText('-')).toBeInTheDocument()
   })
 
   it('renders context lines with gray background and no prefix', () => {
-    render(<DiffViewer diffLines={[{ type: 'context', content: 'same content', lineNumber: 1 }]} />)
+    render(
+      <DiffViewer diffLines={[{ type: 'context', content: 'same content', line_number_new: 1 }]} />
+    )
 
     const line = screen.getByTestId('diff-line-context-1')
     expect(line).toHaveClass('bg-gray-50')
@@ -109,7 +115,7 @@ describe('DiffViewer', () => {
     const largeDiff: DiffLine[] = Array.from({ length: 150 }, (_, i) => ({
       type: 'context' as const,
       content: `line ${i + 1}`,
-      lineNumber: i + 1,
+      line_number_new: i + 1,
     }))
 
     render(<DiffViewer diffLines={largeDiff} />)
@@ -187,21 +193,21 @@ describe('DiffViewer', () => {
   })
 
   it('renders additions with green background', () => {
-    render(<DiffViewer diffLines={[{ type: 'addition', content: 'new', lineNumber: 1 }]} />)
+    render(<DiffViewer diffLines={[{ type: 'addition', content: 'new', line_number_new: 1 }]} />)
 
     const line = screen.getByTestId('diff-line-addition-1')
-    expect(line).toHaveClass('bg-green-50')
+    expect(line).toHaveClass('bg-green-100')
   })
 
   it('renders deletions with red background', () => {
-    render(<DiffViewer diffLines={[{ type: 'deletion', content: 'old', lineNumber: 1 }]} />)
+    render(<DiffViewer diffLines={[{ type: 'deletion', content: 'old', line_number_new: 1 }]} />)
 
     const line = screen.getByTestId('diff-line-deletion-1')
-    expect(line).toHaveClass('bg-red-50')
+    expect(line).toHaveClass('bg-red-100')
   })
 
   it('renders context lines with gray background', () => {
-    render(<DiffViewer diffLines={[{ type: 'context', content: 'same', lineNumber: 1 }]} />)
+    render(<DiffViewer diffLines={[{ type: 'context', content: 'same', line_number_new: 1 }]} />)
 
     const line = screen.getByTestId('diff-line-context-1')
     expect(line).toHaveClass('bg-gray-50')
@@ -209,7 +215,7 @@ describe('DiffViewer', () => {
 
   it('preserves whitespace in diff content', () => {
     const diffWithWhitespace: DiffLine[] = [
-      { type: 'context', content: '    indented line', lineNumber: 1 },
+      { type: 'context', content: '    indented line', line_number_new: 1 },
     ]
 
     render(<DiffViewer diffLines={diffWithWhitespace} />)
@@ -220,9 +226,9 @@ describe('DiffViewer', () => {
 
   it('renders multiple consecutive additions', () => {
     const additions: DiffLine[] = [
-      { type: 'addition', content: 'line 1', lineNumber: 1 },
-      { type: 'addition', content: 'line 2', lineNumber: 2 },
-      { type: 'addition', content: 'line 3', lineNumber: 3 },
+      { type: 'addition', content: 'line 1', line_number_new: 1 },
+      { type: 'addition', content: 'line 2', line_number_new: 2 },
+      { type: 'addition', content: 'line 3', line_number_new: 3 },
     ]
 
     render(<DiffViewer diffLines={additions} />)
@@ -232,8 +238,8 @@ describe('DiffViewer', () => {
 
   it('renders multiple consecutive deletions', () => {
     const deletions: DiffLine[] = [
-      { type: 'deletion', content: 'line 1', lineNumber: 1 },
-      { type: 'deletion', content: 'line 2', lineNumber: 2 },
+      { type: 'deletion', content: 'line 1', line_number_new: 1 },
+      { type: 'deletion', content: 'line 2', line_number_new: 2 },
     ]
 
     render(<DiffViewer diffLines={deletions} />)
@@ -243,10 +249,10 @@ describe('DiffViewer', () => {
 
   it('handles mixed line types in sequence', () => {
     const mixedLines: DiffLine[] = [
-      { type: 'context', content: 'same', lineNumber: 1 },
-      { type: 'deletion', content: 'old', lineNumber: 2 },
-      { type: 'addition', content: 'new', lineNumber: 3 },
-      { type: 'context', content: 'same again', lineNumber: 4 },
+      { type: 'context', content: 'same', line_number_new: 1 },
+      { type: 'deletion', content: 'old', line_number_new: 2 },
+      { type: 'addition', content: 'new', line_number_new: 3 },
+      { type: 'context', content: 'same again', line_number_new: 4 },
     ]
 
     render(<DiffViewer diffLines={mixedLines} />)
@@ -259,7 +265,7 @@ describe('DiffViewer', () => {
 
   it('escapes HTML in diff content', () => {
     const diffWithHTML: DiffLine[] = [
-      { type: 'context', content: '<script>alert("xss")</script>', lineNumber: 1 },
+      { type: 'context', content: '<script>alert("xss")</script>', line_number_new: 1 },
     ]
 
     render(<DiffViewer diffLines={diffWithHTML} />)
@@ -269,7 +275,7 @@ describe('DiffViewer', () => {
   })
 
   it('handles empty string content in diff lines', () => {
-    const emptyContentLine: DiffLine[] = [{ type: 'context', content: '', lineNumber: 1 }]
+    const emptyContentLine: DiffLine[] = [{ type: 'context', content: '', line_number_new: 1 }]
 
     render(<DiffViewer diffLines={emptyContentLine} />)
 

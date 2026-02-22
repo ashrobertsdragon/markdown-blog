@@ -32,7 +32,7 @@ describe('RevisionTimeline', () => {
         id: '1',
         commit_sha: 'abc123def456',
         short_sha: 'abc123d',
-        author: { id: '42', name: 'Test Author' },
+        author_id: '42',
         timestamp: '2026-02-15T10:00:00Z',
         relative_time: '2 hours ago',
         commit_message: 'Initial commit',
@@ -42,7 +42,7 @@ describe('RevisionTimeline', () => {
         id: '2',
         commit_sha: '789ghi012jkl',
         short_sha: '789ghi0',
-        author: { id: '42', name: 'Test Author' },
+        author_id: '42',
         timestamp: '2026-02-15T09:00:00Z',
         relative_time: '3 hours ago',
         commit_message: 'Updated content',
@@ -52,7 +52,7 @@ describe('RevisionTimeline', () => {
         id: '3',
         commit_sha: 'def456abc789',
         short_sha: 'def456a',
-        author: { id: '42', name: 'Test Author' },
+        author_id: '42',
         timestamp: '2026-02-15T08:00:00Z',
         relative_time: '4 hours ago',
         commit_message: 'Revert to previous version',
@@ -128,7 +128,7 @@ describe('RevisionTimeline', () => {
 
       render(<RevisionTimeline {...defaultProps} />)
 
-      const authorElements = screen.getAllByText('Test Author')
+      const authorElements = screen.getAllByText('User 42')
       expect(authorElements).toHaveLength(3)
     })
 
@@ -885,7 +885,7 @@ describe('RevisionTimeline', () => {
 
       render(<RevisionTimeline {...defaultProps} />)
 
-      const container = screen.getByTestId('revision-timeline-container')
+      const container = screen.getByTestId('revision-timeline')
       expect(container).toHaveClass('revision-timeline')
     })
 

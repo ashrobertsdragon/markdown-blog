@@ -129,6 +129,16 @@ export default function PostEditor() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
+            {isEditMode && slug && (
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/posts/${slug}/revisions`)}
+                aria-label="View revision history"
+              >
+                View History
+              </Button>
+            )}
+
             <Button
               variant="outline"
               onClick={() => setShowPreview(!showPreview)}

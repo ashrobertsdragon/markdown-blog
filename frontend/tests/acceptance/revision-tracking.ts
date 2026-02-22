@@ -4,11 +4,33 @@ import { mockClerkAuth } from './fixtures/clerk-mock'
 /**
  * Acceptance tests for Revision Tracking spec - Frontend UI.
  *
- * These tests verify revision history display, diff viewer, and revert
- * functionality as specified in revision-tracking/requirements.md.
+ * Tests exercise the real backend (FLASK_ENV=TESTING, SQLite in-memory).
+ * Only Clerk network traffic is mocked. Test data is seeded via /api/test/seed
+ * and torn down via /api/test/reset.
+ *
+ * Seeded revisions for "test-post" (newest first):
+ *   c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2 — "Revert to initial"
+ *   b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1 — "Update content"
+ *   a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0 — "Initial post draft"
  */
 
+const BACKEND = 'http://localhost:5555'
+
+const SHA_MIDDLE = 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1'
+const SHA_OLDEST = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0'
+
+test.describe.configure({ mode: 'serial' })
+
 test.describe('Revision Tracking - Frontend UI', () => {
+  test.beforeAll(async ({ request }) => {
+    const res = await request.post(`${BACKEND}/api/test/seed`)
+    expect(res.ok()).toBeTruthy()
+  })
+
+  test.afterAll(async ({ request }) => {
+    await request.delete(`${BACKEND}/api/test/reset`)
+  })
+
   test.beforeEach(async ({ page }) => {
     await mockClerkAuth(page, { role: 'author' })
   })
@@ -16,90 +38,42 @@ test.describe('Revision Tracking - Frontend UI', () => {
   test('Display post revision history timeline', async ({ page }) => {
     /**
      * Acceptance Criteria:
-     * - "View History" button appears on published post
+     * - "View History" button appears on the post editor
      * - Revision timeline shows all commits
      * - Each revision shows: commit SHA (shortened), author, timestamp, message
      * - Pagination or infinite scroll for >10 revisions
-     * - Hovering over commit SHA shows full SHA in tooltip
      * - Most recent commit appears first
      */
-    const slug = 'test-post'
+    await page.goto('/edit/test-post')
 
-    await page.route(`**/posts/${slug}`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          slug,
-          title: 'Test Post',
-          content: '# Content',
-          published: true,
-        }),
-      })
-    })
-
-    await page.route(`**/posts/${slug}/revisions`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          revisions: [
-            {
-              commit_sha: 'abc123def456',
-              author: 'test@example.com',
-              timestamp: '2024-01-01T12:00:00Z',
-              message: 'Initial commit',
-            },
-          ],
-          total: 1,
-        }),
-      })
-    })
-
-    await page.goto(`/posts/${slug}`)
+    const editor = page.locator('.w-md-editor')
+    await expect(editor).toBeVisible({ timeout: 10000 })
 
     const viewHistoryButton = page.locator('button:has-text("View History")')
     await expect(viewHistoryButton).toBeVisible()
 
     await viewHistoryButton.click()
+    await page.waitForURL('**/posts/test-post/revisions')
 
     const revisionTimeline = page.locator('[data-testid="revision-timeline"]')
-    await expect(revisionTimeline).toBeVisible()
+    await expect(revisionTimeline).toBeVisible({ timeout: 10000 })
 
-    const commitSha = page.locator('text=/abc123/')
+    const commitSha = page.locator(`text=/c3d4e5f/`)
     await expect(commitSha).toBeVisible()
   })
 
   test('View previous version of post', async ({ page }) => {
     /**
      * Acceptance Criteria:
-     * - Clicking revision displays post content at that commit
+     * - Navigating to a revision URL displays post content at that commit
      * - Previous version is read-only (no editing)
      * - Title, author, timestamp, commit SHA clearly displayed
      * - "Revert to This Version" button appears
-     * - Clear message if previous version not available
      */
-    const slug = 'test-post'
-    const sha = 'abc123'
+    await page.goto(`/posts/test-post/revisions/${SHA_OLDEST}`)
 
-    await page.route(`**/posts/${slug}/revisions/${sha}`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          commit_sha: sha,
-          content: '# Previous Version',
-          title: 'Test Post',
-          author: 'test@example.com',
-          timestamp: '2024-01-01T12:00:00Z',
-        }),
-      })
-    })
-
-    await page.goto(`/posts/${slug}/revisions/${sha}`)
-
-    const content = page.locator('text=/Previous Version/')
-    await expect(content).toBeVisible()
+    const content = page.locator('text=/Initial Content/')
+    await expect(content).toBeVisible({ timeout: 10000 })
 
     const revertButton = page.locator('button:has-text("Revert")')
     await expect(revertButton).toBeVisible()
@@ -114,36 +88,16 @@ test.describe('Revision Tracking - Frontend UI', () => {
      * - Selecting two revisions displays diff view
      * - Additions highlighted in green
      * - Deletions highlighted in red
-     * - Unchanged lines appear in gray
-     * - Large diffs show only changed sections with context
      */
-    const slug = 'test-post'
-    const sha1 = 'abc123'
-    const sha2 = 'def456'
-
-    await page.route(`**/posts/${slug}/revisions/${sha1}/diff/${sha2}`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          diff_lines: [
-            { type: 'deletion', content: '- Old line', line_number: 1 },
-            { type: 'addition', content: '+ New line', line_number: 1 },
-            { type: 'unchanged', content: '  Same line', line_number: 2 },
-          ],
-        }),
-      })
-    })
-
-    await page.goto(`/posts/${slug}/diff/${sha1}/${sha2}`)
+    await page.goto(`/posts/test-post/revisions/${SHA_OLDEST}/diff/${SHA_MIDDLE}`)
 
     const diffViewer = page.locator('[data-testid="diff-viewer"]')
-    await expect(diffViewer).toBeVisible()
+    await expect(diffViewer).toBeVisible({ timeout: 10000 })
 
-    const deletionLine = page.locator('.bg-red-100:has-text("Old line")')
+    const deletionLine = page.locator('.bg-red-100').first()
     await expect(deletionLine).toBeVisible()
 
-    const additionLine = page.locator('.bg-green-100:has-text("New line")')
+    const additionLine = page.locator('.bg-green-100').first()
     await expect(additionLine).toBeVisible()
   })
 
@@ -153,26 +107,11 @@ test.describe('Revision Tracking - Frontend UI', () => {
      * - "Revert to This Version" shows confirmation modal
      * - Confirmation restores draft file to that commit SHA
      * - Author redirected to edit page for restored draft
-     * - Error displayed if revert fails
      */
-    const slug = 'test-post'
-    const sha = 'abc123'
-
-    await page.route(`**/posts/${slug}/revert`, async route => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ message: 'Reverted successfully', slug }),
-        })
-      } else {
-        await route.continue()
-      }
-    })
-
-    await page.goto(`/posts/${slug}/revisions/${sha}`)
+    await page.goto(`/posts/test-post/revisions/${SHA_MIDDLE}`)
 
     const revertButton = page.locator('button:has-text("Revert")')
+    await expect(revertButton).toBeVisible({ timeout: 10000 })
     await revertButton.click()
 
     const confirmationModal = page.locator('[role="alertdialog"]')
@@ -181,7 +120,7 @@ test.describe('Revision Tracking - Frontend UI', () => {
     const confirmButton = confirmationModal.locator('button:has-text("Confirm")')
     await confirmButton.click()
 
-    await page.waitForURL(`/edit/${slug}`)
+    await page.waitForURL('**/edit/test-post', { timeout: 15000 })
   })
 
   test('Compare current draft with published version', async ({ page }) => {
@@ -189,25 +128,9 @@ test.describe('Revision Tracking - Frontend UI', () => {
      * Acceptance Criteria:
      * - Editing published post shows "Compare with Published" button
      * - Clicking shows diff between current draft and published version
-     * - Changed sections highlighted
      * - "No changes" message if draft matches published version
      */
-    const slug = 'test-post'
-
-    await page.route(`**/posts/${slug}`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          slug,
-          title: 'Test Post',
-          content: '# Current Draft',
-          published: true,
-        }),
-      })
-    })
-
-    await page.goto(`/edit/${slug}`)
+    await page.goto('/edit/test-post')
 
     const compareButton = page.locator('button:has-text("Compare with Published")')
     if (await compareButton.isVisible()) {

@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **PostEditor**: Added "View History" button that navigates to `/posts/{slug}/revisions`
+
+### Fixed
+
+- **DiffViewer**: Corrected `data-testid` from `diff-viewer` (added), line background colours from `bg-green-50`/`bg-red-50` to `bg-green-100`/`bg-red-100`, and line number logic to use `line_number_new ?? line_number_old` from real API field names
+- **RevisionTimeline**: Changed `data-testid` from `revision-timeline-container` to `revision-timeline`
+- **RevisionDiffPage**: Fixed reversed `useRevisionDiff` argument order (`sha`, `otherSha`)
+- **revisionsApi**: Updated `DiffLine` interface to match real backend shape: `line_number_old?` and `line_number_new?` (snake_case) replacing `lineNumber?`
+- **types/revision**: Removed non-existent `RevisionAuthor` re-export
+- **Tests**: Fixed `author: { id, name }` → `author_id` across all revision test files (unit, integration, acceptance)
+- **Tests**: Fixed `revision-timeline-container` → `revision-timeline` testid in integration and unit tests
+- **Tests**: Fixed `DiffLine` field name (`lineNumber` → `line_number_new`) and colour assertions in both DiffViewer test files
+- **Acceptance tests**: Rewrote `revision-tracking.ts` to use real backend — removed all `page.route()` mocks, added `beforeAll`/`afterAll` seed/reset hooks, serial mode
+
+### Previously Added
+
 - **CI/CD**: Added GitHub Actions deployment workflow
 
   - Automated deployment on merge to `main` branch

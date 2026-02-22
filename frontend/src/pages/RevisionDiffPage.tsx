@@ -18,7 +18,7 @@ export default function RevisionDiffPage() {
   }>()
   const navigate = useNavigate()
 
-  const { data, isLoading, isError, error } = useRevisionDiff(slug, otherSha, sha)
+  const { data, isLoading, isError, error } = useRevisionDiff(slug, sha, otherSha)
 
   if (isLoading) {
     return <LoadingSpinner message="Calculating diff..." className="min-h-screen" />
@@ -49,8 +49,8 @@ export default function RevisionDiffPage() {
           </Button>
           <h1 className="text-3xl font-bold text-gray-800">Compare Revisions</h1>
           <p className="mt-2 text-gray-600">
-            Comparing <code className="bg-gray-100 px-1 rounded">{otherSha.slice(0, 7)}</code> to{' '}
-            <code className="bg-gray-100 px-1 rounded font-semibold">{sha.slice(0, 7)}</code>
+            Comparing <code className="bg-gray-100 px-1 rounded">{sha.slice(0, 7)}</code> to{' '}
+            <code className="bg-gray-100 px-1 rounded font-semibold">{otherSha.slice(0, 7)}</code>
           </p>
         </div>
 
