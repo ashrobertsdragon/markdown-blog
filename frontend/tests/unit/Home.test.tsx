@@ -27,9 +27,7 @@ describe('Home', () => {
      */
     it('should display loading state on initial render', async () => {
       const { healthService } = await import('@/services/healthService')
-      vi.mocked(healthService.checkHealth).mockImplementation(
-        () => new Promise(() => {})
-      )
+      vi.mocked(healthService.checkHealth).mockImplementation(() => new Promise(() => {}))
 
       render(<Home />)
 

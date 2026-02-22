@@ -8,12 +8,12 @@ import { mockClerkAuth } from './fixtures/clerk-mock'
  * functionality as specified in revision-tracking/requirements.md.
  */
 
-test.describe.fixme('Revision Tracking - Frontend UI', () => {
+test.describe('Revision Tracking - Frontend UI', () => {
   test.beforeEach(async ({ page }) => {
     await mockClerkAuth(page, { role: 'author' })
   })
 
-  test.skip('Display post revision history timeline', async ({ page }) => {
+  test('Display post revision history timeline', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - "View History" button appears on published post
@@ -70,7 +70,7 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
     await expect(commitSha).toBeVisible()
   })
 
-  test.skip('View previous version of post', async ({ page }) => {
+  test('View previous version of post', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Clicking revision displays post content at that commit
@@ -104,12 +104,11 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
     const revertButton = page.locator('button:has-text("Revert")')
     await expect(revertButton).toBeVisible()
 
-    
     const editor = page.locator('.w-md-editor-text-input')
     await expect(editor).not.toBeVisible()
   })
 
-  test.skip('Diff viewer between two revisions', async ({ page }) => {
+  test('Diff viewer between two revisions', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Selecting two revisions displays diff view
@@ -148,7 +147,7 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
     await expect(additionLine).toBeVisible()
   })
 
-  test.skip('Revert to specific revision with confirmation', async ({ page }) => {
+  test('Revert to specific revision with confirmation', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - "Revert to This Version" shows confirmation modal
@@ -176,18 +175,16 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
     const revertButton = page.locator('button:has-text("Revert")')
     await revertButton.click()
 
-    
     const confirmationModal = page.locator('[role="alertdialog"]')
     await expect(confirmationModal).toBeVisible()
 
     const confirmButton = confirmationModal.locator('button:has-text("Confirm")')
     await confirmButton.click()
 
-    
     await page.waitForURL(`/edit/${slug}`)
   })
 
-  test.skip('Compare current draft with published version', async ({ page }) => {
+  test('Compare current draft with published version', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Editing published post shows "Compare with Published" button
@@ -221,7 +218,7 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
     }
   })
 
-  test.skip('Revision history permissions by role', async () => {
+  test('Revision history permissions by role', async () => {
     /**
      * Acceptance Criteria:
      * - Reader views published post: revision timeline visible (read-only)
@@ -230,6 +227,5 @@ test.describe.fixme('Revision Tracking - Frontend UI', () => {
      * - Admin views any post: full history AND revert buttons available
      * - Non-authenticated user: revision timeline NOT displayed
      */
-    
   })
 })

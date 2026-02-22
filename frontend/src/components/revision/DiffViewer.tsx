@@ -44,7 +44,9 @@ export function DiffViewer({ diffLines, isLoading, error }: DiffViewerProps) {
     )
   }
 
-  if (diffLines.length === 0) {
+  const hasChanges = diffLines.some(line => line.type !== 'context')
+
+  if (diffLines.length === 0 || !hasChanges) {
     return <div className="p-8 text-center text-gray-500">No changes detected</div>
   }
 

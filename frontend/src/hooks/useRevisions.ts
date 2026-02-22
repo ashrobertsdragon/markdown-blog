@@ -38,6 +38,10 @@ export function useRevisionHistory(
       return revisionsApi.listRevisions(slug, skip, limit, token)
     },
     enabled: Boolean(slug),
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 403 || error?.response?.status === 404) return false
+      return failureCount < 3
+    },
   })
 }
 
@@ -62,6 +66,10 @@ export function useRevisionDetail(
       return revisionsApi.getRevision(slug, sha, token)
     },
     enabled: Boolean(slug && sha),
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 403 || error?.response?.status === 404) return false
+      return failureCount < 3
+    },
   })
 }
 
@@ -88,6 +96,10 @@ export function useRevisionDiff(
       return revisionsApi.getDiff(slug, sha1, sha2, token)
     },
     enabled: Boolean(slug && sha1 && sha2),
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 403 || error?.response?.status === 404) return false
+      return failureCount < 3
+    },
   })
 }
 

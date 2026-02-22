@@ -20,6 +20,7 @@ import pytest
 
 from backend.domain.aggregates.post_revision import PostRevision
 from backend.domain.value_objects.commit_sha import CommitSHA
+from backend.infrastructure.versioning.diff_service import DiffResult
 
 try:
     from backend.application.queries.compare_revisions_query import (
@@ -226,7 +227,13 @@ def test_compare_revisions_handler_returns_diff() -> None:
     )
 
     mock_repo.find_by_sha.side_effect = [from_revision, to_revision]
-    mock_diff_service.diff_text.return_value = []
+    mock_diff_service.diff_text.return_value = DiffResult(
+        lines=[],
+        is_large_file=False,
+        total_additions=0,
+        total_deletions=0,
+        total_context_lines=0,
+    )
 
     query = CompareRevisionsQuery(
         post_id=from_revision.post_id,

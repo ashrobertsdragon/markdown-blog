@@ -33,7 +33,6 @@ import type { PostFilter } from '@/services/postsApi'
 export default function MyPosts() {
   const navigate = useNavigate()
 
-  
   const [filter, setFilter] = useState<PostFilter>('all')
   const [page, setPage] = useState(1)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -58,7 +57,6 @@ export default function MyPosts() {
     try {
       await deleteDraft.mutateAsync(slugToDelete)
     } catch {
-      
     } finally {
       setDeleteConfirmOpen(false)
       setSlugToDelete(null)

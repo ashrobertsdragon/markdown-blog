@@ -24,7 +24,7 @@ interface RevisionItemProps {
 function RevisionItem({ revision, isCurrent, isInteractive, onSelect }: RevisionItemProps) {
   const handleActivate = () => {
     if (isInteractive) {
-      onSelect(revision.short_sha)
+      onSelect(revision.commit_sha)
     }
   }
 
@@ -46,7 +46,7 @@ function RevisionItem({ revision, isCurrent, isInteractive, onSelect }: Revision
       tabIndex={isInteractive ? 0 : undefined}
       onClick={handleActivate}
       onKeyDown={handleKeyDown}
-      aria-label={`Revision ${revision.short_sha} by ${revision.author.name} ${revision.relative_time}${isCurrent ? ' (current)' : ''}`}
+      aria-label={`Revision ${revision.commit_sha} by User ${revision.author_id} ${revision.relative_time}${isCurrent ? ' (current)' : ''}`}
       aria-current={isCurrent ? 'true' : 'false'}
       className={`
         revision-item
@@ -84,7 +84,7 @@ function RevisionItem({ revision, isCurrent, isInteractive, onSelect }: Revision
           </div>
           <p className="mt-1 text-sm text-gray-600 truncate">{revision.commit_message}</p>
           <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
-            <span>{revision.author.name}</span>
+            <span>User {revision.author_id}</span>
             <span>•</span>
             <span>{revision.relative_time}</span>
           </div>
@@ -174,11 +174,11 @@ function RevisionTimelineContent({
   return (
     <div data-testid="revision-timeline-container" className="revision-timeline space-y-4">
       <ul data-testid="revision-timeline-list" className="space-y-3">
-        {data.revisions.map(revision => (
+        {data.revisions.map((revision, index) => (
           <RevisionItem
             key={revision.id}
             revision={revision}
-            isCurrent={revision.short_sha === currentSha}
+            isCurrent={currentSha ? revision.short_sha === currentSha : index === 0 && skip === 0}
             isInteractive={isAuthor}
             onSelect={onSelectRevision}
           />

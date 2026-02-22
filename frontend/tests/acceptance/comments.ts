@@ -204,7 +204,6 @@ test.describe('Comments - Frontend UI', () => {
     if (await replyIndicator.isVisible()) {
       await replyIndicator.click()
 
-      
       const parentComment = page.locator('[data-comment-id]').first()
       await expect(parentComment).toBeInViewport()
     }

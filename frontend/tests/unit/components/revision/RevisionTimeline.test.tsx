@@ -18,7 +18,7 @@ vi.mock('@/hooks/useRevisions', () => ({
  * Tests chronological revision history display with pagination, selection,
  * and authorization controls. Validates all rendering states and user interactions.
  */
-describe.skip('RevisionTimeline', () => {
+describe('RevisionTimeline', () => {
   const defaultProps = {
     slug: 'test-post',
     currentSha: 'abc123d',

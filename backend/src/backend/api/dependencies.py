@@ -1,5 +1,7 @@
 """Dependency injection for API routes."""
 
+import logging
+import os
 from typing import cast
 
 from backend.config import FileSystemSettings, GitHubSettings
@@ -27,9 +29,15 @@ from backend.infrastructure.versioning.diff_service import DiffService
 from backend.infrastructure.versioning.github_sync_service import (
     GitHubSyncService,
 )
+from backend.infrastructure.versioning.mock_github_service import (
+    MockGitHubSyncService,
+)
+
+logger = logging.getLogger(__name__)
 
 _filesystem_settings: FileSystemSettings | None = None
 _github_settings: GitHubSettings | None = None
+_github_service: GitHubSyncService | MockGitHubSyncService | None = None
 
 
 def get_filesystem_settings() -> FileSystemSettings:
@@ -64,14 +72,29 @@ def get_draft_repository() -> FileSystemDraftRepository:
     return FileSystemDraftRepository(fs_settings.DRAFTS_PATH)
 
 
-def get_github_service() -> GitHubSyncService:
-    """Get GitHubSyncService instance."""
+def get_github_service() -> GitHubSyncService | MockGitHubSyncService:
+    """Get GitHubSyncService instance (or mock in TESTING environment)."""
+    global _github_service
+    if _github_service is not None:
+        return _github_service
+
     gh_settings = get_github_settings()
-    return GitHubSyncService(
-        gh_settings.GITHUB_TOKEN,
-        gh_settings.GITHUB_OWNER,
-        gh_settings.GITHUB_REPO,
-    )
+    flask_env = os.environ.get("FLASK_ENV")
+
+    if flask_env == "TESTING":
+        logger.info("Using MockGitHubSyncService for TESTING environment")
+        _github_service = MockGitHubSyncService(
+            gh_settings.GITHUB_TOKEN,
+            gh_settings.GITHUB_OWNER,
+            gh_settings.GITHUB_REPO,
+        )
+    else:
+        _github_service = GitHubSyncService(
+            gh_settings.GITHUB_TOKEN,
+            gh_settings.GITHUB_OWNER,
+            gh_settings.GITHUB_REPO,
+        )
+    return _github_service
 
 
 def get_markdown_service() -> MarkdownServiceProtocol:

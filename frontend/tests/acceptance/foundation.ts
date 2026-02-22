@@ -17,10 +17,8 @@ test.describe('Foundation - Frontend Infrastructure', () => {
      */
     await page.goto('/')
 
-    
     await expect(page).toHaveTitle(/.+/)
 
-    
     const currentUrl = page.url()
     expect(currentUrl).toMatch(/\/$/)
   })
@@ -34,7 +32,7 @@ test.describe('Foundation - Frontend Infrastructure', () => {
      * Note: This test verifies dev server is running during development.
      * In production, this would be skipped.
      */
-    
+
     await page.goto('/')
     await expect(page).toHaveTitle(/.+/)
   })
@@ -64,8 +62,6 @@ test.describe('Foundation - Frontend Infrastructure', () => {
      */
     await page.goto('/')
 
-    
-    
     const body = page.locator('body')
     await expect(body).toBeVisible()
   })

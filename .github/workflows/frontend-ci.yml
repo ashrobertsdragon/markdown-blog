@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
@@ -35,13 +35,15 @@ jobs:
           cd frontend
           npm ci
 
-      - name: Lint with Biome
-        run: npx biome check fontend/.
+      - name: Lint and typecheck
+        run: |
+          cd frontend
+          npm run lint .
 
       - name: Run tests
         run: |
           cd frontend
-          npm test -- --coverage --run
+          npm test:all
 
       - name: Check coverage threshold
         run: |

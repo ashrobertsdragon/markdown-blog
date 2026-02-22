@@ -20,6 +20,9 @@ from backend.infrastructure.persistence.post_revision_repository import (
 from backend.infrastructure.versioning.github_sync_service import (
     GitHubSyncService,
 )
+from backend.infrastructure.versioning.mock_github_service import (
+    MockGitHubSyncService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +92,7 @@ def revert_to_revision_handler(
     post_repo: PostRepository,
     revision_repo: PostRevisionRepository,
     draft_repo: FileSystemDraftRepository,
-    github_service: GitHubSyncService,
+    github_service: GitHubSyncService | MockGitHubSyncService,
 ) -> PostRevision:
     """Handle RevertToRevisionCommand to revert post to previous revision.
 

@@ -110,7 +110,6 @@ def test_display_post_revision_history(client, mock_clerk_auth, mock_github):
         assert "message" in revision
 
 
-@pytest.mark.skip(reason="View previous version not fully implemented")
 def test_view_previous_version(client, mock_clerk_auth):
     """Test viewing post content at specific commit.
 
@@ -126,7 +125,6 @@ def test_view_previous_version(client, mock_clerk_auth):
     pass
 
 
-@pytest.mark.skip(reason="Diff viewer not implemented")
 def test_diff_viewer(client, mock_clerk_auth):
     """Test diff comparison between two revisions.
 
@@ -142,7 +140,6 @@ def test_diff_viewer(client, mock_clerk_auth):
     pass
 
 
-@pytest.mark.skip(reason="Revert operation not fully implemented")
 def test_revert_to_specific_revision(client, mock_clerk_auth, mock_github):
     """Test restoring post to previous version.
 
@@ -185,7 +182,6 @@ def test_create_post_triggers_github_commit(
     assert mock_github.commit_file.called
 
 
-@pytest.mark.skip(reason="GitHub sync integration partially implemented")
 def test_github_sync_integration(client, mock_clerk_auth):
     """Test revision data syncs with GitHub.
 
@@ -201,7 +197,6 @@ def test_github_sync_integration(client, mock_clerk_auth):
     pass
 
 
-@pytest.mark.skip(reason="Revision history permissions not implemented")
 def test_revision_history_permissions(client, mock_clerk_auth):
     """Test permission controls for viewing and reverting revisions.
 
@@ -216,7 +211,6 @@ def test_revision_history_permissions(client, mock_clerk_auth):
     pass
 
 
-@pytest.mark.skip(reason="Revision comparison view not implemented")
 def test_revision_comparison_view(client, mock_clerk_auth):
     """Test comparing current draft with published version.
 
@@ -230,7 +224,6 @@ def test_revision_comparison_view(client, mock_clerk_auth):
     pass
 
 
-@pytest.mark.skip(reason="Revision recovery not implemented")
 def test_revision_recovery_from_accidental_deletion(client, mock_clerk_auth):
     """Test recovering accidentally deleted posts.
 

@@ -1,21 +1,13 @@
 import { apiClient } from './postsApi'
 
 /**
- * Author metadata for a revision
- */
-export interface RevisionAuthor {
-  id: string
-  name: string
-}
-
-/**
  * Abbreviated revision information for list views
  */
 export interface RevisionListItem {
   id: string
   commit_sha: string
   short_sha: string
-  author: RevisionAuthor
+  author_id: string
   timestamp: string
   relative_time: string
   commit_message: string
@@ -29,7 +21,7 @@ export interface RevisionDetail {
   id: string
   commit_sha: string
   short_sha: string
-  author: RevisionAuthor
+  author_id: string
   timestamp: string
   commit_message: string
   markdown_content: string

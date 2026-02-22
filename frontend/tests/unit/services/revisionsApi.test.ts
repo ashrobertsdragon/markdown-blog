@@ -33,7 +33,7 @@ import { revisionsApi } from '@/services/revisionsApi'
  * - Query parameter handling
  * - Error handling and propagation
  */
-describe.skip('revisionsApi', () => {
+describe('revisionsApi', () => {
   afterEach(() => {
     vi.clearAllMocks()
   })

@@ -37,7 +37,6 @@ export function MarkdownEditor({ value, onChange, onSave, className }: MarkdownE
   }
 
   return (
-    
     <div
       onKeyDown={handleKeyDown}
       data-testid="markdown-editor-container"

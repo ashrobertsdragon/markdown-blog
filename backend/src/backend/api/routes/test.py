@@ -4,6 +4,7 @@ Only active when FLASK_ENV=TESTING. Returns 404 in all other environments.
 """
 
 import os
+import uuid
 from datetime import UTC, datetime
 
 from flask import Blueprint, Response, jsonify
@@ -16,7 +17,11 @@ from backend.infrastructure.persistence.filesystem_draft_repository import (
     DraftFile,
     FileSystemDraftRepository,
 )
-from backend.infrastructure.persistence.models import Post, User
+from backend.infrastructure.persistence.models import (
+    Post,
+    PostRevisionModel,
+    User,
+)
 
 test_bp = Blueprint("test", __name__)
 
@@ -59,7 +64,17 @@ def seed() -> tuple[Response, int]:
     if guard is not None:
         return guard
 
+    # Force close any existing sessions before dropping
+    from backend.infrastructure.persistence.database import dispose_engine
+
+    dispose_engine()
     engine = get_engine()
+
+    from sqlalchemy import text
+
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA foreign_keys = OFF;"))
+
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 
@@ -79,49 +94,73 @@ def seed() -> tuple[Response, int]:
         session.add(admin)
         session.flush()
 
-        posts = [
-            Post(
-                slug="test-post",
-                title="Test Post",
-                html_content="<h1>Initial Content</h1>",
-                published=False,
-                author_id=author.id,
-            ),
-            Post(
-                slug="publish-me",
-                title="Publish Me",
-                html_content="<p>Draft content</p>",
-                published=False,
-                author_id=author.id,
-            ),
-            Post(
-                slug="delete-me",
-                title="Delete Me",
-                html_content="<p>To be deleted</p>",
-                published=False,
-                author_id=author.id,
-            ),
-            Post(
-                slug="draft-1",
-                title="Draft 1",
-                html_content="",
-                published=False,
-                author_id=author.id,
-            ),
-            Post(
-                slug="pub-1",
-                title="Published 1",
-                html_content="<p>Published content</p>",
-                published=True,
-                author_id=author.id,
-            ),
+        posts_specs = [
+            ("test-post", "Test Post", "<h1>Initial Content</h1>", False),
+            ("publish-me", "Publish Me", "<p>Draft content</p>", False),
+            ("delete-me", "Delete Me", "<p>To be deleted</p>", False),
+            ("draft-1", "Draft 1", "", False),
+            ("pub-1", "Published 1", "<p>Published content</p>", True),
         ]
-        for post in posts:
-            session.add(post)
+        for slug, title, html, published in posts_specs:
+            session.add(
+                Post(
+                    slug=slug,
+                    title=title,
+                    html_content=html,
+                    published=published,
+                    author_id=author.id,
+                )
+            )
+
+        session.flush()
+
+        # Seed revisions for test-post
+        test_post = session.exec(
+            select(Post).where(Post.slug == "test-post")
+        ).first()
+        if test_post:
+            revisions = [
+                PostRevisionModel(
+                    id=uuid.uuid4(),
+                    post_id=test_post.id,
+                    commit_sha="c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2",
+                    author_id=author.id,
+                    commit_message="Revert to initial",
+                    markdown_content="# Initial Content\n\nTest content.",
+                    is_revert=True,
+                    created_at=datetime(2026, 2, 21, 12, 0, 0, tzinfo=UTC),
+                    updated_at=datetime(2026, 2, 21, 12, 0, 0, tzinfo=UTC),
+                ),
+                PostRevisionModel(
+                    id=uuid.uuid4(),
+                    post_id=test_post.id,
+                    commit_sha="b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1",
+                    author_id=author.id,
+                    commit_message="Update content",
+                    markdown_content="# Updated Content\n\nMore test content.",
+                    is_revert=False,
+                    created_at=datetime(2026, 2, 21, 11, 0, 0, tzinfo=UTC),
+                    updated_at=datetime(2026, 2, 21, 11, 0, 0, tzinfo=UTC),
+                ),
+                PostRevisionModel(
+                    id=uuid.uuid4(),
+                    post_id=test_post.id,
+                    commit_sha="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
+                    author_id=author.id,
+                    commit_message="Initial post draft",
+                    markdown_content="# Initial Content\n\nTest content.",
+                    is_revert=False,
+                    created_at=datetime(2026, 2, 21, 10, 0, 0, tzinfo=UTC),
+                    updated_at=datetime(2026, 2, 21, 10, 0, 0, tzinfo=UTC),
+                ),
+            ]
+            for rev in revisions:
+                session.add(rev)
 
         session.commit()
         users_count = len(session.exec(select(User)).all())
         posts_count = len(session.exec(select(Post)).all())
+        revisions_count = len(session.exec(select(PostRevisionModel)).all())
 
     draft_repo = _get_draft_repo()
     draft_specs = [
@@ -144,7 +183,12 @@ def seed() -> tuple[Response, int]:
         )
 
     return jsonify(
-        {"status": "seeded", "users": users_count, "posts": posts_count}
+        {
+            "status": "seeded",
+            "users": users_count,
+            "posts": posts_count,
+            "revisions": revisions_count,
+        }
     ), 201
 
 
@@ -165,6 +209,7 @@ def reset() -> tuple[Response, int]:
 
     engine = get_engine()
     with Session(engine) as session:
+        session.exec(delete(PostRevisionModel))
         session.exec(delete(Post))
         session.exec(delete(User))
         session.commit()

@@ -25,7 +25,6 @@ export function LoadingSpinner({ message, className, size = 'md' }: LoadingSpinn
   }
 
   return (
-    
     <div
       className={cn('flex flex-col items-center justify-center gap-2', className)}
       role="status"

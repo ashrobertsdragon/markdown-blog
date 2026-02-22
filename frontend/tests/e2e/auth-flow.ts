@@ -38,7 +38,6 @@ test.describe('Authentication Flow', () => {
     await page.goto('/')
     await expect(page).toHaveURL('/')
 
-    
     const loadingSpinner = page.locator('[role="status"]')
     if (await loadingSpinner.isVisible()) {
       await loadingSpinner.waitFor({ state: 'hidden', timeout: 10000 })
@@ -150,12 +149,8 @@ test.describe('Authentication Flow', () => {
   })
 
   test('rapid navigation between protected routes handled', async ({ page }) => {
-    
-    page.goto('/admin').catch(() => {
-      
-    })
+    page.goto('/admin').catch(() => {})
 
-    
     await page.goto('/author')
 
     await expect(page).toHaveURL(/\/(login|author|admin)/)

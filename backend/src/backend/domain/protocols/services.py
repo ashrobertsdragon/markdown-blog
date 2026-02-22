@@ -5,7 +5,10 @@ implement, enabling dependency injection and loose coupling between
 application and infrastructure layers.
 """
 
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from backend.infrastructure.versioning.diff_service import DiffResult
 
 
 class MarkdownService(Protocol):
@@ -55,7 +58,7 @@ class DiffService(Protocol):
 
     def diff_text(
         self, old_content: str | None, new_content: str | None
-    ) -> list:
+    ) -> "DiffResult":
         """Generate diff between two text contents.
 
         Args:
@@ -63,6 +66,6 @@ class DiffService(Protocol):
             new_content: New text content (may be None)
 
         Returns:
-            List of diff line objects with type and content
+            DiffResult object containing lines and metadata
         """
         ...

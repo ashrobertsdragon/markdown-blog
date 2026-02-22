@@ -183,8 +183,6 @@ describe('PreviewPane Component', () => {
   })
 
   it('passes rehypeSanitize plugin to MarkdownPreview', () => {
-    
-    
     const { container } = render(<PreviewPane markdown="# Test" />)
 
     const markdownPreview = container.querySelector('[data-testid="markdown-preview"]')

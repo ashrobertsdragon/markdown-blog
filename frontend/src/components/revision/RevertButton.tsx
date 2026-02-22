@@ -61,6 +61,7 @@ export function RevertButton({ slug, targetSha, commitMessage, onSuccess }: Reve
             variant="destructive"
             disabled={isPending}
             aria-label={`Revert to revision ${shortSha}`}
+            data-testid="revision-detail-revert-button"
           >
             {isPending ? 'Reverting...' : 'Revert'}
           </Button>
@@ -84,6 +85,7 @@ export function RevertButton({ slug, targetSha, commitMessage, onSuccess }: Reve
                 handleConfirm()
               }}
               disabled={isPending}
+              data-testid="revert-modal-confirm"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isPending ? 'Reverting...' : 'Confirm'}

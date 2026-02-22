@@ -73,7 +73,7 @@ export function RevisionDetail({
         <div className="metadata space-y-2">
           <div className="flex items-center gap-4 flex-wrap text-sm">
             <span className="text-gray-700">
-              <span className="font-medium">Author:</span> {data.author.name}
+              <span className="font-medium">Author ID:</span> {data.author_id}
             </span>
             <span className="text-gray-400">•</span>
             <span className="text-gray-700">

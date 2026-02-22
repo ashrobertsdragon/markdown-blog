@@ -125,15 +125,29 @@ def compare_revisions_handler(
         )
 
     logger.debug("Generating diff between revisions")
-    diff_lines = diff_service.diff_text(
+    diff_result = diff_service.diff_text(
         old_content=from_revision.markdown_content,
         new_content=to_revision.markdown_content,
     )
 
-    logger.info(f"Successfully generated diff: {len(diff_lines)} diff lines")
+    logger.info(
+        f"Successfully generated diff: {len(diff_result.lines)} diff lines"
+    )
+
+    # Map backend DiffLine to format expected by frontend
+    formatted_diff_lines = []
+    for line in diff_result.lines:
+        line_num = (
+            line.line_number_new
+            if line.type == "addition"
+            else line.line_number_old
+        )
+        formatted_diff_lines.append(
+            {"type": line.type, "content": line.content, "lineNumber": line_num}
+        )
 
     return CompareRevisionsResponse(
         from_revision=from_revision,
         to_revision=to_revision,
-        diff_lines=diff_lines,
+        diff_lines=formatted_diff_lines,
     )

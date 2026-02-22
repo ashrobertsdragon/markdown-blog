@@ -12,6 +12,7 @@ import NotFound from '@/pages/NotFound'
 import PostEditor from '@/pages/PostEditor'
 import PublicPost from '@/pages/PublicPost'
 import RevisionDetailPage from '@/pages/RevisionDetailPage'
+import RevisionDiffPage from '@/pages/RevisionDiffPage'
 import RevisionHistory from '@/pages/RevisionHistory'
 
 const queryClient = new QueryClient({
@@ -60,6 +61,14 @@ export function AppRoutes() {
         element={
           <ProtectedRoute requireRole="authenticated">
             <RevisionDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/posts/:slug/revisions/:sha/diff/:otherSha"
+        element={
+          <ProtectedRoute requireRole="authenticated">
+            <RevisionDiffPage />
           </ProtectedRoute>
         }
       />

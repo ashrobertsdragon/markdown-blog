@@ -19,8 +19,6 @@ test.describe('Authentication - Frontend UI', () => {
      */
     await page.goto('/')
 
-    
-    
     const signInButton = page.locator('text=/sign in/i').first()
     if (await signInButton.isVisible()) {
       await expect(signInButton).toBeVisible()
@@ -39,8 +37,6 @@ test.describe('Authentication - Frontend UI', () => {
     await mockClerkAuth(page, { role: 'author' })
     await page.goto('/')
 
-    
-    
     const authenticatedElement = page.locator('[data-testid="user-menu"]').first()
     if (await authenticatedElement.isVisible()) {
       await expect(authenticatedElement).toBeVisible()
@@ -55,13 +51,11 @@ test.describe('Authentication - Frontend UI', () => {
      * - User without required role sees 403 Forbidden page
      * - User redirected back to originally requested page after login
      */
-    
+
     await mockClerkUnauthenticated(page)
 
-    
     await page.goto('/my-posts', { waitUntil: 'networkidle' })
 
-    
     await page.waitForURL(/\/login/, { timeout: 5000 }).catch(() => {})
 
     const url = page.url()
@@ -77,8 +71,6 @@ test.describe('Authentication - Frontend UI', () => {
     await mockClerkAuth(page, { role: 'admin' })
     await page.goto('/admin')
 
-    
-    
     const url = page.url()
     expect(url).toContain('/admin')
   })
@@ -93,7 +85,6 @@ test.describe('Authentication - Frontend UI', () => {
     await mockClerkAuth(page, { role: 'author' })
     await page.goto('/')
 
-    
     const myPostsLink = page.locator('text=/my posts/i').first()
     if (await myPostsLink.isVisible()) {
       await expect(myPostsLink).toBeVisible()

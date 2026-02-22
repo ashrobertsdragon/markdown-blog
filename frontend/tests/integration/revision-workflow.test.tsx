@@ -26,7 +26,7 @@ vi.mock('@/hooks/useRevisions', () => ({
   useRevertRevision: mockUseRevertRevision,
 }))
 
-describe.skip('Revision Workflow Integration Tests', () => {
+describe('Revision Workflow Integration Tests', () => {
   let queryClient: QueryClient
   const user = userEvent.setup()
 
@@ -99,6 +99,15 @@ describe.skip('Revision Workflow Integration Tests', () => {
       },
     })
     vi.clearAllMocks()
+
+    // Default mock implementation for useRevertRevision to avoid destructuring errors
+    mockUseRevertRevision.mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+      reset: vi.fn(),
+    })
   })
 
   describe('Permission-Based Workflows', () => {

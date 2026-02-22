@@ -17,11 +17,17 @@ export default function RevisionHistory() {
   }
 
   if (error || !draft) {
+    const isForbidden = (error as any)?.response?.status === 403 || error?.message?.includes('403')
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error?.message || 'Post not found.'}</AlertDescription>
+          <AlertDescription>
+            {isForbidden
+              ? 'You are not authorized to view revisions for this post.'
+              : error?.message || 'Post not found.'}
+          </AlertDescription>
         </Alert>
       </div>
     )
@@ -44,7 +50,7 @@ export default function RevisionHistory() {
 
         <RevisionTimeline
           slug={slug}
-          currentSha="abc123d"
+          currentSha=""
           onSelectRevision={handleSelectRevision}
           isAuthor={role === 'author' || role === 'admin'}
         />

@@ -93,8 +93,6 @@ describe('App', () => {
     it('should use BrowserRouter for client-side routing', () => {
       const { container } = render(<App />)
 
-      
-      
       expect(container.firstChild).toBeTruthy()
     })
 
@@ -113,7 +111,7 @@ describe('App', () => {
      */
     it('should render with Routes component', () => {
       const { container } = render(<App />)
-      
+
       expect(container.firstChild).toBeTruthy()
     })
   })
@@ -126,7 +124,6 @@ describe('App', () => {
     it('should render Home page at root path', () => {
       render(<App />)
 
-      
       const homeElement = screen.queryByTestId('home-component')
       expect(homeElement).toBeInTheDocument()
     })
@@ -151,7 +148,6 @@ describe('App', () => {
     it('should have catch-all route configured', () => {
       const { container } = render(<App />)
 
-      
       expect(container).toBeTruthy()
     })
 
@@ -162,7 +158,6 @@ describe('App', () => {
     it('should have valid route structure', () => {
       const { container } = render(<App />)
 
-      
       expect(container.firstChild).toBeTruthy()
     })
   })
@@ -176,11 +171,8 @@ describe('App', () => {
       const { unmount: unmount1 } = render(<App />)
       unmount1()
 
-      
       const { unmount: unmount2 } = render(<App />)
       unmount2()
-
-      
     })
 
     /**
@@ -215,11 +207,8 @@ describe('App', () => {
      * The application runs at root "/" not a subdirectory
      */
     it('should not use basename prop on BrowserRouter', () => {
-      
-      
       render(<App />)
 
-      
       const homeElement = screen.queryByTestId('home-component')
       expect(homeElement).toBeInTheDocument()
     })
@@ -231,7 +220,6 @@ describe('App', () => {
     it('should have functional routing setup', () => {
       const { container } = render(<App />)
 
-      
       expect(container.firstChild).toBeTruthy()
     })
   })
@@ -244,7 +232,6 @@ describe('App', () => {
     it('should be a functional component', () => {
       expect(typeof App).toBe('function')
 
-      
       const { container } = render(<App />)
       expect(container.firstChild).toBeTruthy()
     })
@@ -256,7 +243,6 @@ describe('App', () => {
     it('should render in valid DOM structure', () => {
       const { container } = render(<App />)
 
-      
       expect(container.firstChild).toBeTruthy()
       expect(container.textContent).toBeTruthy()
     })
@@ -270,7 +256,6 @@ describe('App', () => {
         render(<App />)
       }).not.toThrow()
 
-      
       const homeElement = screen.queryByTestId('home-component')
       expect(homeElement).toBeInTheDocument()
     })
@@ -284,7 +269,6 @@ describe('App', () => {
     it('should provide routing context to children', () => {
       const { container } = render(<App />)
 
-      
       expect(container).toBeTruthy()
     })
 
@@ -295,7 +279,6 @@ describe('App', () => {
     it('should have Routes as main route container', () => {
       render(<App />)
 
-      
       const homeElement = screen.queryByTestId('home-component')
       expect(homeElement).toBeInTheDocument()
     })
@@ -307,7 +290,6 @@ describe('App', () => {
     it('should render route components correctly', () => {
       render(<App />)
 
-      
       const homeComponent = screen.queryByTestId('home-component')
       expect(homeComponent).toBeInTheDocument()
     })

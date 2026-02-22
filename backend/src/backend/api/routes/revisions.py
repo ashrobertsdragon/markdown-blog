@@ -337,7 +337,7 @@ def revert_to_revision(slug: str) -> tuple[Response, int]:
             slug=slug,
             target_sha=target_sha,
             author_id=g.current_user.id,
-            user_role=g.current_user.role,
+            user_role=g.current_user.role.value,
         )
         new_revision = revert_to_revision_handler(
             command,
@@ -351,12 +351,15 @@ def revert_to_revision(slug: str) -> tuple[Response, int]:
             {
                 "success": True,
                 "message": f"Post reverted to {target_sha[:7]}",
-                "new_commit_sha": new_revision.commit_sha,
+                "new_commit_sha": str(new_revision.commit_sha),
                 "redirect_url": f"/edit/{slug}",
             }
         ), 200
 
     except ValueError as e:
+        logger.warning(
+            f"ValueError in revert_to_revision: {str(e)}", exc_info=e
+        )
         error_msg = str(e).lower()
         if "not found" in error_msg:
             return jsonify({"error": str(e)}), 404

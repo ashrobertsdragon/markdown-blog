@@ -285,14 +285,12 @@ test.describe('Admin Dashboard - Frontend UI', () => {
      */
     await mockClerkAuth(page, { role: 'admin' })
 
-    
     await page.setViewportSize({ width: 1280, height: 720 })
     await page.goto('/admin')
 
     const sidebar = page.locator('[data-testid="admin-sidebar"]')
     await expect(sidebar).toBeVisible()
 
-    
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto('/admin')
 

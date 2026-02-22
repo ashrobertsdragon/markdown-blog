@@ -67,7 +67,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -89,7 +88,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -123,7 +121,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -162,7 +159,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -186,7 +182,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -212,7 +207,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -237,7 +231,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -264,7 +257,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -289,7 +281,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       const { container } = renderPublicPost()
@@ -313,7 +304,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -343,7 +333,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -370,7 +359,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -396,7 +384,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -423,7 +410,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -453,7 +439,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -479,7 +464,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -505,7 +489,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -533,7 +516,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -559,7 +541,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -597,7 +578,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -622,7 +602,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -647,7 +626,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -685,7 +663,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -710,7 +687,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -736,7 +712,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -762,7 +737,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       const { container } = renderPublicPost()
@@ -787,7 +761,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()
@@ -826,7 +799,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       const { unmount } = renderPublicPost()
@@ -854,7 +826,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -890,7 +861,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       const { container } = renderPublicPost()
@@ -916,7 +886,6 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-        
       } as any)
 
       renderPublicPost()
@@ -940,7 +909,6 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-        
       } as any)
 
       renderPublicPost()

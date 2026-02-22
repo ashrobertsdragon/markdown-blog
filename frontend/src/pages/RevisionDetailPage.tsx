@@ -19,11 +19,17 @@ export default function RevisionDetailPage() {
   }
 
   if (error || !draft) {
+    const isForbidden = (error as any)?.response?.status === 403 || error?.message?.includes('403')
+
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error?.message || 'Post not found.'}</AlertDescription>
+          <AlertDescription>
+            {isForbidden
+              ? 'You are not authorized to view this revision.'
+              : error?.message || 'Post not found.'}
+          </AlertDescription>
         </Alert>
       </div>
     )
