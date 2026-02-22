@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### Fixed
+
+- **RevisionTimeline**: Added `role="alert"` to error state and extract backend error message from response body so authorization errors display "not authorized" text correctly
+- **RevisionHistory**: Improved `isForbidden` detection to match backend error message text in addition to HTTP status code
+- **useRevisions/usePosts**: Added `retry: false` to all query hooks so 403/404 errors surface immediately without retry delays
+- **PostRevisionRepository**: `find_by_sha` now supports short SHA prefix matching (< 40 chars uses `startswith`) in addition to full SHA exact match
+- **DiffViewer**: Removed `hasChanges` guard so context-only diff arrays render correctly; parent page passes empty array for same-SHA comparisons to show "No changes detected"
+
+### Previously Added
 
 - **PostEditor**: Added "View History" button that navigates to `/posts/{slug}/revisions`
 

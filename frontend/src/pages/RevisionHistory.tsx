@@ -17,7 +17,10 @@ export default function RevisionHistory() {
   }
 
   if (error || !draft) {
-    const isForbidden = (error as any)?.response?.status === 403 || error?.message?.includes('403')
+    const isForbidden =
+      (error as { response?: { status?: number } } | null)?.response?.status === 403 ||
+      error?.message?.toLowerCase().includes('not authorized') ||
+      error?.message?.includes('403')
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">

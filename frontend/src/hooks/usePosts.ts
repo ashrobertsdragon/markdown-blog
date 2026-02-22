@@ -30,10 +30,7 @@ export function useDraft(slug: string): UseQueryResult<PostResponse, Error> {
       return postsApi.getDraft(slug, token)
     },
     enabled: Boolean(slug),
-    retry: (failureCount, error: any) => {
-      if (error?.response?.status === 403 || error?.response?.status === 404) return false
-      return failureCount < 3
-    },
+    retry: false,
   })
 }
 

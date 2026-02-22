@@ -92,32 +92,34 @@ class PostRevisionRepository:
         return None
 
     def find_by_sha(self, commit_sha: str) -> PostRevision | None:
-        """Fetch revision by commit SHA only.
+        """Fetch revision by commit SHA (full or short prefix).
+
+        Supports both full 40-char SHAs (exact match) and short SHAs
+        (prefix match, like git's short SHA convention).
 
         Args:
-            commit_sha: Git commit SHA string
+            commit_sha: Git commit SHA string (full or short prefix)
 
         Returns:
             PostRevision domain aggregate or None if not found
         """
+        sha_filter = (
+            col(PostRevisionModel.commit_sha).startswith(commit_sha)
+            if len(commit_sha) < 40
+            else PostRevisionModel.commit_sha == commit_sha
+        )
         if self.session:
             session = self.session
-            statement = select(PostRevisionModel).where(
-                PostRevisionModel.commit_sha == commit_sha
-            )
-            model = session.exec(statement).first()
-            if model:
-                return self._to_domain(model)
-            return None
+            model = session.exec(
+                select(PostRevisionModel).where(sha_filter)
+            ).first()
+            return self._to_domain(model) if model else None
         else:
             for session in get_db():
-                statement = select(PostRevisionModel).where(
-                    PostRevisionModel.commit_sha == commit_sha
-                )
-                model = session.exec(statement).first()
-                if model:
-                    return self._to_domain(model)
-                return None
+                model = session.exec(
+                    select(PostRevisionModel).where(sha_filter)
+                ).first()
+                return self._to_domain(model) if model else None
         return None
 
     def get_by_post_and_sha(

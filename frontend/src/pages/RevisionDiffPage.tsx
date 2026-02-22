@@ -55,7 +55,7 @@ export default function RevisionDiffPage() {
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-white p-1 overflow-hidden">
-          <DiffViewer diffLines={data?.diff_lines || []} />
+          <DiffViewer diffLines={sha === otherSha ? [] : (data?.diff_lines ?? [])} />
         </div>
       </div>
     </div>

@@ -24,7 +24,7 @@ interface RevisionItemProps {
 function RevisionItem({ revision, isCurrent, isInteractive, onSelect }: RevisionItemProps) {
   const handleActivate = () => {
     if (isInteractive) {
-      onSelect(revision.commit_sha)
+      onSelect(revision.short_sha)
     }
   }
 
@@ -117,12 +117,16 @@ function InitialLoadingSkeleton() {
 function ErrorState({ error, onRetry }: { error: Error | null; onRetry: () => void }) {
   return (
     <div
+      role="alert"
       data-testid="revision-timeline-error"
       aria-live="assertive"
       className="p-4 bg-red-50 border border-red-200 rounded-lg"
     >
       <p className="text-red-800 font-medium">Failed to load revisions</p>
-      <p className="text-red-600 text-sm mt-1">{error?.message}</p>
+      <p className="text-red-600 text-sm mt-1">
+        {(error as { response?: { data?: { error?: string } } } | null)?.response?.data?.error ??
+          error?.message}
+      </p>
       <button
         type="button"
         data-testid="revision-timeline-retry"
