@@ -331,6 +331,7 @@ def test_require_auth_creates_first_time_user_in_database(
         "email": "newuser@example.com",
     }
     mock_user_repository.find_by_clerk_user_id.return_value = None
+    mock_user_repository.add.side_effect = lambda u: u
 
     @app.route("/test")
     @require_auth

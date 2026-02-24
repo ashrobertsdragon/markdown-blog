@@ -166,7 +166,7 @@ def require_auth(f: Callable[..., Any]) -> Callable[..., Any]:
             user = User.create_from_clerk(
                 clerk_user_id=clerk_user_id, email=email
             )
-            user_repo.add(user)
+            user = user_repo.add(user)
 
         g.current_user = user
 
