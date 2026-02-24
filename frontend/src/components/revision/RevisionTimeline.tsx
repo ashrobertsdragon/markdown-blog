@@ -46,7 +46,7 @@ function RevisionItem({ revision, isCurrent, isInteractive, onSelect }: Revision
       tabIndex={isInteractive ? 0 : undefined}
       onClick={handleActivate}
       onKeyDown={handleKeyDown}
-      aria-label={`Revision ${revision.commit_sha} by User ${revision.author_id} ${revision.relative_time}${isCurrent ? ' (current)' : ''}`}
+      aria-label={`Revision ${revision.short_sha} by User ${revision.author_id} ${revision.relative_time}${isCurrent ? ' (current)' : ''}`}
       aria-current={isCurrent ? 'true' : 'false'}
       className={`
         revision-item
