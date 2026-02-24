@@ -16,7 +16,7 @@
     "test:acceptance": "playwright test acceptance/",
     "test:all": "vitest run && playwright test",
     "lint": "biome check --write . && tsc --noEmit",
-    "lint:ci": "biome ci .",
+    "lint:ci": "biome ci . && tsc --noEmit",
     "clean": "rm -rf ../build coverage"
   },
   "dependencies": {
