@@ -22,19 +22,14 @@ from uuid import uuid4
 
 import pytest
 
+from backend.application.commands.revert_to_revision_command import (
+    RevertToRevisionCommand,
+    revert_to_revision_handler,
+)
 from backend.domain.aggregates.post import Post
 from backend.domain.aggregates.post_revision import PostRevision
 from backend.domain.value_objects.commit_sha import CommitSHA
 from backend.domain.value_objects.slug import Slug
-
-try:
-    from backend.application.commands.revert_to_revision_command import (
-        RevertToRevisionCommand,
-        revert_to_revision_handler,
-    )
-except ImportError:
-    RevertToRevisionCommand = None
-    revert_to_revision_handler = None
 
 
 def test_command_dataclass_structure() -> None:
@@ -183,10 +178,10 @@ def test_command_fields_are_immutable() -> None:
     )
 
     with pytest.raises((AttributeError, TypeError)):
-        command.slug = "modified-slug"
+        command.slug = "modified-slug"  # type: ignore[misc]
 
     with pytest.raises((AttributeError, TypeError)):
-        command.target_sha = "modified-sha"
+        command.target_sha = "modified-sha"  # type: ignore[misc]
 
 
 def test_command_repr_shows_all_fields() -> None:

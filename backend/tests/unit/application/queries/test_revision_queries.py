@@ -18,36 +18,24 @@ from uuid import uuid4
 
 import pytest
 
+from backend.application.queries.compare_revisions_query import (
+    CompareRevisionsQuery,
+    CompareRevisionsResponse,
+    compare_revisions_handler,
+)
+from backend.application.queries.get_revision_history_query import (
+    GetRevisionHistoryQuery,
+    GetRevisionHistoryResponse,
+    get_revision_history_handler,
+)
+from backend.application.queries.get_revision_query import (
+    GetRevisionQuery,
+    GetRevisionResponse,
+    get_revision_handler,
+)
 from backend.domain.aggregates.post_revision import PostRevision
 from backend.domain.value_objects.commit_sha import CommitSHA
 from backend.infrastructure.versioning.diff_service import DiffResult
-
-try:
-    from backend.application.queries.compare_revisions_query import (
-        CompareRevisionsQuery,
-        CompareRevisionsResponse,
-        compare_revisions_handler,
-    )
-    from backend.application.queries.get_revision_history_query import (
-        GetRevisionHistoryQuery,
-        GetRevisionHistoryResponse,
-        get_revision_history_handler,
-    )
-    from backend.application.queries.get_revision_query import (
-        GetRevisionQuery,
-        GetRevisionResponse,
-        get_revision_handler,
-    )
-except ImportError:
-    GetRevisionHistoryQuery = None
-    GetRevisionHistoryResponse = None
-    get_revision_history_handler = None
-    GetRevisionQuery = None
-    GetRevisionResponse = None
-    get_revision_handler = None
-    CompareRevisionsQuery = None
-    CompareRevisionsResponse = None
-    compare_revisions_handler = None
 
 
 def test_get_revision_history_query_dataclass_structure() -> None:

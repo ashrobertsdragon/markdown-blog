@@ -47,7 +47,7 @@ def test_command_frozen_dataclass() -> None:
     )
 
     with pytest.raises((AttributeError, TypeError)):
-        command.slug = "modified-slug"
+        command.slug = "modified-slug"  # type: ignore[misc]
 
 
 def test_command_slug_type_validation() -> None:
@@ -58,10 +58,10 @@ def test_command_slug_type_validation() -> None:
     (None, int, etc.) raise clear ValueError or TypeError messages.
     """
     with pytest.raises((TypeError, ValueError)):
-        DeleteDraftCommand(slug=None, author_id=1, user_role="author")
+        DeleteDraftCommand(slug=None, author_id=1, user_role="author")  # type: ignore[arg-type]
 
     with pytest.raises((TypeError, ValueError)):
-        DeleteDraftCommand(slug=123, author_id=1, user_role="author")
+        DeleteDraftCommand(slug=123, author_id=1, user_role="author")  # type: ignore[arg-type]
 
 
 def test_command_empty_slug_validation() -> None:
