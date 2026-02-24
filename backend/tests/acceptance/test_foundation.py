@@ -7,7 +7,7 @@ in @.spec-workflow/specs/foundation/requirements.md.
 
 import os
 
-import pytest
+import pytest  # noqa: F401
 
 
 def test_project_structure_and_monorepo(client):

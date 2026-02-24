@@ -44,7 +44,7 @@ def test_passenger_wsgi_raises_value_error(flask_env, monkeypatch):
     with pytest.raises(
         ValueError, match="Virtual Environment path must be set"
     ):
-        import passenger_wsgi
+        import passenger_wsgi  # noqa: F401
 
 
 def test_passenger_wsgi_testing_does_not_exec(monkeypatch):

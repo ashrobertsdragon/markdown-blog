@@ -134,7 +134,6 @@ def compare_revisions_handler(
         f"Successfully generated diff: {len(diff_result.lines)} diff lines"
     )
 
-
     formatted_diff_lines = []
     for line in diff_result.lines:
         line_num = (

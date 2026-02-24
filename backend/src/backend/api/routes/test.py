@@ -64,7 +64,6 @@ def seed() -> tuple[Response, int]:
     if guard is not None:
         return guard
 
-
     from backend.infrastructure.persistence.database import dispose_engine
 
     dispose_engine()
@@ -113,7 +112,6 @@ def seed() -> tuple[Response, int]:
             )
 
         session.flush()
-
 
         test_post = session.exec(
             select(Post).where(Post.slug == "test-post")

@@ -52,6 +52,6 @@ def ensure_virtualenv(path: str | None = None) -> None:
 if os.environ.get("FLASK_ENV") != "TESTING":
     ensure_virtualenv()
 
-from backend.main import create_app
+from backend.main import create_app  # noqa: E402
 
 application = create_app()
