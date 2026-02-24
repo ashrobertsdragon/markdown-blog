@@ -63,7 +63,7 @@ export function DiffViewer({ diffLines, isLoading, error }: DiffViewerProps) {
 
           return (
             <div
-              key={index}
+              key={`${line.type}-${displayNumber}-${index}`}
               data-testid={`diff-line-${line.type}-${displayNumber}`}
               className={`${bgColor} flex whitespace-pre`}
             >
