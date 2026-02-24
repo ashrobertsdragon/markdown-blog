@@ -207,7 +207,7 @@ def test_publish_with_none_html_raises_error() -> None:
     post = Post.create_draft("none-html", "None HTML Test", 1)
 
     with pytest.raises(ValueError, match="html_content"):
-        post.publish(None)  # type: ignore[arg-type]
+        post.publish(None)
 
 
 def test_publish_with_empty_html_accepted() -> None:

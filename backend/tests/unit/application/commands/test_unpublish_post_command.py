@@ -49,7 +49,7 @@ def test_command_frozen_dataclass() -> None:
     )
 
     with pytest.raises((AttributeError, TypeError)):
-        command.slug = "modified-slug"  # type: ignore[misc]
+        command.slug = "modified-slug"
 
 
 def test_command_slug_type_validation() -> None:
@@ -60,10 +60,10 @@ def test_command_slug_type_validation() -> None:
     (None, int, etc.) raise clear ValueError messages.
     """
     with pytest.raises((TypeError, ValueError)):
-        UnpublishPostCommand(slug=None, author_id=1, user_role="author")  # type: ignore[arg-type]
+        UnpublishPostCommand(slug=None, author_id=1, user_role="author")
 
     with pytest.raises((TypeError, ValueError)):
-        UnpublishPostCommand(slug=123, author_id=1, user_role="author")  # type: ignore[arg-type]
+        UnpublishPostCommand(slug=123, author_id=1, user_role="author")
 
 
 def test_command_repr() -> None:

@@ -130,13 +130,13 @@ def test_query_frozen_dataclass_immutability() -> None:
     query = ListPostsQuery(author_id=42)
 
     with pytest.raises((AttributeError, TypeError)):
-        query.author_id = 99  # type: ignore[misc]
+        query.author_id = 99
 
     with pytest.raises((AttributeError, TypeError)):
-        query.page = 5  # type: ignore[misc]
+        query.page = 5
 
     with pytest.raises((AttributeError, TypeError)):
-        query.limit = 10  # type: ignore[misc]
+        query.limit = 10
 
 
 def test_query_instances_are_comparable() -> None:

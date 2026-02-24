@@ -82,7 +82,7 @@ class PostRepository:
         """
         statement = select(PostModel).where(
             PostModel.slug == slug,
-            PostModel.deleted_at == None,  # noqa: E711
+            PostModel.deleted_at == None,
         )
 
         if self._session:
@@ -119,7 +119,7 @@ class PostRepository:
             select(PostModel)
             .where(
                 PostModel.author_id == author_id,
-                PostModel.deleted_at == None,  # noqa: E711
+                PostModel.deleted_at == None,
             )
             .order_by(col(PostModel.created_at).desc())
             .limit(limit)
@@ -155,7 +155,7 @@ class PostRepository:
             select(PostModel)
             .where(
                 PostModel.published,
-                PostModel.deleted_at == None,  # noqa: E711
+                PostModel.deleted_at == None,
             )
             .order_by(col(PostModel.created_at).desc())
             .limit(limit)
@@ -286,7 +286,7 @@ class PostRepository:
         Returns:
             Tuple of (posts list, total count of matching posts)
         """
-        not_deleted = PostModel.deleted_at == None  # noqa: E711
+        not_deleted = PostModel.deleted_at == None
         base_where = (PostModel.author_id == author_id) & not_deleted
 
         if filter_type == PostFilter.DRAFTS:

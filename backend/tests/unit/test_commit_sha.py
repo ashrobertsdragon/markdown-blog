@@ -49,7 +49,7 @@ class TestCommitSHAValidationErrors:
     def test_commit_sha_rejects_none(self) -> None:
         """CommitSHA raises TypeError when initialized with None."""
         with pytest.raises(TypeError):
-            CommitSHA(None)  # type: ignore[arg-type]
+            CommitSHA(None)
 
     def test_commit_sha_rejects_empty_string(self) -> None:
         """CommitSHA raises ValueError when initialized with empty string."""
@@ -89,7 +89,7 @@ class TestCommitSHAImmutability:
         sha_value = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0"
         commit_sha = CommitSHA(sha_value)
         with pytest.raises(AttributeError):
-            commit_sha.value = "different_sha_value"  # type: ignore[misc]
+            commit_sha.value = "different_sha_value"
 
     def test_commit_sha_equality_by_value(self) -> None:
         """Two CommitSHA instances with the same value are equal."""

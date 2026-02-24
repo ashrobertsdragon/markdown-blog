@@ -77,10 +77,10 @@ def test_save_draft_command_immutable() -> None:
     )
 
     with pytest.raises((AttributeError, TypeError)):
-        command.slug = "modified-slug"  # type: ignore[misc]
+        command.slug = "modified-slug"
 
     with pytest.raises((AttributeError, TypeError)):
-        command.content = "Modified content"  # type: ignore[misc]
+        command.content = "Modified content"
 
 
 def test_save_draft_command_slug_too_long() -> None:

@@ -59,13 +59,13 @@ def test_html_content_value_cannot_be_changed_after_creation() -> None:
     """Verify HtmlContent is immutable after creation."""
     content = HtmlContent("<p>Original HTML</p>")
     with pytest.raises(AttributeError):
-        content.value = "<p>Modified HTML</p>"  # type: ignore[misc]
+        content.value = "<p>Modified HTML</p>"
 
 
 def test_html_content_raises_typeerror_for_none_input() -> None:
     """Verify None input raises TypeError since HTML cannot be None."""
     with pytest.raises(TypeError):
-        HtmlContent(None)  # type: ignore[arg-type]
+        HtmlContent(None)
 
 
 def test_html_content_instances_are_hashable() -> None:

@@ -57,14 +57,14 @@ def test_markdown_content_preserves_unicode() -> None:
 def test_markdown_content_raises_typeerror_for_none_input() -> None:
     """Verify None input raises TypeError since markdown cannot be None."""
     with pytest.raises(TypeError):
-        MarkdownContent(None)  # type: ignore[arg-type]
+        MarkdownContent(None)
 
 
 def test_markdown_content_value_cannot_be_changed_after_creation() -> None:
     """Verify MarkdownContent is immutable after creation."""
     content = MarkdownContent("Original content")
     with pytest.raises(AttributeError):
-        content.value = "Modified content"  # type: ignore[misc]
+        content.value = "Modified content"
 
 
 def test_markdown_content_instances_are_hashable() -> None:

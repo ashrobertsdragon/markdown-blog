@@ -66,13 +66,13 @@ def test_slug_raises_valueerror_for_special_chars_only() -> None:
 
 def test_slug_raises_typeerror_for_none_input() -> None:
     with pytest.raises(TypeError):
-        Slug(None)  # type: ignore[arg-type]
+        Slug(None)
 
 
 def test_slug_value_cannot_be_changed_after_creation() -> None:
     slug = Slug("my-post")
     with pytest.raises(AttributeError):
-        slug.value = "new-value"  # type: ignore[misc]
+        slug.value = "new-value"
 
 
 def test_slug_instances_are_hashable() -> None:

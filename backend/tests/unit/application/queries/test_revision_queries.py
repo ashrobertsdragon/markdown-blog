@@ -39,15 +39,15 @@ try:
         get_revision_handler,
     )
 except ImportError:
-    GetRevisionHistoryQuery = None  # type: ignore[misc, assignment]
-    GetRevisionHistoryResponse = None  # type: ignore[misc, assignment]
-    get_revision_history_handler = None  # type: ignore[assignment]
-    GetRevisionQuery = None  # type: ignore[misc, assignment]
-    GetRevisionResponse = None  # type: ignore[misc, assignment]
-    get_revision_handler = None  # type: ignore[assignment]
-    CompareRevisionsQuery = None  # type: ignore[misc, assignment]
-    CompareRevisionsResponse = None  # type: ignore[misc, assignment]
-    compare_revisions_handler = None  # type: ignore[assignment]
+    GetRevisionHistoryQuery = None
+    GetRevisionHistoryResponse = None
+    get_revision_history_handler = None
+    GetRevisionQuery = None
+    GetRevisionResponse = None
+    get_revision_handler = None
+    CompareRevisionsQuery = None
+    CompareRevisionsResponse = None
+    compare_revisions_handler = None
 
 
 def test_get_revision_history_query_dataclass_structure() -> None:

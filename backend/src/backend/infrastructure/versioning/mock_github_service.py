@@ -27,13 +27,13 @@ class MockGitHubSyncService:
         self._token = token
         self._owner = owner
         self._repo = repo
-        # Simple in-memory store: {path: content}
+
         self._files: dict[str, str] = {}
 
     def commit_file(self, path: str, content: str, message: str) -> str | None:
         """Simulate committing a file."""
         self._files[path] = content
-        # Return a fake 40-char SHA (hex is 32, so we pad with zeros)
+
         fake_sha = uuid.uuid4().hex.zfill(40)
         logger.info(f"[MOCK GITHUB] Committed {path} with message: {message}")
         return fake_sha

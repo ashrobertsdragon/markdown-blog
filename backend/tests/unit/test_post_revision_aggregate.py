@@ -103,7 +103,7 @@ class TestPostRevisionFieldValidation:
 
         with pytest.raises(ValueError, match="post_id cannot be None"):
             PostRevision.create(
-                post_id=None,  # type: ignore[arg-type]
+                post_id=None,
                 commit_sha=commit_sha_str,
                 author_id=author_id,
                 commit_message="Test",
@@ -117,7 +117,7 @@ class TestPostRevisionFieldValidation:
 
         with pytest.raises(TypeError, match="post_id must be an int"):
             PostRevision.create(
-                post_id="not-a-uuid",  # type: ignore[arg-type]
+                post_id="not-a-uuid",
                 commit_sha=commit_sha_str,
                 author_id=author_id,
                 commit_message="Test",
@@ -133,7 +133,7 @@ class TestPostRevisionFieldValidation:
             PostRevision.create(
                 post_id=post_id,
                 commit_sha=commit_sha_str,
-                author_id=None,  # type: ignore[arg-type]
+                author_id=None,
                 commit_message="Test",
                 markdown_content="Content",
             )
@@ -147,7 +147,7 @@ class TestPostRevisionFieldValidation:
             PostRevision.create(
                 post_id=post_id,
                 commit_sha=commit_sha_str,
-                author_id="not-an-int",  # type: ignore[arg-type]
+                author_id="not-an-int",
                 commit_message="Test",
                 markdown_content="Content",
             )
@@ -178,7 +178,7 @@ class TestPostRevisionFieldValidation:
                 post_id=post_id,
                 commit_sha=commit_sha_str,
                 author_id=author_id,
-                commit_message=None,  # type: ignore[arg-type]
+                commit_message=None,
                 markdown_content="Content",
             )
 
@@ -212,7 +212,7 @@ class TestPostRevisionFieldValidation:
                 commit_sha=commit_sha_str,
                 author_id=author_id,
                 commit_message="Test",
-                markdown_content=None,  # type: ignore[arg-type]
+                markdown_content=None,
             )
 
     def test_post_revision_create_invalid_commit_sha_propagates(self) -> None:
@@ -248,10 +248,10 @@ class TestPostRevisionImmutability:
         )
 
         with pytest.raises(Exception):
-            revision.commit_message = "Modified message"  # type: ignore[misc]
+            revision.commit_message = "Modified message"
 
         with pytest.raises(Exception):
-            revision.markdown_content = "Modified content"  # type: ignore[misc]
+            revision.markdown_content = "Modified content"
 
     def test_post_revision_prevents_timestamp_modification(self) -> None:
         """Timestamps cannot be changed."""
@@ -271,7 +271,7 @@ class TestPostRevisionImmutability:
         new_timestamp = datetime.now(UTC) + timedelta(hours=1)
 
         with pytest.raises(Exception):
-            revision.created_at = new_timestamp  # type: ignore[misc]
+            revision.created_at = new_timestamp
 
         assert revision.created_at == original_created_at
 
@@ -290,7 +290,7 @@ class TestPostRevisionImmutability:
         )
 
         with pytest.raises(Exception):
-            revision.commit_sha = CommitSHA("9" * 40)  # type: ignore[misc]
+            revision.commit_sha = CommitSHA("9" * 40)
 
 
 class TestPostRevisionProperties:

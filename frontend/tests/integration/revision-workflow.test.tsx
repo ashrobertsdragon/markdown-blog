@@ -100,7 +100,7 @@ describe('Revision Workflow Integration Tests', () => {
     })
     vi.clearAllMocks()
 
-    // Default mock implementation for useRevertRevision to avoid destructuring errors
+    
     mockUseRevertRevision.mockReturnValue({
       mutate: vi.fn(),
       isPending: false,

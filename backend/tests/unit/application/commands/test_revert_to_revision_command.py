@@ -33,8 +33,8 @@ try:
         revert_to_revision_handler,
     )
 except ImportError:
-    RevertToRevisionCommand = None  # type: ignore[misc, assignment]
-    revert_to_revision_handler = None  # type: ignore[assignment]
+    RevertToRevisionCommand = None
+    revert_to_revision_handler = None
 
 
 def test_command_dataclass_structure() -> None:
@@ -183,10 +183,10 @@ def test_command_fields_are_immutable() -> None:
     )
 
     with pytest.raises((AttributeError, TypeError)):
-        command.slug = "modified-slug"  # type: ignore[misc]
+        command.slug = "modified-slug"
 
     with pytest.raises((AttributeError, TypeError)):
-        command.target_sha = "modified-sha"  # type: ignore[misc]
+        command.target_sha = "modified-sha"
 
 
 def test_command_repr_shows_all_fields() -> None:

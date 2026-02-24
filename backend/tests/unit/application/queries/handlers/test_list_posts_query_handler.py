@@ -401,10 +401,10 @@ def test_list_posts_response_dataclass_is_frozen() -> None:
     )
 
     with pytest.raises((AttributeError, TypeError)):
-        response.posts = []  # type: ignore[misc]
+        response.posts = []
 
     with pytest.raises((AttributeError, TypeError)):
-        response.total_count = 10  # type: ignore[misc]
+        response.total_count = 10
 
 
 def test_list_posts_response_repr_includes_metadata() -> None:

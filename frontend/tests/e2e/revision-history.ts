@@ -12,7 +12,7 @@ import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
  */
 test.describe('Revision History E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // Seed the database
+    
     const response = await page.request.post('http://localhost:5555/api/test/seed')
     expect(response.ok()).toBeTruthy()
 
@@ -32,7 +32,7 @@ test.describe('Revision History E2E Tests', () => {
       const timelineList = page.locator('[data-testid="revision-timeline-list"]')
       await expect(timelineList).toBeVisible()
 
-      // Should have at least the 3 seeded revisions
+      
       const items = page.locator('[data-testid^="revision-item-"]')
       await expect(items).toHaveCount(3)
     })
@@ -40,21 +40,21 @@ test.describe('Revision History E2E Tests', () => {
     test('1.2: Shows correct metadata (SHA, author, timestamp, message)', async ({ page }) => {
       await page.goto('/posts/test-post/revisions')
 
-      // Get the first revision (most recent)
+      
       const firstItem = page.locator('[data-testid^="revision-item-"]').first()
       await expect(firstItem).toBeVisible()
 
-      // Check for elements within the first item
+      
       await expect(firstItem.locator('[data-testid^="revision-sha-"]')).toBeVisible()
-      await expect(firstItem).toContainText('User') // Displays 'User {author_id}'
-      await expect(firstItem).toContainText('Revert to initial') // Most recent seeded message
+      await expect(firstItem).toContainText('User')
+      await expect(firstItem).toContainText('Revert to initial')
     })
 
     test('1.3: Displays current badge on current revision', async ({ page }) => {
       await page.goto('/posts/test-post/revisions')
 
-      // The most recent revision is considered "current" by the frontend logic
-      // Our backend seed data has c3d4e5f... as the first one (most recent)
+      
+      
       const currentBadge = page.locator('[data-testid^="revision-current-badge-c3d4e5f"]')
       await expect(currentBadge).toBeVisible()
       await expect(currentBadge).toContainText('Current')
@@ -63,7 +63,7 @@ test.describe('Revision History E2E Tests', () => {
     test('1.4: Displays revert badge on revert revisions', async ({ page }) => {
       await page.goto('/posts/test-post/revisions')
 
-      // Our 3rd seeded revision (most recent) is a revert
+      
       const revertBadge = page.locator('[data-testid^="revision-revert-badge-"]').first()
       await expect(revertBadge).toBeVisible()
       await expect(revertBadge).toContainText('Revert')
@@ -104,7 +104,7 @@ test.describe('Revision History E2E Tests', () => {
 
     test('2.4: Detail renders HTML content', async ({ page }) => {
       await page.goto('/posts/test-post/revisions')
-      const revisionItem = page.locator('[data-testid^="revision-item-"]').last() // Initial one
+      const revisionItem = page.locator('[data-testid^="revision-item-"]').last()
       await revisionItem.click()
       await page.waitForLoadState('networkidle')
 
@@ -115,7 +115,7 @@ test.describe('Revision History E2E Tests', () => {
 
     test('2.5: Revert button visible for authors', async ({ page }) => {
       await page.goto('/posts/test-post/revisions')
-      const revisionItem = page.locator('[data-testid^="revision-item-"]').nth(1) // Middle one
+      const revisionItem = page.locator('[data-testid^="revision-item-"]').nth(1)
       await revisionItem.click()
       await page.waitForLoadState('networkidle')
 
@@ -132,14 +132,14 @@ test.describe('Revision History E2E Tests', () => {
       await page.goto('/posts/test-post/revisions')
       await waitForAuthToLoad(page)
 
-      // The error is in an Alert component
+      
       await expect(page.locator('role=alert')).toContainText(/not authorized/i)
     })
   })
 
   test.describe('Test Group 3: Diff Viewer', () => {
     test('3.1: Diff displays additions and deletions', async ({ page }) => {
-      // We need two SHAs to compare. Let's get them from the timeline.
+      
       await page.goto('/posts/test-post/revisions')
       const shaElements = page.locator('[data-testid^="revision-sha-"]')
       await expect(shaElements).toHaveCount(3)
@@ -158,7 +158,7 @@ test.describe('Revision History E2E Tests', () => {
       const diffContainer = page.locator('[aria-label="Diff viewer"]')
       await expect(diffContainer).toBeVisible()
 
-      // Since our seeded content for these two are slightly different, there should be some diff
+      
       const lines = page.locator('[data-testid^="diff-line-"]')
       await expect(lines.count()).resolves.toBeGreaterThan(0)
     })
@@ -210,7 +210,7 @@ test.describe('Revision History E2E Tests', () => {
       await expect(revertButton).toBeVisible()
       await revertButton.click()
 
-      // Modals in Shadcn (Radix) use role="alertdialog" or "dialog"
+      
       const modal = page.locator('role=alertdialog').or(page.locator('role=dialog'))
       await expect(modal.first()).toBeVisible()
       await expect(modal.first()).toContainText(/confirm revert/i)

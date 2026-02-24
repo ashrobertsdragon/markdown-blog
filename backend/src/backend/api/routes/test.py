@@ -64,7 +64,7 @@ def seed() -> tuple[Response, int]:
     if guard is not None:
         return guard
 
-    # Force close any existing sessions before dropping
+
     from backend.infrastructure.persistence.database import dispose_engine
 
     dispose_engine()
@@ -114,7 +114,7 @@ def seed() -> tuple[Response, int]:
 
         session.flush()
 
-        # Seed revisions for test-post
+
         test_post = session.exec(
             select(Post).where(Post.slug == "test-post")
         ).first()
