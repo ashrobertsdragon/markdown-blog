@@ -138,6 +138,10 @@ def client(test_settings, test_build_dir, monkeypatch, tmp_path):
 def dispose_engine_after_test():
     """Ensure engine is disposed after every test to free resources."""
     yield
+    from backend.config import _db_settings, get_db_url
+
+    _db_settings.cache_clear()
+    get_db_url.cache_clear()
     dispose_engine()
 
 
