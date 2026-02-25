@@ -9,7 +9,9 @@ from backend.infrastructure.persistence.database import get_db
 
 
 @pytest.mark.skipif(
-    not os.environ.get("DB_NAME"), reason="Database not configured"
+    not os.environ.get("DB_NAME")
+    and os.environ.get("FLASK_ENV", "").upper() != "TESTING",
+    reason="Database not configured",
 )
 def test_session_can_execute_simple_query():
     """Session from get_db should execute SELECT queries."""

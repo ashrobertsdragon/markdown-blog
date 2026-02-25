@@ -54,7 +54,7 @@ warn_return_any = true
 addopts = ["--cov-fail-under=80", "--cov-report=json", "--cov=.", "-rf"]
 markers = ["external: mark a test as requiring external an external dependency"]
 minversion = "9.0"
-pythonpath = ["src"]
+pythonpath = [".", "src"]
 testpaths = ["docs", "tests"]
 
 [tool.ruff]
@@ -77,3 +77,6 @@ ignore-decorators = ["typing.overload"]
 "**/__init__.py" = ["D104", "E402"]
 "**/{tests,docs,tools}/*" = ["ANN001", "ANN201", "D", "E402"]
 "config.py" = ["ANN003", "N802", "N803"]
+
+[tool.ty.environment]
+root = ["./src", "."]
