@@ -15,8 +15,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 import yaml
 
+from backend.api.dependencies import get_github_service
 from backend.domain.aggregates.user import User
 from backend.domain.value_objects.role import Role
+from backend.infrastructure.versioning.mock_github_service import (
+    MockGitHubSyncService,
+)
 
 
 @pytest.fixture
@@ -63,17 +67,7 @@ def mock_clerk_auth(author_jwt_payload, author_user):
         yield
 
 
-@pytest.fixture
-def mock_github():
-    """Mock GitHub service to avoid real network calls."""
-    with patch("backend.api.routes.posts.GitHubSyncService") as mock:
-        instance = mock.return_value
-        instance.commit_file.return_value = "fake_sha_123"
-        instance.delete_file.return_value = "fake_sha_delete"
-        yield instance
-
-
-def test_create_draft_post(client, mock_clerk_auth, mock_github):
+def test_create_draft_post(client, mock_clerk_auth):
     """Test Requirement 1, 8, and 11.
 
     Create draft with validation and front matter.
@@ -111,13 +105,12 @@ def test_create_draft_post(client, mock_clerk_auth, mock_github):
         assert "created_at" in front_matter
         assert front_matter["author"] == "10"
 
-    mock_github.commit_file.assert_called_once()
-    _, kwargs = mock_github.commit_file.call_args
-    assert slug in kwargs["path"]
-    assert f"Create draft: {title}" in kwargs["message"]
+    github = get_github_service()
+    assert isinstance(github, MockGitHubSyncService)
+    assert f"drafts/{slug}.md" in github._files
 
 
-def test_edit_draft_post(client, mock_clerk_auth, mock_github):
+def test_edit_draft_post(client, mock_clerk_auth):
     """Test Requirement 2: Edit draft content.
 
     Acceptance Criteria:
@@ -150,9 +143,10 @@ def test_edit_draft_post(client, mock_clerk_auth, mock_github):
         content = f.read()
         assert new_content in content
 
-    assert mock_github.commit_file.call_count == 2
-    _, kwargs = mock_github.commit_file.call_args
-    assert f"Update draft: {title}" in kwargs["message"]
+    github = get_github_service()
+    assert isinstance(github, MockGitHubSyncService)
+    assert f"drafts/{slug}.md" in github._files
+    assert new_content in github._files[f"drafts/{slug}.md"]
 
 
 def test_preview_markdown(client, mock_clerk_auth):
@@ -179,7 +173,7 @@ def test_preview_markdown(client, mock_clerk_auth):
         assert response.status_code in (404, 405, 501)
 
 
-def test_publish_post(client, mock_clerk_auth, mock_github):
+def test_publish_post(client, mock_clerk_auth):
     """Test Requirement 4 and 9.
 
     Publish post with markdown conversion and sanitization.
@@ -238,7 +232,7 @@ def test_publish_post(client, mock_clerk_auth, mock_github):
         assert "published_at" in front_matter
 
 
-def test_unpublish_post(client, mock_clerk_auth, mock_github):
+def test_unpublish_post(client, mock_clerk_auth):
     """Test Requirement 5: Unpublish a post.
 
     Acceptance Criteria:
@@ -277,7 +271,7 @@ def test_unpublish_post(client, mock_clerk_auth, mock_github):
         assert front_matter["published"] is False
 
 
-def test_delete_draft_post(client, mock_clerk_auth, mock_github):
+def test_delete_draft_post(client, mock_clerk_auth):
     """Test Requirement 6: Delete draft post.
 
     Acceptance Criteria:
@@ -301,10 +295,10 @@ def test_delete_draft_post(client, mock_clerk_auth, mock_github):
     assert response.status_code == 204
 
     assert not os.path.exists(file_path)
-    mock_github.delete_file.assert_called_once()
-    delete_kwargs = mock_github.delete_file.call_args.kwargs
-    assert slug in delete_kwargs["path"]
-    assert delete_kwargs["message"] == f"Delete draft: {slug}"
+
+    github = get_github_service()
+    assert isinstance(github, MockGitHubSyncService)
+    assert f"drafts/{slug}.md" not in github._files
 
 
 def test_list_author_drafts(client, mock_clerk_auth):

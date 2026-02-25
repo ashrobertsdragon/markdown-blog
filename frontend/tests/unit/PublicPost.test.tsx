@@ -1,7 +1,9 @@
+import type { UseQueryResult } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PublicPost from '@/pages/PublicPost'
+import type { PublicPostResponse } from '@/services/postsApi'
 
 /**
  * Mock react-router-dom to control route params
@@ -67,7 +69,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -88,7 +90,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -121,7 +123,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -159,7 +161,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -182,7 +184,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -207,7 +209,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -231,7 +233,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -257,7 +259,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -281,7 +283,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       const { container } = renderPublicPost()
 
@@ -304,7 +306,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -333,7 +335,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -359,7 +361,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -384,7 +386,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -410,7 +412,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -439,7 +441,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -464,7 +466,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -489,7 +491,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -516,7 +518,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -541,7 +543,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -578,7 +580,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -602,7 +604,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -626,7 +628,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -663,7 +665,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -687,7 +689,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -712,7 +714,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -737,7 +739,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       const { container } = renderPublicPost()
 
@@ -761,7 +763,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -799,7 +801,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       const { unmount } = renderPublicPost()
 
@@ -826,7 +828,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -861,7 +863,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       const { container } = renderPublicPost()
 
@@ -886,7 +888,7 @@ describe('PublicPost', () => {
         isError: true,
         error: mockError,
         isSuccess: false,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 
@@ -909,7 +911,7 @@ describe('PublicPost', () => {
         isError: false,
         error: null,
         isSuccess: true,
-      } as any)
+      } as unknown as UseQueryResult<PublicPostResponse, Error>)
 
       renderPublicPost()
 

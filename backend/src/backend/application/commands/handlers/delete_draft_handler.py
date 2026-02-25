@@ -4,14 +4,12 @@ from typing import TYPE_CHECKING
 from backend.application.commands.delete_draft_command import DeleteDraftCommand
 
 if TYPE_CHECKING:
+    from backend.domain.protocols.services import GitHubSyncService
     from backend.infrastructure.persistence.filesystem_draft_repository import (
         FileSystemDraftRepository,
     )
     from backend.infrastructure.persistence.post_repository import (
         PostRepository,
-    )
-    from backend.infrastructure.versioning.github_sync_service import (
-        GitHubSyncService,
     )
 
 logger = logging.getLogger(__name__)

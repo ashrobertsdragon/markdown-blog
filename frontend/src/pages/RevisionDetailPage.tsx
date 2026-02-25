@@ -19,7 +19,9 @@ export default function RevisionDetailPage() {
   }
 
   if (error || !draft) {
-    const isForbidden = (error as any)?.response?.status === 403 || error?.message?.includes('403')
+    const isForbidden =
+      (error as Error & { response?: { status: number } })?.response?.status === 403 ||
+      error?.message?.includes('403')
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">

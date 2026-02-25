@@ -8,14 +8,12 @@ import logging
 
 from backend.application.commands.create_draft_command import CreateDraftCommand
 from backend.domain.aggregates.post import Post
+from backend.domain.protocols.services import GitHubSyncService
 from backend.infrastructure.persistence.filesystem_draft_repository import (
     DraftFile,
     FileSystemDraftRepository,
 )
 from backend.infrastructure.persistence.post_repository import PostRepository
-from backend.infrastructure.versioning.github_sync_service import (
-    GitHubSyncService,
-)
 
 logger = logging.getLogger(__name__)
 

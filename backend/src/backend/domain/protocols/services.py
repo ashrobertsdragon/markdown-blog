@@ -49,6 +49,51 @@ class HtmlSanitizer(Protocol):
         ...
 
 
+class GitHubSyncService(Protocol):
+    """Protocol for GitHub file synchronization service.
+
+    Defines the interface for committing, deleting, and fetching files
+    via the GitHub Contents API. Both real and mock implementations must
+    satisfy this interface.
+    """
+
+    def commit_file(self, path: str, content: str, message: str) -> str | None:
+        """Commit a file to the repository.
+
+        Args:
+            path: File path in repository
+            content: File content to commit
+            message: Commit message
+
+        Returns:
+            Commit SHA on success, None on failure
+        """
+        ...
+
+    def delete_file(self, path: str, message: str) -> bool:
+        """Delete a file from the repository.
+
+        Args:
+            path: File path in repository
+            message: Commit message
+
+        Returns:
+            True on success, False on failure
+        """
+        ...
+
+    def get_file_content(self, path: str) -> str | None:
+        """Fetch file content from the repository.
+
+        Args:
+            path: File path in repository
+
+        Returns:
+            File content string on success, None on failure
+        """
+        ...
+
+
 class DiffService(Protocol):
     """Protocol for diff generation service.
 

@@ -5,6 +5,7 @@ from backend.application.commands.publish_post_command import PublishPostCommand
 
 if TYPE_CHECKING:
     from backend.domain.aggregates.post import Post
+    from backend.domain.protocols.services import GitHubSyncService
     from backend.infrastructure.markdown.markdown_rendering_service import (
         MarkdownRenderingService,
     )
@@ -15,9 +16,6 @@ if TYPE_CHECKING:
         PostRepository,
     )
     from backend.infrastructure.rendering.html_sanitizer import HtmlSanitizer
-    from backend.infrastructure.versioning.github_sync_service import (
-        GitHubSyncService,
-    )
 
 logger = logging.getLogger(__name__)
 

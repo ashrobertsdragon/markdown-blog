@@ -4,6 +4,7 @@ import logging
 
 from flask import Blueprint, Response, g, jsonify, request
 
+from backend.api.dependencies import get_github_service as _get_github_service
 from backend.api.middleware.auth_middleware import require_auth, require_role
 from backend.application.commands.create_draft_command import CreateDraftCommand
 from backend.application.commands.delete_draft_command import DeleteDraftCommand
@@ -46,9 +47,6 @@ from backend.infrastructure.persistence.filesystem_draft_repository import (
 )
 from backend.infrastructure.persistence.post_repository import PostRepository
 from backend.infrastructure.rendering.html_sanitizer import HtmlSanitizer
-from backend.infrastructure.versioning.github_sync_service import (
-    GitHubSyncService,
-)
 
 posts_bp = Blueprint("posts", __name__)
 logger = logging.getLogger(__name__)
@@ -82,16 +80,6 @@ def _get_draft_repository() -> FileSystemDraftRepository:
 def _get_post_repository() -> PostRepository:
     """Get PostRepository instance."""
     return PostRepository()
-
-
-def _get_github_service() -> GitHubSyncService:
-    """Get GitHubSyncService instance."""
-    gh_settings = _get_github_settings()
-    return GitHubSyncService(
-        gh_settings.GITHUB_TOKEN,
-        gh_settings.GITHUB_OWNER,
-        gh_settings.GITHUB_REPO,
-    )
 
 
 def _get_markdown_service() -> MarkdownRenderingService:

@@ -25,13 +25,9 @@ export function LoadingSpinner({ message, className, size = 'md' }: LoadingSpinn
   }
 
   return (
-    <div
-      className={cn('flex flex-col items-center justify-center gap-2', className)}
-      role="status"
-      aria-live="polite"
-    >
+    <output className={cn('flex flex-col items-center justify-center gap-2', className)}>
       <Loader2 className={cn('animate-spin', sizeClasses[size])} aria-hidden="true" />
       {message && <p className="text-lg text-gray-600">{message}</p>}
-    </div>
+    </output>
   )
 }

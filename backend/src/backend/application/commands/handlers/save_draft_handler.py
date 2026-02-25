@@ -11,12 +11,10 @@ from typing import TYPE_CHECKING
 import yaml
 
 from backend.application.commands.save_draft_command import SaveDraftCommand
+from backend.domain.protocols.services import GitHubSyncService
 from backend.infrastructure.persistence.filesystem_draft_repository import (
     DraftFile,
     FileSystemDraftRepository,
-)
-from backend.infrastructure.versioning.github_sync_service import (
-    GitHubSyncService,
 )
 
 if TYPE_CHECKING:

@@ -37,10 +37,10 @@ export function MarkdownEditor({ value, onChange, onSave, className }: MarkdownE
   }
 
   return (
-    <div
+    <fieldset
       onKeyDown={handleKeyDown}
       data-testid="markdown-editor-container"
-      className={cn('w-full', className)}
+      className={cn('w-full border-0 p-0 m-0', className)}
     >
       <MDEditor
         value={value}
@@ -49,6 +49,6 @@ export function MarkdownEditor({ value, onChange, onSave, className }: MarkdownE
           rehypePlugins: [[rehypeSanitize]],
         }}
       />
-    </div>
+    </fieldset>
   )
 }
