@@ -1,4 +1,5 @@
 import pytest
+
 from backend.domain.value_objects.comment_text import CommentText
 
 
