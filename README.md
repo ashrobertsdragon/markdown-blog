@@ -57,27 +57,27 @@ A modern blog platform combining Domain-Driven Design principles with a dual-sto
    cd markdown-blog
    ```
 
-2. **Configure Environment**
+1. **Configure Environment**
 
    - Copy `backend/.env.example` to `backend/.env`.
    - Copy `frontend/.env.example` to `frontend/.env`.
    - Fill in the required values in both `.env` files, such as database credentials and API keys.
 
-3. **Setup Backend**
+1. **Setup Backend**
 
    ```bash
    cd backend
    uv sync
    ```
 
-4. **Setup Frontend**
+1. **Setup Frontend**
 
    ```bash
    cd ../frontend
    npm install
    ```
 
-5. **Setup Database**
+1. **Setup Database**
    Ensure your PostgreSQL server is running, then create the development database.
 
    ```bash
@@ -86,7 +86,7 @@ A modern blog platform combining Domain-Driven Design principles with a dual-sto
 
    The backend is configured to use this database via the `DATABASE_URL` in `backend/.env`.
 
-6. **Run the Application**
+1. **Run the Application**
    Open two terminals:
 
    ```bash
@@ -235,9 +235,9 @@ CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key
 **Where to find these values:**
 
 1. Sign up at [clerk.com](https://clerk.com)
-2. Create a new application
-3. Navigate to **API Keys** in the Clerk dashboard
-4. Copy the **Secret Key** and **Publishable Key**
+1. Create a new application
+1. Navigate to **API Keys** in the Clerk dashboard
+1. Copy the **Secret Key** and **Publishable Key**
 
 #### Protecting Endpoints
 
@@ -485,7 +485,7 @@ The application provides two `useAuth` hooks with different purposes:
    - Provides role-based logic (`role`, `isSignedIn`, `isLoaded`, `user`)
    - Use for role checks and user display in components
 
-2. **Clerk useAuth** (`@clerk/clerk-react`):
+1. **Clerk useAuth** (`@clerk/clerk-react`):
 
    - Provides `getToken()` for obtaining JWT tokens
    - Use when making authenticated API calls
@@ -630,9 +630,9 @@ def create_post():
 **Debugging Tips:**
 
 1. **Check JWT payload**: Use [jwt.io](https://jwt.io) to decode tokens and verify claims (`sub`, `email`, `exp`)
-2. **Inspect network requests**: Use browser DevTools Network tab to verify `Authorization` header is present
-3. **Enable Flask debug logging**: Set `FLASK_DEBUG=1` in `backend/.env` to see detailed auth errors
-4. **Test with curl**: Manually test endpoints with curl to isolate frontend vs backend issues:
+1. **Inspect network requests**: Use browser DevTools Network tab to verify `Authorization` header is present
+1. **Enable Flask debug logging**: Set `FLASK_DEBUG=1` in `backend/.env` to see detailed auth errors
+1. **Test with curl**: Manually test endpoints with curl to isolate frontend vs backend issues:
 
 ```bash
 # Get token from Clerk dashboard or browser DevTools
@@ -845,12 +845,12 @@ Publish a draft, rendering markdown to HTML and making it visible.
 **Pipeline on publish:**
 
 1. Reads draft markdown from filesystem
-2. Renders markdown to HTML using markdown-it-py
-3. Applies syntax highlighting to code blocks with Pygments
-4. Sanitizes HTML with Bleach (allowlist-based)
-5. Stores rendered HTML in database
-6. Updates publication status and timestamps
-7. Commits changes to GitHub
+1. Renders markdown to HTML using markdown-it-py
+1. Applies syntax highlighting to code blocks with Pygments
+1. Sanitizes HTML with Bleach (allowlist-based)
+1. Stores rendered HTML in database
+1. Updates publication status and timestamps
+1. Commits changes to GitHub
 
 **Example curl:**
 
@@ -1158,9 +1158,9 @@ The rendered HTML is sanitized using **Bleach**, an allowlist-based HTML sanitiz
 **Security measures:**
 
 1. **Dangerous tags removed:** `<script>`, `<style>`, `<iframe>`, `<object>` and their contents are completely removed
-2. **Protocol filtering:** Only `http://`, `https://`, and `mailto:` protocols allowed
-3. **External link security:** All external links (`http://`, `https://`) automatically get `rel="nofollow noreferrer"` attributes
-4. **XSS prevention:** Event handlers and inline styles removed
+1. **Protocol filtering:** Only `http://`, `https://`, and `mailto:` protocols allowed
+1. **External link security:** All external links (`http://`, `https://`) automatically get `rel="nofollow noreferrer"` attributes
+1. **XSS prevention:** Event handlers and inline styles removed
 
 **Examples of filtered content:**
 
@@ -1278,9 +1278,9 @@ Everything after the closing `---` delimiter is the raw markdown content.
 #### Workflow
 
 1. **Draft created:** When you create a draft via the API, a new `.md` file is created with initial YAML front matter and blank content
-2. **Draft saved:** Each `PUT /api/posts/:slug` saves the markdown content to the filesystem and commits to GitHub
-3. **Draft published:** When you publish, the markdown is rendered to HTML, sanitized, and stored in the database; `published: true` is set in front matter
-4. **Draft unpublished:** Setting `published: false` hides the post but keeps the rendered HTML stored
+1. **Draft saved:** Each `PUT /api/posts/:slug` saves the markdown content to the filesystem and commits to GitHub
+1. **Draft published:** When you publish, the markdown is rendered to HTML, sanitized, and stored in the database; `published: true` is set in front matter
+1. **Draft unpublished:** Setting `published: false` hides the post but keeps the rendered HTML stored
 
 ## Testing
 
@@ -1424,7 +1424,7 @@ Before deploying to production:
    git checkout -b feature/your-feature-name
    ```
 
-2. **Write failing tests (TDD)**
+1. **Write failing tests (TDD)**
 
    ```bash
    # Backend
@@ -1434,20 +1434,20 @@ Before deploying to production:
    cd frontend && npm test -- tests/NewComponent.test.jsx
    ```
 
-3. **Implement feature**
+1. **Implement feature**
 
    - Follow existing patterns in codebase
    - Keep domain logic in `domain/` layer
    - Infrastructure concerns in `infrastructure/`
 
-4. **Ensure tests pass**
+1. **Ensure tests pass**
 
    ```bash
    uv run pytest          # Backend
    npm test               # Frontend
    ```
 
-5. **Run quality checks**
+1. **Run quality checks**
 
 ```bash
 uvx ruff check --fix . # Backend lint
@@ -1519,6 +1519,8 @@ PRs must meet these criteria before merging:
 
 - [Deployment Guide](docs/deployment.md) - Production deployment instructions
 - [API Reference](docs/api.md) - REST API endpoints documentation
+- [Revision Tracking API](docs/revision-tracking.md) - Revision history, diff, and revert endpoints
+- [OpenAPI Specification](shared/openapi.yaml) - Machine-readable API contract (OpenAPI 3.0)
 
 ### External Resources
 

@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Docs**: Added `docs/revision-tracking.md` with full API documentation for all four
+  revision tracking endpoints (list, get, diff, revert), including request/response
+  schemas, error codes, performance SLAs, and curl/Python/bash code examples
+
+- **Docs**: Added `shared/openapi.yaml` with OpenAPI 3.0 specification for revision
+  tracking endpoints, including reusable component schemas, security scheme, and
+  structured examples
+
+- **Docs**: Linked revision tracking API docs and OpenAPI spec from README
+
 - **PostEditor**: Added "View History" button that navigates to `/posts/{slug}/revisions`
 
 - **CI/CD**: Added GitHub Actions deployment workflow
@@ -370,6 +380,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - File modified: `frontend/src/App.tsx`
 
 - **Frontend**: Comprehensive E2E authentication flow tests with Playwright
+
   - Created playwright.config.ts with multi-browser testing (Chromium, Firefox, WebKit)
   - Implemented web server auto-start for frontend (Vite port 3000) and backend (Flask port 5000)
   - Configured test reporting: HTML, JSON, and JUnit XML formats
@@ -763,6 +774,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enforced CLAUDE.md rule: no code comments, only docstrings
 
 - **Backend**: Post table schema update for improved field naming and querying
+
   - Renamed `published_html` column to `html_content` for consistency with domain model
   - Added `published_at` field (datetime | None) to track publication timestamp with database index for efficient sorting
   - Added index to `published` field for optimized filtering queries
@@ -798,6 +810,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files modified: `backend/src/passenger_wsgi.py`
 
 - **Frontend**: Updated entry point from `main.jsx` to `main.tsx` in `index.html`.
+
 - **Frontend**: Updated tests to correctly expect `React.StrictMode` as `symbol` type (React 18 behavior).
 
 ### Removed
@@ -811,19 +824,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **RevisionTimeline**: Added `role="alert"` to error state and extract backend error message from response body so authorization errors display "not authorized" text correctly
+
 - **RevisionHistory**: Improved `isForbidden` detection to match backend error message text in addition to HTTP status code
+
 - **useRevisions/usePosts**: Added `retry: false` to all query hooks so 403/404 errors surface immediately without retry delays
+
 - **PostRevisionRepository**: `find_by_sha` now supports short SHA prefix matching (< 40 chars uses `startswith`) in addition to full SHA exact match
+
 - **DiffViewer**: Removed `hasChanges` guard so context-only diff arrays render correctly; parent page passes empty array for same-SHA comparisons to show "No changes detected"
 
 - **DiffViewer**: Corrected `data-testid` from `diff-viewer` (added), line background colours from `bg-green-50`/`bg-red-50` to `bg-green-100`/`bg-red-100`, and line number logic to use `line_number_new ?? line_number_old` from real API field names
+
 - **RevisionTimeline**: Changed `data-testid` from `revision-timeline-container` to `revision-timeline`
+
 - **RevisionDiffPage**: Fixed reversed `useRevisionDiff` argument order (`sha`, `otherSha`)
+
 - **revisionsApi**: Updated `DiffLine` interface to match real backend shape: `line_number_old?` and `line_number_new?` (snake_case) replacing `lineNumber?`
+
 - **types/revision**: Removed non-existent `RevisionAuthor` re-export
+
 - **Tests**: Fixed `author: { id, name }` → `author_id` across all revision test files (unit, integration, acceptance)
+
 - **Tests**: Fixed `revision-timeline-container` → `revision-timeline` testid in integration and unit tests
+
 - **Tests**: Fixed `DiffLine` field name (`lineNumber` → `line_number_new`) and colour assertions in both DiffViewer test files
+
 - **Acceptance tests**: Rewrote `revision-tracking.ts` to use real backend — removed all `page.route()` mocks, added `beforeAll`/`afterAll` seed/reset hooks, serial mode
 
 - **API**: `GET /api/posts/<slug>` now includes markdown `content` from the filesystem so the editor loads with existing draft text
@@ -1319,6 +1344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Frontend Components & Routing (TDD)
 
 - **Task 16**: Created NotFound page component
+
   - Created frontend/src/pages/NotFound.tsx with 404 error page
   - Implemented user-friendly 404 message with Tailwind styling
   - Added React Router Link component for navigation back to home page
@@ -1327,7 +1353,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests verify 404 message rendering, home link presence and navigation, component styling
   - All tests use React Testing Library with BrowserRouter wrapper
   - Component uses Tailwind utility classes for styling (flex, text-9xl, rounded-lg, etc.)
+
 - Created Home page component with health status display
+
   - Created frontend/src/pages/Home.tsx as landing page demonstrating health check integration
   - Implemented health status fetching from healthService.checkHealth() on component mount
   - Added loading, error, and success state management using React hooks (useState, useEffect)
@@ -1341,8 +1369,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - TypeScript with proper HealthResponse interface integration
 
 - Established monorepo structure with backend/ and frontend/ directories
+
 - Configured uv as Python package manager
+
 - Set up pre-commit hooks for code quality enforcement
+
 - Configured GitHub Actions CI/CD pipelines for backend (Python 3.13) and frontend (Node 22.18, 24.6)
 
 ### Changed

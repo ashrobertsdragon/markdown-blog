@@ -1,0 +1,562 @@
+openapi: 3.0.0
+info:
+  title: Blog API
+  version: 1.0.0
+  description: >
+    REST API for the Flask + React blog platform. Provides endpoints
+    for post management, revision tracking, comments, and
+    notifications. All authenticated endpoints require a Clerk-issued
+    JWT Bearer token.
+
+servers:
+  - url: /api
+    description: Application API root
+
+security:
+  - bearerAuth: []
+
+paths:
+  /posts/{slug}/revisions:
+    get:
+      operationId: listRevisions
+      summary: List revision history for a post
+      description: >
+        Returns paginated revision history sorted most-recent-first.
+        Each revision includes the commit SHA, author ID, timestamp,
+        relative time string, commit message, and a flag indicating
+        whether it was a revert commit. Only the post author or an
+        admin may access this endpoint.
+      tags:
+        - Revision Tracking
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+        - name: skip
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000
+            default: 0
+          description: Number of records to skip for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of records to return per page
+      responses:
+        '200':
+          description: Paginated list of revisions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevisionListResponse'
+              example:
+                revisions:
+                  - id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    commit_sha: "abc123def456abc123def456abc123def456abc1"
+                    short_sha: "abc123d"
+                    author_id: "f1e2d3c4-b5a6-9870-fedc-ba9876543210"
+                    timestamp: "2024-11-10T15:30:00+00:00"
+                    relative_time: "2 days ago"
+                    commit_message: "Update introduction paragraph"
+                    is_revert: false
+                total_count: 42
+                has_more: true
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidSkip:
+                  value:
+                    error: "skip must be between 0 and 10000"
+                invalidLimit:
+                  value:
+                    error: "limit must be between 1 and 100"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/PostNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /posts/{slug}/revisions/{sha}:
+    get:
+      operationId: getRevision
+      summary: Get a single revision by commit SHA
+      description: >
+        Returns the full content of a post at a specific commit SHA,
+        including both raw markdown and sanitized rendered HTML.
+        Includes a flag indicating whether this is the currently
+        active revision. Only the post author or an admin may access
+        this endpoint.
+      tags:
+        - Revision Tracking
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+        - $ref: '#/components/parameters/ShaParam'
+      responses:
+        '200':
+          description: Revision details with content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevisionDetailResponse'
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                commit_sha: "abc123def456abc123def456abc123def456abc1"
+                short_sha: "abc123d"
+                author_id: "f1e2d3c4-b5a6-9870-fedc-ba9876543210"
+                timestamp: "2024-11-10T15:30:00+00:00"
+                commit_message: "Update introduction paragraph"
+                markdown_content: "# My Post\n\nIntroduction content..."
+                html_content: "<h1>My Post</h1><p>Introduction content...</p>"
+                is_current: false
+                is_revert: false
+        '400':
+          description: Invalid SHA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptySha:
+                  value:
+                    error: "SHA cannot be empty"
+                shaTooLong:
+                  value:
+                    error: "SHA length 101 exceeds maximum of 100"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /posts/{slug}/revisions/{sha1}/diff/{sha2}:
+    get:
+      operationId: compareRevisions
+      summary: Compare two revisions and generate a diff
+      description: >
+        Generates a line-by-line diff between two revisions identified
+        by commit SHAs. Returns structured diff lines annotated with
+        type (context, addition, or deletion). SHA order is
+        significant: sha1 is the "from" (older) revision, sha2 is
+        the "to" (newer) revision. Only the post author or an admin
+        may access this endpoint.
+      tags:
+        - Revision Tracking
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+        - name: sha1
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 100
+          description: Commit SHA of the older ("from") revision
+        - name: sha2
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 100
+          description: Commit SHA of the newer ("to") revision
+      responses:
+        '200':
+          description: Diff between the two revisions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffResponse'
+              example:
+                from_revision:
+                  sha: "abc123def456abc123def456abc123def456abc1"
+                  short_sha: "abc123d"
+                  timestamp: "2024-11-09T10:00:00+00:00"
+                  author_id: "f1e2d3c4-b5a6-9870-fedc-ba9876543210"
+                to_revision:
+                  sha: "def456abc123def456abc123def456abc123def4"
+                  short_sha: "def456a"
+                  timestamp: "2024-11-10T15:30:00+00:00"
+                  author_id: "f1e2d3c4-b5a6-9870-fedc-ba9876543210"
+                diff_lines:
+                  - type: "context"
+                    content: "# My Post"
+                  - type: "deletion"
+                    content: "Old introduction paragraph."
+                  - type: "addition"
+                    content: "New introduction paragraph."
+                  - type: "context"
+                    content: ""
+        '400':
+          description: Invalid SHA parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyFromSha:
+                  value:
+                    error: "from_sha cannot be empty"
+                emptyToSha:
+                  value:
+                    error: "to_sha cannot be empty"
+                fromShaTooLong:
+                  value:
+                    error: "from_sha length 101 exceeds maximum of 100"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /posts/{slug}/revert:
+    post:
+      operationId: revertToRevision
+      summary: Revert a post to a previous revision
+      description: >
+        Restores draft content to the state at a specified commit SHA.
+        Creates a new GitHub commit with message "Revert to
+        {short-sha}: {original-message}" and a corresponding
+        PostRevision record. Previous history is preserved — this
+        operation is non-destructive. Only the post author or an
+        admin may revert.
+      tags:
+        - Revision Tracking
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevertRequest'
+            example:
+              target_sha: "abc123def456"
+      responses:
+        '200':
+          description: Post successfully reverted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevertResponse'
+              example:
+                success: true
+                message: "Post reverted to abc123d"
+                new_commit_sha: "xyz789abc123xyz789abc123xyz789abc123xyz7"
+                redirect_url: "/edit/my-post"
+        '400':
+          description: Missing or invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notJson:
+                  value:
+                    error: "Request body must be JSON"
+                missingField:
+                  value:
+                    error: "Missing required field: target_sha"
+                shaTooLong:
+                  value:
+                    error: "target_sha length 101 exceeds maximum of 100"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: GitHub commit or filesystem write failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk-issued JWT token
+
+  parameters:
+    SlugParam:
+      name: slug
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-z0-9-]+$'
+      description: URL slug identifying the post
+    ShaParam:
+      name: sha
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 100
+      description: Full or abbreviated commit SHA
+
+  schemas:
+    RevisionSummary:
+      type: object
+      description: Revision metadata without content
+      properties:
+        id:
+          type: string
+          format: uuid
+        commit_sha:
+          type: string
+          description: Full 40-character commit SHA
+        short_sha:
+          type: string
+          description: First 7 characters of commit SHA
+        author_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        relative_time:
+          type: string
+          description: Human-readable elapsed time (e.g. "2 days ago")
+        commit_message:
+          type: string
+        is_revert:
+          type: boolean
+      required:
+        - id
+        - commit_sha
+        - short_sha
+        - author_id
+        - timestamp
+        - relative_time
+        - commit_message
+        - is_revert
+
+    RevisionListResponse:
+      type: object
+      properties:
+        revisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RevisionSummary'
+        total_count:
+          type: integer
+          description: Total number of revisions for this post
+        has_more:
+          type: boolean
+          description: Whether more revisions exist beyond this page
+      required:
+        - revisions
+        - total_count
+        - has_more
+
+    RevisionDetailResponse:
+      type: object
+      description: Single revision with full content
+      properties:
+        id:
+          type: string
+          format: uuid
+        commit_sha:
+          type: string
+          description: Full 40-character commit SHA
+        short_sha:
+          type: string
+          description: First 7 characters of commit SHA
+        author_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        commit_message:
+          type: string
+        markdown_content:
+          type: string
+          description: Raw markdown content at this revision
+        html_content:
+          type: string
+          description: Sanitized rendered HTML content
+        is_current:
+          type: boolean
+          description: True if this is the most recent revision
+        is_revert:
+          type: boolean
+      required:
+        - id
+        - commit_sha
+        - short_sha
+        - author_id
+        - timestamp
+        - commit_message
+        - markdown_content
+        - html_content
+        - is_current
+        - is_revert
+
+    RevisionRef:
+      type: object
+      description: Minimal revision reference used in diff responses
+      properties:
+        sha:
+          type: string
+          description: Full 40-character commit SHA
+        short_sha:
+          type: string
+          description: First 7 characters of commit SHA
+        timestamp:
+          type: string
+          format: date-time
+        author_id:
+          type: string
+          format: uuid
+      required:
+        - sha
+        - short_sha
+        - timestamp
+        - author_id
+
+    DiffLine:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [context, addition, deletion]
+          description: >
+            Line classification: context = unchanged, addition =
+            added in to_revision, deletion = removed in to_revision
+        content:
+          type: string
+          description: Line content (without leading +/- markers)
+      required:
+        - type
+        - content
+
+    DiffResponse:
+      type: object
+      properties:
+        from_revision:
+          $ref: '#/components/schemas/RevisionRef'
+        to_revision:
+          $ref: '#/components/schemas/RevisionRef'
+        diff_lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/DiffLine'
+      required:
+        - from_revision
+        - to_revision
+        - diff_lines
+
+    RevertRequest:
+      type: object
+      properties:
+        target_sha:
+          type: string
+          maxLength: 100
+          description: Commit SHA to revert the post to
+      required:
+        - target_sha
+
+    RevertResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        message:
+          type: string
+          description: Confirmation message including the short SHA
+        new_commit_sha:
+          type: string
+          description: Full SHA of the newly created revert commit
+        redirect_url:
+          type: string
+          description: Frontend path to the post edit page
+      required:
+        - success
+        - message
+        - new_commit_sha
+        - redirect_url
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+      required:
+        - error
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Valid token but user lacks permission
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Not authorized to view revisions"
+
+    PostNotFound:
+      description: No post exists with the given slug
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Post 'my-post' not found"
+
+    NotFound:
+      description: Post or revision not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            postNotFound:
+              value:
+                error: "Post 'my-post' not found"
+            revisionNotFound:
+              value:
+                error: "Revision not found"
+
+    InternalError:
+      description: Unexpected server error or data integrity issue
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+tags:
+  - name: Revision Tracking
+    description: >-
+      Browse post commit history, view previous versions, compare
+      diffs, and revert
