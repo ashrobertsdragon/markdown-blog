@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comment domain**: Added `Comment` aggregate root and `CommentText` value object establishing the domain model for the flat comment system; supports root comments and replies via `parent_id`, soft deletion via `mark_as_deleted()`, and runtime contract enforcement via `__post_init__`
+
 - **Docs**: Added `docs/revision-tracking.md` with full API documentation for all four
   revision tracking endpoints (list, get, diff, revert), including request/response
   schemas, error codes, performance SLAs, and curl/Python/bash code examples
