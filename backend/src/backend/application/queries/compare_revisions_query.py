@@ -134,16 +134,15 @@ def compare_revisions_handler(
         f"Successfully generated diff: {len(diff_result.lines)} diff lines"
     )
 
-    formatted_diff_lines = []
-    for line in diff_result.lines:
-        line_num = (
-            line.line_number_new
-            if line.type == "addition"
-            else line.line_number_old
-        )
-        formatted_diff_lines.append(
-            {"type": line.type, "content": line.content, "lineNumber": line_num}
-        )
+    formatted_diff_lines = [
+        {
+            "type": line.type,
+            "content": line.content,
+            "line_number_old": line.line_number_old,
+            "line_number_new": line.line_number_new,
+        }
+        for line in diff_result.lines
+    ]
 
     return CompareRevisionsResponse(
         from_revision=from_revision,
