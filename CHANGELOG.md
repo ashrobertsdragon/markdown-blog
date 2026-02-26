@@ -7,31 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- **RevisionTimeline**: Added `role="alert"` to error state and extract backend error message from response body so authorization errors display "not authorized" text correctly
-- **RevisionHistory**: Improved `isForbidden` detection to match backend error message text in addition to HTTP status code
-- **useRevisions/usePosts**: Added `retry: false` to all query hooks so 403/404 errors surface immediately without retry delays
-- **PostRevisionRepository**: `find_by_sha` now supports short SHA prefix matching (< 40 chars uses `startswith`) in addition to full SHA exact match
-- **DiffViewer**: Removed `hasChanges` guard so context-only diff arrays render correctly; parent page passes empty array for same-SHA comparisons to show "No changes detected"
-
-### Previously Added
+### Added
 
 - **PostEditor**: Added "View History" button that navigates to `/posts/{slug}/revisions`
-
-### Fixed
-
-- **DiffViewer**: Corrected `data-testid` from `diff-viewer` (added), line background colours from `bg-green-50`/`bg-red-50` to `bg-green-100`/`bg-red-100`, and line number logic to use `line_number_new ?? line_number_old` from real API field names
-- **RevisionTimeline**: Changed `data-testid` from `revision-timeline-container` to `revision-timeline`
-- **RevisionDiffPage**: Fixed reversed `useRevisionDiff` argument order (`sha`, `otherSha`)
-- **revisionsApi**: Updated `DiffLine` interface to match real backend shape: `line_number_old?` and `line_number_new?` (snake_case) replacing `lineNumber?`
-- **types/revision**: Removed non-existent `RevisionAuthor` re-export
-- **Tests**: Fixed `author: { id, name }` → `author_id` across all revision test files (unit, integration, acceptance)
-- **Tests**: Fixed `revision-timeline-container` → `revision-timeline` testid in integration and unit tests
-- **Tests**: Fixed `DiffLine` field name (`lineNumber` → `line_number_new`) and colour assertions in both DiffViewer test files
-- **Acceptance tests**: Rewrote `revision-tracking.ts` to use real backend — removed all `page.route()` mocks, added `beforeAll`/`afterAll` seed/reset hooks, serial mode
-
-### Previously Added
 
 - **CI/CD**: Added GitHub Actions deployment workflow
 
@@ -39,108 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Dynamic switching between standard and LiteSpeed deployment scripts via `LITESPEED` environment variable
   - Secure handling of SSH keys and production secrets
   - Integration with `uv` for backend dependency management
-
-### Fixed
-
-- **API**: `GET /api/posts/<slug>` now includes markdown `content` from the filesystem so the editor loads with existing draft text
-
-- **API**: `DELETE /api/posts/<slug>` now soft-deletes the DB record (sets `deleted_at`) rather than removing it; all read queries exclude soft-deleted posts
-
-- **API**: Delete handler no longer raises `RuntimeError` on GitHub failure; logs a warning and continues (consistent with save/publish behaviour)
-
-- **Tests**: Seed endpoint drops and recreates all tables on every call, guaranteeing a clean DB state regardless of prior run outcome
-
-- **Tests**: Fixed `Delete Draft Post` locator — `/delete/i` matched all three row buttons when the post title contains "Delete"; narrowed to `/^delete post/i`
-
-- **Tests**: Post-management acceptance tests now pass reliably
-
-  - Added dummy `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_PERSONAL_ACCESS_TOKEN` env vars to the Playwright Flask command so `GitHubSettings()` initialises without raising `ValidationError`; GitHub calls log a 401 warning and continue
-  - Seed endpoint now creates filesystem draft files under `DRAFTS_PATH=/tmp/test-drafts` so the publish handler can find draft content; reset deletes those files
-  - Set `workers: 1` to eliminate Flask contention between parallel Playwright workers
-  - Replaced CSS-class locators (`.bg-gray-100`, `.bg-green-100`) with `getByRole('cell')` assertions; Tailwind v4 does not emit those classes in the dev build
-
-### Changed
-
-- **Tests**: Acceptance tests now exercise the real backend instead of mocking it
-
-  - Added local JWKS server (port 5557) serving a committed test RSA key pair as a Playwright web server
-  - Flask starts with `FLASK_ENV=TESTING` and `CLERK_JWKS_URL` pointing to the local JWKS server during Playwright runs
-  - `clerk-mock.ts` now generates real RS256 JWTs via `jose`; `session.getToken()` returns a signed token the backend can verify
-  - Removed all `page.route()` backend mocks from `post-management.ts`; added `beforeAll`/`afterAll` seed/reset hooks
-  - Added `POST /api/test/seed` and `DELETE /api/test/reset` endpoints (404 outside `FLASK_ENV=TESTING`) to create test users and posts
-  - Added `CLERK_JWKS_URL` override to `Settings` and `ClerkAuthAdapter._construct_jwks_url()`
-  - Only external dependencies (Clerk.js, GitHub API) remain mocked
-
-### Security
-
-- **Frontend**: Added environment guard to test mode authentication bypass
-
-  - Test mode now requires `import.meta.env.MODE === 'test'` in addition to `window.__CLERK_TEST_MOCK__`
-  - Prevents production users from spoofing authentication by setting window variables
-  - Blocks potential privilege escalation via browser console manipulation
-  - Addresses critical security vulnerability identified in PR review
-
-### Fixed
-
-- **Backend**: Fixed `SELECT SELECT 1` bug in `/api/health/db` endpoint
-
-  - `sqlmodel.select(text("SELECT 1"))` generated invalid SQL; replaced with `get_engine().connect()` and raw `text("SELECT 1")` via SQLAlchemy directly
-  - Updated test mocks from `get_db`/`Session` to `get_engine`
-  - Corrected health route URLs from `/health` to `/api/health` in integration and passenger WSGI tests
-
-- **Frontend**: Skipped all revision tracking tests pending full spec implementation
-
-  - `tests/e2e/revision-history.ts` and `tests/acceptance/revision-tracking.ts` — `test.describe.fixme`
-  - `tests/integration/revision-workflow.test.tsx`, `tests/unit/components/revision/RevisionTimeline.test.tsx`, `tests/unit/services/revisionsApi.test.ts` — `describe.skip`
-  - Fixed pre-existing prop mismatches (`postId`→`slug`, `onRevertClick`→`onRevertSuccess`, missing `isAuthor`)
-  - Fixed health check URL in acceptance tests and playwright config (`/health`→`/api/health`)
-
-- **Frontend**: Fixed API mock URL patterns in acceptance tests
-
-  - Added missing `/api` prefix to all route mocks in post-management.ts
-  - Ensures Playwright tests correctly intercept frontend API requests
-  - Aligns with Vite proxy configuration and actual request patterns
-
-- **Backend**: Improved test reliability and clarity
-
-  - Replaced conditional `pytest.skip()` with `@pytest.mark.xfail` decorator in revision tracking tests
-  - Renamed `test_post_revision_table_schema` to `test_create_post_triggers_github_commit` for clarity
-  - Made configuration test flexible for local/test environments (accepts TEST\_/MOCK\_ prefixed env vars)
-  - Fixed CHANGELOG file path reference for E2E tests (pointed to wrong directory)
-
-- **Frontend**: Extracted role derivation helper to reduce code duplication
-
-  - Created `deriveRoleFromMetadata()` helper function
-  - Eliminates duplicate role parsing logic between ClerkAuthProvider and MockAuthProvider
-  - Ensures consistent role handling across authentication providers
-
-### Changed
-
-- **Backend**: Refactored PostRevision aggregate to use int IDs for consistency
-
-  - Changed PostRevision.post_id and PostRevision.author_id from UUID to int to match Post and User aggregates
-  - Eliminated fragile UUID(int=...) conversion pattern throughout codebase
-  - Updated PostRevisionRepository to work directly with int IDs
-  - Updated all queries and commands to use int for post_id parameter
-  - Improved architectural consistency across domain layer
-
-- **Backend**: Simplified revision API routes by removing unnecessary abstractions
-
-  - Removed handler wrapper classes (GetRevisionHistoryQueryHandler, etc.) that added no value
-  - Handler functions now called directly from route handlers
-  - Split revisions.py into three focused modules (routes, dependencies, formatters)
-  - Reduced revisions.py from 571 to 379 lines (34% reduction)
-  - Extracted dependency injection to api/dependencies.py (93 lines)
-  - Extracted response formatters to api/formatters.py (56 lines)
-  - Improved code maintainability and readability
-
-- **Backend**: Removed all inline code comments from production code
-
-  - Replaced inline comments with docstrings where needed
-  - Removed redundant comments that restated obvious code
-  - Enforced CLAUDE.md rule: no code comments, only docstrings
-
-### Added
 
 - **Backend**: Acceptance tests for all spec workflow specifications
 
@@ -348,22 +224,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Memoized parsing to prevent unnecessary re-renders
   - Responsive to markdown prop changes
 
-### Changed
-
-- **Backend**: Post table schema update for improved field naming and querying
-  - Renamed `published_html` column to `html_content` for consistency with domain model
-  - Added `published_at` field (datetime | None) to track publication timestamp with database index for efficient sorting
-  - Added index to `published` field for optimized filtering queries
-  - Updated PostRepository to handle timezone-aware datetime conversion for `published_at` field
-  - Updated PostRepository field mapping: `_to_model()` and `_to_domain()` now use `html_content` field
-  - Added timezone awareness logic: converts naive datetime to UTC timezone when loading from database
-  - Comprehensive test coverage: 19 unit tests for model schema and repository field mapping with 100% pass rate
-  - Files modified: `backend/src/backend/infrastructure/persistence/models.py`, `backend/src/backend/infrastructure/persistence/post_repository.py`
-  - Files created: `backend/tests/unit/test_post_repository.py`
-  - Tests modified: `backend/tests/unit/test_models.py` (updated to use `html_content` field)
-
-### Added
-
 - **Backend**: Posts API routes with full CRUD operations and access control
 
   - Implemented 7 REST endpoints for post management: create draft (POST /api/posts), get draft (GET /api/posts/:slug), save draft (PUT /api/posts/:slug), delete draft (DELETE /api/posts/:slug), publish post (POST /api/posts/:slug/publish), unpublish post (POST /api/posts/:slug/unpublish), list author posts (GET /api/posts/my-posts)
@@ -482,107 +342,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files created: `backend/src/backend/infrastructure/sanitization/html_sanitizer.py`, `backend/src/backend/infrastructure/sanitization/__init__.py`, `backend/tests/unit/infrastructure/sanitization/test_html_sanitizer.py`
   - Dependencies added: bleach 6.2.0, types-bleach 6.2.0.20241208
 
-### Security
-
-- **Backend**: Implemented comprehensive XSS prevention for blog post content
-
-  - Protects against script injection attacks in published posts
-  - Prevents malicious iframe embedding and plugin execution
-  - Blocks dangerous URL schemes in links and images
-  - Mitigates CSS-based attacks by removing style tags and attributes
-  - Adds nofollow/noreferrer to external links preventing referrer leakage and SEO manipulation
-  - Sanitization applied automatically during post publishing workflow
-
-- **Backend**: Production-ready markdown to HTML rendering service with syntax highlighting
-
-  - Implemented MarkdownRenderingService for converting markdown content to HTML with Pygments syntax highlighting
-  - Syntax highlighting support for 500+ programming languages including Python, JavaScript, TypeScript, C++, C#, F#, JSON
-  - Code block rendering with proper CSS class attributes for theme integration
-  - Graceful fallback for unknown programming languages using lexer auto-detection, with plain text rendering as final fallback
-  - Production-ready error handling with try-except blocks and graceful degradation on rendering failures
-  - Comprehensive logging at module level (debug, warning, error) for production observability
-  - Stateless service design enabling concurrent rendering without race conditions
-  - Dependencies added: markdown-it-py 3.0.0+ for markdown parsing, Pygments 2.17.0+ for syntax highlighting, types-Pygments for type safety
-  - Comprehensive test suite: 43 unit tests covering markdown features (headings, lists, links, images, code blocks), syntax highlighting (Python, JavaScript, TypeScript, JSON, C++, C#), edge cases (empty input, Unicode, HTML escaping), and error handling (93% coverage)
-  - Files created: `backend/src/backend/infrastructure/markdown/markdown_rendering_service.py`, `backend/src/backend/infrastructure/markdown/__init__.py`, `backend/tests/unit/infrastructure/test_markdown_rendering_service.py`
-  - Files modified: `backend/pyproject.toml`, `backend/uv.lock`
-
-- **Backend**: GitHubSyncService for automatic version control via GitHub API
-
-  - Implemented resilient GitHub API integration for draft version control
-  - commit_file() method creates or updates files in GitHub repository with base64 encoding
-  - delete_file() method removes files from GitHub repository
-  - Exponential backoff retry logic for HTTP 429 rate limiting (1s, 2s, 4s delays, max 3 retries)
-  - Non-blocking error handling - draft operations succeed even if GitHub API fails
-  - Comprehensive error recovery: handles timeouts, connection errors, HTTP errors (401/403/404/500)
-  - Secure token handling - never logs authentication credentials
-  - Returns commit SHA on successful operations for audit trail
-  - 5-second timeout on all network requests prevents indefinite hanging
-  - Constructor validation ensures required credentials (token, owner, repo) are provided
-  - Comprehensive test suite: 24 unit tests covering success paths, retry logic, error handling (100% coverage)
-  - Files created: `backend/src/backend/infrastructure/versioning/github_sync_service.py`, `backend/src/backend/infrastructure/versioning/__init__.py`, `backend/tests/unit/infrastructure/versioning/test_github_sync_service.py`, `backend/tests/unit/infrastructure/versioning/__init__.py`
-  - Meets all requirements: 10.1 (commit on create), 10.2 (commit on save), 10.3 (commit on delete), 10.4 (non-blocking failures), 10.5 (rate limit retry), 10.6 (graceful degradation)
-
-- **Backend**: FileSystemDraftRepository for markdown draft persistence
-
-  - Implemented filesystem-based repository for blog post drafts with YAML front matter
-  - DraftFile class for YAML serialization/deserialization with complete metadata support
-  - YAML front matter includes: title, author, created_at, published, published_at, tags
-  - FileSystemDraftRepository with CRUD operations: save(), find_by_slug(), delete(), list_by_author()
-  - Path traversal protection using Slug value object for safe filesystem operations
-  - UTF-8 encoding support for international characters and emoji
-  - Idempotent delete operation (succeeds even if file doesn't exist)
-  - Auto-creates drafts directory on repository initialization
-  - Round-trip preservation of all metadata and content through save/load cycles
-  - Configuration support: DRAFTS_PATH, GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO settings
-  - Comprehensive test suite: 13 unit tests for DraftFile, 13 integration tests for repository (100% coverage)
-  - Files created: `backend/src/backend/infrastructure/persistence/filesystem_draft_repository.py`, `backend/tests/unit/test_draft_file.py`, `backend/tests/integration/test_filesystem_draft_repository.py`
-  - Files modified: `backend/src/backend/config.py`
-  - Dependencies added: pyyaml 6.0.3, types-pyyaml 6.0.12.20250915
-
-- **Backend**: Post aggregate root for blog post lifecycle management
-
-  - Mutable aggregate implementing Domain-Driven Design patterns for post state transitions
-  - Factory method `create_draft()` for creating new draft posts with validated title and author
-  - State transition methods: `publish()` converts drafts to published posts with HTML content, `unpublish()` reverts to draft state
-  - Integration with Slug value object for URL-safe identifiers and HtmlContent for sanitized HTML storage
-  - UTC-aware timestamps: `created_at` (immutable), `updated_at` (auto-managed), `published_at` (audit trail preserved on unpublish)
-  - Input validation: title must be non-empty string, author_id must be positive integer
-  - Audit trail preservation: published_at timestamp retained when unpublishing for historical tracking
-  - Type-safe with modern Python 3.12+ type hints including datetime and UUID annotations
-  - Comprehensive test suite with 14 unit tests covering factory method, state transitions, timestamp handling, and edge cases (100% coverage)
-  - Files created: `backend/src/backend/domain/aggregates/post.py`, `backend/tests/unit/test_post.py`
-
-- **Backend**: HtmlContent value object for type-safe sanitized HTML storage
-
-  - Immutable wrapper for sanitized HTML content in published blog posts
-  - Validates content is not None while accepting empty strings for valid empty posts
-  - Preserves HTML formatting, whitespace, and special characters
-  - Frozen dataclass implementation preventing post-initialization mutations
-  - Value object semantics with equality based on content, proper string representation
-  - Comprehensive test coverage with 14 unit tests (100% coverage)
-  - Files created: `backend/src/backend/domain/value_objects/html_content.py`, `backend/tests/unit/test_html_content.py`
-  - Files modified: `backend/src/backend/domain/value_objects/__init__.py`
-
-- **Backend**: MarkdownContent value object for type-safe markdown storage
-
-  - Immutable wrapper for raw markdown text in blog post drafts
-  - Validates content is not None to prevent invalid state
-  - Preserves markdown formatting and special characters
-  - Comprehensive test coverage with 14 unit tests (100% coverage)
-  - Files created: `backend/src/backend/domain/value_objects/markdown_content.py`, `backend/tests/unit/test_markdown_content.py`
-
-- **Backend**: URL slug validation and normalization for blog posts
-
-  - Implemented immutable Slug value object with automatic formatting
-  - Converts uppercase to lowercase, replaces spaces with hyphens, removes special characters
-  - Enforces validation: non-empty, maximum 200 characters, alphanumeric and hyphens only
-  - Secure against path traversal attacks with comprehensive input sanitization
-  - 100% test coverage with 22 unit tests
-  - Files created: `backend/src/backend/domain/value_objects/slug.py`, `backend/tests/unit/test_slug.py`
-
-### Added
-
 - **Documentation**: Comprehensive authentication setup guide in README
 
   - Added "Authentication" section after "Development" documenting complete authentication system
@@ -610,8 +369,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enables role-based rendering and authentication checks across all route components
   - File modified: `frontend/src/App.tsx`
 
-### Added
-
 - **Frontend**: Comprehensive E2E authentication flow tests with Playwright
   - Created playwright.config.ts with multi-browser testing (Chromium, Firefox, WebKit)
   - Implemented web server auto-start for frontend (Vite port 3000) and backend (Flask port 5000)
@@ -626,8 +383,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tests use explicit waits to avoid flakiness: page.waitForURL(), page.waitForLoadState(), page.waitForFunction()
   - Playwright installed as dev dependency (@playwright/test ^1.57.0)
   - Tests run deterministically without flakiness in both local development and CI environments
-
-### Added
 
 - **Configuration**: Enhanced Clerk environment variable documentation
 
@@ -703,20 +458,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tests passing (96/97 total, 1 Clerk SDK internal detail expected)
   - Files modified: `frontend/src/main.tsx`, `frontend/vitest.config.ts`
   - Files created: `frontend/tests/unit/main.test.tsx`
-
-### Changed
-
-- **Frontend**: Refactored NotFound and Home pages to use ShadCN UI components for design consistency
-
-  - Replaced custom Tailwind-styled link in NotFound page with ShadCN Button component using asChild pattern
-  - Replaced custom div card in Home page with ShadCN Card component (CardHeader, CardTitle, CardContent)
-  - Replaced plain text error display in Home page with ShadCN Alert component with destructive variant
-  - Ensures consistent design system across all frontend pages matching Forbidden page implementation
-  - All existing tests updated and passing (3 NotFound tests, 17 Home tests)
-  - No breaking changes to component behavior or user experience
-  - Files modified: `frontend/src/pages/NotFound.tsx`, `frontend/src/pages/Home.tsx`, `frontend/tests/unit/NotFound.test.tsx`, `frontend/tests/unit/Home.test.tsx`
-
-### Added
 
 - **Frontend**: Installed Clerk React SDK for user authentication
 
@@ -871,7 +612,177 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Mirrors dependencies from `pyproject.toml` for compatibility
   - Files added: `backend/requirements.txt`
 
+- **Documentation**: Comprehensive developer onboarding documentation in `README.md`
+
+  - Project overview with Domain-Driven Design and Hexagonal Architecture explanation
+  - 15-minute quick start guide with copy-pasteable commands for immediate setup
+  - Development workflow documentation for backend (uv) and frontend (npm)
+  - Testing instructions for pytest, Vitest, Playwright, and pre-commit hooks
+  - CI/CD documentation for GitHub Actions workflows (backend and frontend)
+  - Deployment overview with health check verification steps
+  - Troubleshooting table with 15 common issues and solutions
+  - Contributing guidelines with conventional commits format and PR checklist
+  - Resource links for documentation, tooling, and external services (GitHub, Resend, Clerk)
+  - Architecture diagram showing bounded contexts and system components
+  - Development standards covering code quality, testing pyramid, and security requirements
+
+- **Backend**: Environment variable template in `backend/.env.example`
+
+  - Database configuration variables (LOCAL_POSTGRES_USER, LOCAL_POSTGRES_PASSWORD, LOCAL_POSTGRES_DB)
+  - Flask environment settings (FLASK_ENV)
+  - External API keys template (GITHUB_PERSONAL_ACCESS_TOKEN, RESEND_API_KEY)
+  - Clerk authentication credentials (CLERK_SECRET_KEY)
+  - cPanel deployment credentials template (CPANEL_POSTGRES_USER, CPANEL_POSTGRES_PASSWORD, CPANEL_POSTGRES_DB)
+  - Clear documentation comments explaining each variable's purpose
+  - Security reminder to never commit actual credentials
+
+- **Frontend**: Environment variable template in `frontend/.env.example`
+
+  - API base URL configuration (VITE_API_BASE_URL) for backend communication
+  - Clerk authentication public key (VITE_CLERK_PUBLISHABLE_KEY) for frontend integration
+  - Vite-specific environment variable naming convention (VITE\_ prefix)
+  - Documentation comments explaining variable usage and security practices
+
+- **Deployment**: Automated deployment script for cPanel hosting
+
+  - End-to-end deployment automation to cPanel shared hosting environment
+  - Idempotent database provisioning (PostgreSQL database, user, and privileges)
+  - Automated code upload via rsync with checksum verification
+  - Remote Python virtual environment setup and dependency installation
+  - Database schema creation from SQLModel models
+  - Passenger WSGI application registration with environment variable injection
+  - Health check verification across all critical endpoints
+  - Comprehensive error handling with exponential backoff retry logic
+  - Cross-platform SSH key handling (Windows Git Bash and Linux compatibility)
+  - Security features: input sanitization, secret suppression, audit logging
+  - Production deployment confirmation prompt for safety
+  - BATS test suite with 40 tests covering validation, provisioning, error handling, and idempotency
+  - Comprehensive production domain confirmation test coverage (interactive/non-interactive scenarios, staging/dev domain handling)
+  - Detailed deployment documentation with prerequisites and usage examples
+
+- **Backend**: Implemented Passenger WSGI entry point in `src/passenger_wsgi.py`
+
+  - Created WSGI-compliant entry point for Phusion Passenger deployment
+  - Implemented virtual environment bootstrap logic with configurable VIRTUAL_ENV environment variable
+  - Imported Flask application via `create_app()` factory pattern
+  - Exported application as 'application' variable (Passenger WSGI requirement)
+  - Comprehensive error handling with actionable debugging information to stderr
+  - Cross-platform compatibility (Windows development, Linux production)
+  - PEP 3333 WSGI specification compliance
+  - Test suite: 9 integration tests covering WSGI interface, variable naming, type verification, request handling, and virtual environment loading, 5 unit tests covering all functions.
+
+- **Backend**: Fixed build directory path in main.py to match Vite output
+
+  - Changed from frontend/dist to build/ to match vite.config.ts outDir
+  - Vite outputs to ../build from frontend directory (monorepo/build/)
+  - Updated unit tests to expect build/ instead of frontend/dist
+  - Updated tests to use Path(**file**).parents[3] instead of repeated .parent
+
+- **CI**: Fixed backend CI workflow to create minimal frontend build structure
+
+  - Creates build/ directory with build/static/js/ subdirectory
+  - Creates build/index.html with minimal HTML for SPA routing tests
+  - Creates dummy JS file for static file serving tests
+  - Allows SPA routing tests to pass without full frontend build
+  - Backend tests can verify SPA route handling independently
+
+- **Config**: Removed ty.toml from monorepo
+
+- **CI**: Added workflow_dispatch and workflow file path triggers to both CI workflows
+
+  - Backend and frontend CI now trigger on workflow file changes
+  - Added manual trigger capability via workflow_dispatch
+
+- **Backend**: Implemented Flask application factory pattern in `main.py`
+
+  - Created `create_app()` factory function with environment-based configuration
+  - Configured Flask with static_folder='dist/static' and template_folder='dist' for React SPA serving
+  - Registered health check blueprint with no URL prefix
+  - Implemented CORS for development environment only (disabled in production)
+  - Added SPA catch-all route serving index.html for client-side routing
+  - Implemented path traversal protection with double URL-decoding and backslash detection
+  - Added security logging for path traversal attempts and file access errors
+  - Production safety: raises RuntimeError if build directory missing in production
+  - Development tolerance: logs warning if build directory missing in development
+  - Comprehensive test suite: 12 unit tests + 18 integration tests (100% coverage for main.py)
+  - Security tests: 5 tests covering path traversal attack vectors (direct, middle, URL-encoded, backslash, exception handling)
+
+- **Integration Testing**: Implemented local build and E2E integration test suite
+
+  - Created `scripts/build.sh` for automated frontend production builds
+  - Implemented comprehensive E2E test suite in `backend/tests/e2e/test_build.py`
+  - Tests verify frontend build artifacts (index.html, static/, JS bundles)
+  - Tests verify Flask server startup and health endpoint responses
+  - Tests verify React SPA serving and client-side routing behavior
+  - Tests verify API routes excluded from SPA catch-all routing
+  - Added `wait_for_server()` utility in `backend/tests/e2e/utils.py` for server readiness checks
+  - Pytest fixtures for build execution and Flask server daemon thread management
+  - BATS test suite in `scripts/tests/build.bats` with 4 tests validating build script execution
+  - Comprehensive validation of production deployment workflow before cPanel deployment
+
+- **Frontend**: Implemented `App.tsx` root component with BrowserRouter routing for Home and NotFound pages.
+
+- **Frontend**: Implemented `main.tsx` Vite entry point using React 18 createRoot API with StrictMode wrapper.
+
+- **Frontend**: Added root element creation to test setup for proper DOM initialization in tests.
+
 ### Changed
+
+- **Tests**: Acceptance tests now exercise the real backend instead of mocking it
+
+  - Added local JWKS server (port 5557) serving a committed test RSA key pair as a Playwright web server
+  - Flask starts with `FLASK_ENV=TESTING` and `CLERK_JWKS_URL` pointing to the local JWKS server during Playwright runs
+  - `clerk-mock.ts` now generates real RS256 JWTs via `jose`; `session.getToken()` returns a signed token the backend can verify
+  - Removed all `page.route()` backend mocks from `post-management.ts`; added `beforeAll`/`afterAll` seed/reset hooks
+  - Added `POST /api/test/seed` and `DELETE /api/test/reset` endpoints (404 outside `FLASK_ENV=TESTING`) to create test users and posts
+  - Added `CLERK_JWKS_URL` override to `Settings` and `ClerkAuthAdapter._construct_jwks_url()`
+  - Only external dependencies (Clerk.js, GitHub API) remain mocked
+
+- **Backend**: Refactored PostRevision aggregate to use int IDs for consistency
+
+  - Changed PostRevision.post_id and PostRevision.author_id from UUID to int to match Post and User aggregates
+  - Eliminated fragile UUID(int=...) conversion pattern throughout codebase
+  - Updated PostRevisionRepository to work directly with int IDs
+  - Updated all queries and commands to use int for post_id parameter
+  - Improved architectural consistency across domain layer
+
+- **Backend**: Simplified revision API routes by removing unnecessary abstractions
+
+  - Removed handler wrapper classes (GetRevisionHistoryQueryHandler, etc.) that added no value
+  - Handler functions now called directly from route handlers
+  - Split revisions.py into three focused modules (routes, dependencies, formatters)
+  - Reduced revisions.py from 571 to 379 lines (34% reduction)
+  - Extracted dependency injection to api/dependencies.py (93 lines)
+  - Extracted response formatters to api/formatters.py (56 lines)
+  - Improved code maintainability and readability
+
+- **Backend**: Removed all inline code comments from production code
+
+  - Replaced inline comments with docstrings where needed
+  - Removed redundant comments that restated obvious code
+  - Enforced CLAUDE.md rule: no code comments, only docstrings
+
+- **Backend**: Post table schema update for improved field naming and querying
+  - Renamed `published_html` column to `html_content` for consistency with domain model
+  - Added `published_at` field (datetime | None) to track publication timestamp with database index for efficient sorting
+  - Added index to `published` field for optimized filtering queries
+  - Updated PostRepository to handle timezone-aware datetime conversion for `published_at` field
+  - Updated PostRepository field mapping: `_to_model()` and `_to_domain()` now use `html_content` field
+  - Added timezone awareness logic: converts naive datetime to UTC timezone when loading from database
+  - Comprehensive test coverage: 19 unit tests for model schema and repository field mapping with 100% pass rate
+  - Files modified: `backend/src/backend/infrastructure/persistence/models.py`, `backend/src/backend/infrastructure/persistence/post_repository.py`
+  - Files created: `backend/tests/unit/test_post_repository.py`
+  - Tests modified: `backend/tests/unit/test_models.py` (updated to use `html_content` field)
+
+- **Frontend**: Refactored NotFound and Home pages to use ShadCN UI components for design consistency
+
+  - Replaced custom Tailwind-styled link in NotFound page with ShadCN Button component using asChild pattern
+  - Replaced custom div card in Home page with ShadCN Card component (CardHeader, CardTitle, CardContent)
+  - Replaced plain text error display in Home page with ShadCN Alert component with destructive variant
+  - Ensures consistent design system across all frontend pages matching Forbidden page implementation
+  - All existing tests updated and passing (3 NotFound tests, 17 Home tests)
+  - No breaking changes to component behavior or user experience
+  - Files modified: `frontend/src/pages/NotFound.tsx`, `frontend/src/pages/Home.tsx`, `frontend/tests/unit/NotFound.test.tsx`, `frontend/tests/unit/Home.test.tsx`
 
 - **Backend**: Locked Python version requirement to exact match
 
@@ -886,6 +797,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Ensures proper module imports in production Passenger environment
   - Files modified: `backend/src/passenger_wsgi.py`
 
+- **Frontend**: Updated entry point from `main.jsx` to `main.tsx` in `index.html`.
+- **Frontend**: Updated tests to correctly expect `React.StrictMode` as `symbol` type (React 18 behavior).
+
 ### Removed
 
 - **Tests**: Removed temporary BATS test file
@@ -895,6 +809,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files removed: `scripts/tests/deploy_config_fix.bats`
 
 ### Fixed
+
+- **RevisionTimeline**: Added `role="alert"` to error state and extract backend error message from response body so authorization errors display "not authorized" text correctly
+- **RevisionHistory**: Improved `isForbidden` detection to match backend error message text in addition to HTTP status code
+- **useRevisions/usePosts**: Added `retry: false` to all query hooks so 403/404 errors surface immediately without retry delays
+- **PostRevisionRepository**: `find_by_sha` now supports short SHA prefix matching (< 40 chars uses `startswith`) in addition to full SHA exact match
+- **DiffViewer**: Removed `hasChanges` guard so context-only diff arrays render correctly; parent page passes empty array for same-SHA comparisons to show "No changes detected"
+
+- **DiffViewer**: Corrected `data-testid` from `diff-viewer` (added), line background colours from `bg-green-50`/`bg-red-50` to `bg-green-100`/`bg-red-100`, and line number logic to use `line_number_new ?? line_number_old` from real API field names
+- **RevisionTimeline**: Changed `data-testid` from `revision-timeline-container` to `revision-timeline`
+- **RevisionDiffPage**: Fixed reversed `useRevisionDiff` argument order (`sha`, `otherSha`)
+- **revisionsApi**: Updated `DiffLine` interface to match real backend shape: `line_number_old?` and `line_number_new?` (snake_case) replacing `lineNumber?`
+- **types/revision**: Removed non-existent `RevisionAuthor` re-export
+- **Tests**: Fixed `author: { id, name }` → `author_id` across all revision test files (unit, integration, acceptance)
+- **Tests**: Fixed `revision-timeline-container` → `revision-timeline` testid in integration and unit tests
+- **Tests**: Fixed `DiffLine` field name (`lineNumber` → `line_number_new`) and colour assertions in both DiffViewer test files
+- **Acceptance tests**: Rewrote `revision-tracking.ts` to use real backend — removed all `page.route()` mocks, added `beforeAll`/`afterAll` seed/reset hooks, serial mode
+
+- **API**: `GET /api/posts/<slug>` now includes markdown `content` from the filesystem so the editor loads with existing draft text
+
+- **API**: `DELETE /api/posts/<slug>` now soft-deletes the DB record (sets `deleted_at`) rather than removing it; all read queries exclude soft-deleted posts
+
+- **API**: Delete handler no longer raises `RuntimeError` on GitHub failure; logs a warning and continues (consistent with save/publish behaviour)
+
+- **Tests**: Seed endpoint drops and recreates all tables on every call, guaranteeing a clean DB state regardless of prior run outcome
+
+- **Tests**: Fixed `Delete Draft Post` locator — `/delete/i` matched all three row buttons when the post title contains "Delete"; narrowed to `/^delete post/i`
+
+- **Tests**: Post-management acceptance tests now pass reliably
+
+  - Added dummy `GITHUB_OWNER`, `GITHUB_REPO`, `GITHUB_PERSONAL_ACCESS_TOKEN` env vars to the Playwright Flask command so `GitHubSettings()` initialises without raising `ValidationError`; GitHub calls log a 401 warning and continue
+  - Seed endpoint now creates filesystem draft files under `DRAFTS_PATH=/tmp/test-drafts` so the publish handler can find draft content; reset deletes those files
+  - Set `workers: 1` to eliminate Flask contention between parallel Playwright workers
+  - Replaced CSS-class locators (`.bg-gray-100`, `.bg-green-100`) with `getByRole('cell')` assertions; Tailwind v4 does not emit those classes in the dev build
+
+- **Backend**: Fixed `SELECT SELECT 1` bug in `/api/health/db` endpoint
+
+  - `sqlmodel.select(text("SELECT 1"))` generated invalid SQL; replaced with `get_engine().connect()` and raw `text("SELECT 1")` via SQLAlchemy directly
+  - Updated test mocks from `get_db`/`Session` to `get_engine`
+  - Corrected health route URLs from `/health` to `/api/health` in integration and passenger WSGI tests
+
+- **Frontend**: Skipped all revision tracking tests pending full spec implementation
+
+  - `tests/e2e/revision-history.ts` and `tests/acceptance/revision-tracking.ts` — `test.describe.fixme`
+  - `tests/integration/revision-workflow.test.tsx`, `tests/unit/components/revision/RevisionTimeline.test.tsx`, `tests/unit/services/revisionsApi.test.ts` — `describe.skip`
+  - Fixed pre-existing prop mismatches (`postId`→`slug`, `onRevertClick`→`onRevertSuccess`, missing `isAuthor`)
+  - Fixed health check URL in acceptance tests and playwright config (`/health`→`/api/health`)
+
+- **Frontend**: Fixed API mock URL patterns in acceptance tests
+
+  - Added missing `/api` prefix to all route mocks in post-management.ts
+  - Ensures Playwright tests correctly intercept frontend API requests
+  - Aligns with Vite proxy configuration and actual request patterns
+
+- **Backend**: Improved test reliability and clarity
+
+  - Replaced conditional `pytest.skip()` with `@pytest.mark.xfail` decorator in revision tracking tests
+  - Renamed `test_post_revision_table_schema` to `test_create_post_triggers_github_commit` for clarity
+  - Made configuration test flexible for local/test environments (accepts TEST\_/MOCK\_ prefixed env vars)
+  - Fixed CHANGELOG file path reference for E2E tests (pointed to wrong directory)
+
+- **Frontend**: Extracted role derivation helper to reduce code duplication
+
+  - Created `deriveRoleFromMetadata()` helper function
+  - Eliminates duplicate role parsing logic between ClerkAuthProvider and MockAuthProvider
+  - Ensures consistent role handling across authentication providers
 
 - **Backend**: Posts blueprint registration and URL structure consistency
 
@@ -1077,161 +1056,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Schema creation script now receives all required database configuration
   - Prevents "missing required fields" validation errors during remote schema execution
 
-### Added
+### Security
 
-- **Documentation**: Comprehensive developer onboarding documentation in `README.md`
+- **Frontend**: Added environment guard to test mode authentication bypass
 
-  - Project overview with Domain-Driven Design and Hexagonal Architecture explanation
-  - 15-minute quick start guide with copy-pasteable commands for immediate setup
-  - Development workflow documentation for backend (uv) and frontend (npm)
-  - Testing instructions for pytest, Vitest, Playwright, and pre-commit hooks
-  - CI/CD documentation for GitHub Actions workflows (backend and frontend)
-  - Deployment overview with health check verification steps
-  - Troubleshooting table with 15 common issues and solutions
-  - Contributing guidelines with conventional commits format and PR checklist
-  - Resource links for documentation, tooling, and external services (GitHub, Resend, Clerk)
-  - Architecture diagram showing bounded contexts and system components
-  - Development standards covering code quality, testing pyramid, and security requirements
+  - Test mode now requires `import.meta.env.MODE === 'test'` in addition to `window.__CLERK_TEST_MOCK__`
+  - Prevents production users from spoofing authentication by setting window variables
+  - Blocks potential privilege escalation via browser console manipulation
+  - Addresses critical security vulnerability identified in PR review
 
-- **Backend**: Environment variable template in `backend/.env.example`
+- **Backend**: Implemented comprehensive XSS prevention for blog post content
 
-  - Database configuration variables (LOCAL_POSTGRES_USER, LOCAL_POSTGRES_PASSWORD, LOCAL_POSTGRES_DB)
-  - Flask environment settings (FLASK_ENV)
-  - External API keys template (GITHUB_PERSONAL_ACCESS_TOKEN, RESEND_API_KEY)
-  - Clerk authentication credentials (CLERK_SECRET_KEY)
-  - cPanel deployment credentials template (CPANEL_POSTGRES_USER, CPANEL_POSTGRES_PASSWORD, CPANEL_POSTGRES_DB)
-  - Clear documentation comments explaining each variable's purpose
-  - Security reminder to never commit actual credentials
+  - Protects against script injection attacks in published posts
+  - Prevents malicious iframe embedding and plugin execution
+  - Blocks dangerous URL schemes in links and images
+  - Mitigates CSS-based attacks by removing style tags and attributes
+  - Adds nofollow/noreferrer to external links preventing referrer leakage and SEO manipulation
+  - Sanitization applied automatically during post publishing workflow
 
-- **Frontend**: Environment variable template in `frontend/.env.example`
+- **Backend**: Production-ready markdown to HTML rendering service with syntax highlighting
 
-  - API base URL configuration (VITE_API_BASE_URL) for backend communication
-  - Clerk authentication public key (VITE_CLERK_PUBLISHABLE_KEY) for frontend integration
-  - Vite-specific environment variable naming convention (VITE\_ prefix)
-  - Documentation comments explaining variable usage and security practices
+  - Implemented MarkdownRenderingService for converting markdown content to HTML with Pygments syntax highlighting
+  - Syntax highlighting support for 500+ programming languages including Python, JavaScript, TypeScript, C++, C#, F#, JSON
+  - Code block rendering with proper CSS class attributes for theme integration
+  - Graceful fallback for unknown programming languages using lexer auto-detection, with plain text rendering as final fallback
+  - Production-ready error handling with try-except blocks and graceful degradation on rendering failures
+  - Comprehensive logging at module level (debug, warning, error) for production observability
+  - Stateless service design enabling concurrent rendering without race conditions
+  - Dependencies added: markdown-it-py 3.0.0+ for markdown parsing, Pygments 2.17.0+ for syntax highlighting, types-Pygments for type safety
+  - Comprehensive test suite: 43 unit tests covering markdown features (headings, lists, links, images, code blocks), syntax highlighting (Python, JavaScript, TypeScript, JSON, C++, C#), edge cases (empty input, Unicode, HTML escaping), and error handling (93% coverage)
+  - Files created: `backend/src/backend/infrastructure/markdown/markdown_rendering_service.py`, `backend/src/backend/infrastructure/markdown/__init__.py`, `backend/tests/unit/infrastructure/test_markdown_rendering_service.py`
+  - Files modified: `backend/pyproject.toml`, `backend/uv.lock`
 
-- **Deployment**: Automated deployment script for cPanel hosting
+- **Backend**: GitHubSyncService for automatic version control via GitHub API
 
-  - End-to-end deployment automation to cPanel shared hosting environment
-  - Idempotent database provisioning (PostgreSQL database, user, and privileges)
-  - Automated code upload via rsync with checksum verification
-  - Remote Python virtual environment setup and dependency installation
-  - Database schema creation from SQLModel models
-  - Passenger WSGI application registration with environment variable injection
-  - Health check verification across all critical endpoints
-  - Comprehensive error handling with exponential backoff retry logic
-  - Cross-platform SSH key handling (Windows Git Bash and Linux compatibility)
-  - Security features: input sanitization, secret suppression, audit logging
-  - Production deployment confirmation prompt for safety
-  - BATS test suite with 40 tests covering validation, provisioning, error handling, and idempotency
-  - Comprehensive production domain confirmation test coverage (interactive/non-interactive scenarios, staging/dev domain handling)
-  - Detailed deployment documentation with prerequisites and usage examples
+  - Implemented resilient GitHub API integration for draft version control
+  - commit_file() method creates or updates files in GitHub repository with base64 encoding
+  - delete_file() method removes files from GitHub repository
+  - Exponential backoff retry logic for HTTP 429 rate limiting (1s, 2s, 4s delays, max 3 retries)
+  - Non-blocking error handling - draft operations succeed even if GitHub API fails
+  - Comprehensive error recovery: handles timeouts, connection errors, HTTP errors (401/403/404/500)
+  - Secure token handling - never logs authentication credentials
+  - Returns commit SHA on successful operations for audit trail
+  - 5-second timeout on all network requests prevents indefinite hanging
+  - Constructor validation ensures required credentials (token, owner, repo) are provided
+  - Comprehensive test suite: 24 unit tests covering success paths, retry logic, error handling (100% coverage)
+  - Files created: `backend/src/backend/infrastructure/versioning/github_sync_service.py`, `backend/src/backend/infrastructure/versioning/__init__.py`, `backend/tests/unit/infrastructure/versioning/test_github_sync_service.py`, `backend/tests/unit/infrastructure/versioning/__init__.py`
+  - Meets all requirements: 10.1 (commit on create), 10.2 (commit on save), 10.3 (commit on delete), 10.4 (non-blocking failures), 10.5 (rate limit retry), 10.6 (graceful degradation)
 
-- **Backend**: Implemented Passenger WSGI entry point in `src/passenger_wsgi.py`
+- **Backend**: FileSystemDraftRepository for markdown draft persistence
 
-  - Created WSGI-compliant entry point for Phusion Passenger deployment
-  - Implemented virtual environment bootstrap logic with configurable VIRTUAL_ENV environment variable
-  - Imported Flask application via `create_app()` factory pattern
-  - Exported application as 'application' variable (Passenger WSGI requirement)
-  - Comprehensive error handling with actionable debugging information to stderr
-  - Cross-platform compatibility (Windows development, Linux production)
-  - PEP 3333 WSGI specification compliance
-  - Test suite: 9 integration tests covering WSGI interface, variable naming, type verification, request handling, and virtual environment loading, 5 unit tests covering all functions.
+  - Implemented filesystem-based repository for blog post drafts with YAML front matter
+  - DraftFile class for YAML serialization/deserialization with complete metadata support
+  - YAML front matter includes: title, author, created_at, published, published_at, tags
+  - FileSystemDraftRepository with CRUD operations: save(), find_by_slug(), delete(), list_by_author()
+  - Path traversal protection using Slug value object for safe filesystem operations
+  - UTF-8 encoding support for international characters and emoji
+  - Idempotent delete operation (succeeds even if file doesn't exist)
+  - Auto-creates drafts directory on repository initialization
+  - Round-trip preservation of all metadata and content through save/load cycles
+  - Configuration support: DRAFTS_PATH, GITHUB_TOKEN, GITHUB_OWNER, GITHUB_REPO settings
+  - Comprehensive test suite: 13 unit tests for DraftFile, 13 integration tests for repository (100% coverage)
+  - Files created: `backend/src/backend/infrastructure/persistence/filesystem_draft_repository.py`, `backend/tests/unit/test_draft_file.py`, `backend/tests/integration/test_filesystem_draft_repository.py`
+  - Files modified: `backend/src/backend/config.py`
+  - Dependencies added: pyyaml 6.0.3, types-pyyaml 6.0.12.20250915
 
-- **Backend**: Fixed build directory path in main.py to match Vite output
+- **Backend**: Post aggregate root for blog post lifecycle management
 
-  - Changed from frontend/dist to build/ to match vite.config.ts outDir
-  - Vite outputs to ../build from frontend directory (monorepo/build/)
-  - Updated unit tests to expect build/ instead of frontend/dist
-  - Updated tests to use Path(**file**).parents[3] instead of repeated .parent
+  - Mutable aggregate implementing Domain-Driven Design patterns for post state transitions
+  - Factory method `create_draft()` for creating new draft posts with validated title and author
+  - State transition methods: `publish()` converts drafts to published posts with HTML content, `unpublish()` reverts to draft state
+  - Integration with Slug value object for URL-safe identifiers and HtmlContent for sanitized HTML storage
+  - UTC-aware timestamps: `created_at` (immutable), `updated_at` (auto-managed), `published_at` (audit trail preserved on unpublish)
+  - Input validation: title must be non-empty string, author_id must be positive integer
+  - Audit trail preservation: published_at timestamp retained when unpublishing for historical tracking
+  - Type-safe with modern Python 3.12+ type hints including datetime and UUID annotations
+  - Comprehensive test suite with 14 unit tests covering factory method, state transitions, timestamp handling, and edge cases (100% coverage)
+  - Files created: `backend/src/backend/domain/aggregates/post.py`, `backend/tests/unit/test_post.py`
 
-- **CI**: Fixed backend CI workflow to create minimal frontend build structure
+- **Backend**: HtmlContent value object for type-safe sanitized HTML storage
 
-  - Creates build/ directory with build/static/js/ subdirectory
-  - Creates build/index.html with minimal HTML for SPA routing tests
-  - Creates dummy JS file for static file serving tests
-  - Allows SPA routing tests to pass without full frontend build
-  - Backend tests can verify SPA route handling independently
+  - Immutable wrapper for sanitized HTML content in published blog posts
+  - Validates content is not None while accepting empty strings for valid empty posts
+  - Preserves HTML formatting, whitespace, and special characters
+  - Frozen dataclass implementation preventing post-initialization mutations
+  - Value object semantics with equality based on content, proper string representation
+  - Comprehensive test coverage with 14 unit tests (100% coverage)
+  - Files created: `backend/src/backend/domain/value_objects/html_content.py`, `backend/tests/unit/test_html_content.py`
+  - Files modified: `backend/src/backend/domain/value_objects/__init__.py`
 
-- **Config**: Removed ty.toml from monorepo
+- **Backend**: MarkdownContent value object for type-safe markdown storage
 
-- **CI**: Added workflow_dispatch and workflow file path triggers to both CI workflows
+  - Immutable wrapper for raw markdown text in blog post drafts
+  - Validates content is not None to prevent invalid state
+  - Preserves markdown formatting and special characters
+  - Comprehensive test coverage with 14 unit tests (100% coverage)
+  - Files created: `backend/src/backend/domain/value_objects/markdown_content.py`, `backend/tests/unit/test_markdown_content.py`
 
-  - Backend and frontend CI now trigger on workflow file changes
-  - Added manual trigger capability via workflow_dispatch
+- **Backend**: URL slug validation and normalization for blog posts
 
-- **Backend**: Implemented Flask application factory pattern in `main.py`
+  - Implemented immutable Slug value object with automatic formatting
+  - Converts uppercase to lowercase, replaces spaces with hyphens, removes special characters
+  - Enforces validation: non-empty, maximum 200 characters, alphanumeric and hyphens only
+  - Secure against path traversal attacks with comprehensive input sanitization
+  - 100% test coverage with 22 unit tests
+  - Files created: `backend/src/backend/domain/value_objects/slug.py`, `backend/tests/unit/test_slug.py`
 
-  - Created `create_app()` factory function with environment-based configuration
-  - Configured Flask with static_folder='dist/static' and template_folder='dist' for React SPA serving
-  - Registered health check blueprint with no URL prefix
-  - Implemented CORS for development environment only (disabled in production)
-  - Added SPA catch-all route serving index.html for client-side routing
-  - Implemented path traversal protection with double URL-decoding and backslash detection
-  - Added security logging for path traversal attempts and file access errors
-  - Production safety: raises RuntimeError if build directory missing in production
-  - Development tolerance: logs warning if build directory missing in development
-  - Comprehensive test suite: 12 unit tests + 18 integration tests (100% coverage for main.py)
-  - Security tests: 5 tests covering path traversal attack vectors (direct, middle, URL-encoded, backslash, exception handling)
-
-- **Integration Testing**: Implemented local build and E2E integration test suite
-
-  - Created `scripts/build.sh` for automated frontend production builds
-  - Implemented comprehensive E2E test suite in `backend/tests/e2e/test_build.py`
-  - Tests verify frontend build artifacts (index.html, static/, JS bundles)
-  - Tests verify Flask server startup and health endpoint responses
-  - Tests verify React SPA serving and client-side routing behavior
-  - Tests verify API routes excluded from SPA catch-all routing
-  - Added `wait_for_server()` utility in `backend/tests/e2e/utils.py` for server readiness checks
-  - Pytest fixtures for build execution and Flask server daemon thread management
-  - BATS test suite in `scripts/tests/build.bats` with 4 tests validating build script execution
-  - Comprehensive validation of production deployment workflow before cPanel deployment
-
-- **Frontend**: Implemented `App.tsx` root component with BrowserRouter routing for Home and NotFound pages.
-
-- **Frontend**: Implemented `main.tsx` Vite entry point using React 18 createRoot API with StrictMode wrapper.
-
-- **Frontend**: Added root element creation to test setup for proper DOM initialization in tests.
-
-### Changed
-
-- **Frontend**: Updated entry point from `main.jsx` to `main.tsx` in `index.html`.
-- **Frontend**: Updated tests to correctly expect `React.StrictMode` as `symbol` type (React 18 behavior).
-
-## v0.1.2 (2025-11-17)
+## [0.1.2] - 2025-11-17
 
 ### Fixed
 
 - **CI**: Fixed frontend CI build failure by updating `vitest` to `^4.0.9` and adding `@vitest/coverage-v8`.
 
-## v0.1.1 (2025-11-14)
-
-### Refactor
-
-- Refactored `config.py` to introduce `get_db_url()` for obtaining the database connection string, replacing direct instantiation of `DBSettings`.
-- Updated tests in `test_config.py` to reflect the refactoring and added tests for `get_db_url()`.
-
-### Fixed
-
-#### Code Review Fixes (PR #2)
-
-- **Critical**: Fixed datetime field defaults in `User` and `Post` models
-  - Changed `Field(default=datetime.now(dt.UTC))` to `Field(default_factory=lambda: datetime.now(dt.UTC))`
-  - Prevents all records from sharing the same import-time timestamp
-  - Files: `backend/src/infrastructure/persistence/models.py` (lines 13, 27-28)
-  - Added comprehensive unit tests validating timestamp uniqueness
-- **Critical**: Replaced deprecated Pydantic v2 API in `config.py`
-  - Changed `.unicode_string()` to `str()` for PostgresDsn conversion
-  - Ensures compatibility with future Pydantic versions
-  - File: `backend/src/config.py` (line 53)
-- **Security**: Removed information leakage from health endpoint errors
-  - Changed error responses from `str(e)` to generic "unreachable" message
-  - Added structured logging for internal diagnostics
-  - Prevents exposure of database credentials, stack traces, network details
-  - File: `backend/src/api/routes/health.py` (lines 47-48, 70-73)
-  - Health endpoints now use `requests.exceptions.RequestException`
-- **Testing**: Added test for non-200 GitHub API responses
-  - File: `backend/tests/integration/test_health_endpoints.py`
+## [0.1.1] - 2025-11-14
 
 ### Added
 
@@ -1403,9 +1340,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All tests use React Testing Library with proper mocking of healthService
   - TypeScript with proper HealthResponse interface integration
 
-### Infrastructure
-
 - Established monorepo structure with backend/ and frontend/ directories
 - Configured uv as Python package manager
 - Set up pre-commit hooks for code quality enforcement
 - Configured GitHub Actions CI/CD pipelines for backend (Python 3.13) and frontend (Node 22.18, 24.6)
+
+### Changed
+
+- Refactored `config.py` to introduce `get_db_url()` for obtaining the database connection string, replacing direct instantiation of `DBSettings`.
+- Updated tests in `test_config.py` to reflect the refactoring and added tests for `get_db_url()`.
+
+### Fixed
+
+#### Code Review Fixes (PR #2)
+
+- **Critical**: Fixed datetime field defaults in `User` and `Post` models
+  - Changed `Field(default=datetime.now(dt.UTC))` to `Field(default_factory=lambda: datetime.now(dt.UTC))`
+  - Prevents all records from sharing the same import-time timestamp
+  - Files: `backend/src/infrastructure/persistence/models.py` (lines 13, 27-28)
+  - Added comprehensive unit tests validating timestamp uniqueness
+- **Critical**: Replaced deprecated Pydantic v2 API in `config.py`
+  - Changed `.unicode_string()` to `str()` for PostgresDsn conversion
+  - Ensures compatibility with future Pydantic versions
+  - File: `backend/src/config.py` (line 53)
+- **Security**: Removed information leakage from health endpoint errors
+  - Changed error responses from `str(e)` to generic "unreachable" message
+  - Added structured logging for internal diagnostics
+  - Prevents exposure of database credentials, stack traces, network details
+  - File: `backend/src/api/routes/health.py` (lines 47-48, 70-73)
+  - Health endpoints now use `requests.exceptions.RequestException`
+- **Testing**: Added test for non-200 GitHub API responses
+  - File: `backend/tests/integration/test_health_endpoints.py`
