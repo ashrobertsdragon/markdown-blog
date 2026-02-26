@@ -1,16 +1,4 @@
-"""Unit tests for Comment aggregate.
-
-This module defines comprehensive tests for the Comment aggregate following
-TDD Red phase principles. These tests will initially fail until the Comment
-aggregate is implemented.
-
-Test Coverage:
-- Factory method tests (12 tests)
-- State transition tests (2 tests)
-- Serialization tests (5 tests)
-- Query method tests (2 tests)
-- Unicode/edge case tests (1 test)
-"""
+"""Unit tests for Comment aggregate."""
 
 import datetime as dt
 from datetime import datetime
@@ -185,7 +173,7 @@ def test_comment_cannot_modify_created_at_after_creation() -> None:
     comment = Comment.create(post_id=1, author_id=1, text="Hello")
 
     with pytest.raises(AttributeError):
-        comment.created_at = datetime.now(dt.UTC)  # type: ignore[misc]
+        comment.created_at = datetime.now(dt.UTC)
 
 
 def test_comment_mark_as_deleted_sets_is_deleted_flag() -> None:
