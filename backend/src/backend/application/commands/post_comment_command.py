@@ -21,6 +21,9 @@ class PostCommentCommand:
         text: Raw comment body; must be 1–5000 chars after stripping.
         ip_address: Remote IP address used for rate limit fallback keying.
         is_admin: When True, bypasses rate limit checks in the handler.
+            MUST be derived exclusively from the authenticated session role
+            (e.g. ``g.current_user.role.can_access_admin_endpoints()``).
+            Never source this value from request body or query parameters.
     """
 
     post_id: int

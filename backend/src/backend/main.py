@@ -123,9 +123,9 @@ def create_app() -> Flask:
         response = jsonify(
             {"error": error.message, "code": "rate_limit_exceeded"}
         )
-        response.headers["X-RateLimit-Remaining"] = str(error.remaining)
+        response.headers["X-RateLimit-Remaining"] = str(int(error.remaining))
         response.headers["X-RateLimit-Reset"] = str(
-            int(time.time()) + error.reset_after
+            int(time.time()) + int(error.reset_after)
         )
         return response, 429
 

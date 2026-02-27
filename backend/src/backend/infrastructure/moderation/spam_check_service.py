@@ -7,6 +7,8 @@ and regex-based pattern matching.
 from __future__ import annotations
 
 import re
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass, field
 
 
@@ -40,11 +42,51 @@ class SpamCheckService:
         Args:
             spam_patterns: List of regex strings to match against comment text.
                 Each pattern is compiled once at construction time. Only the
-                first matching pattern contributes to the score.
+                first matching pattern contributes to the score. Patterns must
+                not contain nested quantifiers (e.g. ``(a+)+``) that cause
+                catastrophic backtracking; each is validated at construction
+                against an adversarial string.
+
+        Raises:
+            ValueError: If any pattern exhibits potential ReDoS risk.
+            re.error: If any pattern fails to compile.
         """
         self._spam_patterns: list[re.Pattern[str]] = (
-            [re.compile(p) for p in spam_patterns] if spam_patterns else []
+            [self._compile_safe(p) for p in spam_patterns]
+            if spam_patterns
+            else []
         )
+
+    @staticmethod
+    def _compile_safe(pattern: str) -> re.Pattern[str]:
+        """Compile *pattern* and validate it against a ReDoS probe string.
+
+        Tests the compiled pattern against a 50-character adversarial input
+        within a 100 ms deadline. Patterns that do not return within that
+        window are rejected.
+
+        Args:
+            pattern: Raw regex string to compile (case-insensitive).
+
+        Returns:
+            Compiled :class:`re.Pattern` ready for use.
+
+        Raises:
+            ValueError: If the pattern takes longer than 100 ms to match the
+                probe string, indicating a likely ReDoS vulnerability.
+            re.error: If the pattern fails to compile.
+        """
+        compiled = re.compile(pattern, re.IGNORECASE)
+        probe = "a" * 50 + "!"
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(compiled.search, probe)
+            try:
+                future.result(timeout=0.1)
+            except FuturesTimeoutError:
+                raise ValueError(
+                    f"Pattern may cause catastrophic backtracking: {pattern!r}"
+                )
+        return compiled
 
     def check(self, text: str) -> int:
         """Return a spam score for *text* between 0 and 100.

@@ -58,7 +58,7 @@ def handle_post_comment(
 
     if not allowed:
         reset_timestamp = rate_limit_service.get_reset_time(identifier)
-        reset_after = int(reset_timestamp - time.time())
+        reset_after = max(1, int(reset_timestamp - time.time()))
         raise RateLimitExceededError(
             f"Too many comments. Please wait {reset_after} seconds.",
             reset_after=reset_after,
