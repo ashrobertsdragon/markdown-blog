@@ -12,12 +12,12 @@ from datetime import UTC, datetime
 from unittest.mock import Mock
 
 import pytest
-from backend.infrastructure.persistence.comment_repository import (
-    CommentRepository,
-)
 
 from backend.domain.aggregates.comment import Comment
 from backend.domain.value_objects.comment_text import CommentText
+from backend.infrastructure.persistence.comment_repository import (
+    CommentRepository,
+)
 from backend.infrastructure.persistence.models import CommentModel
 
 
