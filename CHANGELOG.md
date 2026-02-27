@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comment persistence**: Added `CommentModel` SQLModel table with self-referential `parent_id` FK for flat threading, `is_deleted` and `is_pending_moderation` flags with indexes, and foreign keys to `posts` and `users`. Added `CommentRepository` with `save`, `find_by_id`, `list_by_post` (public), `list_by_post_admin` (admin view), `hard_delete`, and `soft_delete` operations following the established repository pattern.
+
 - **Spam detection**: Added `SpamCheckService` scoring comment text 0–100 via URL density, repeated-character, and configurable regex checks; comments scoring ≥ 50 are flagged for moderation rather than blocked
 
 - **Rate limiting**: Added `RateLimitService` enforcing 5 comments per 60-second sliding window per user/IP using an in-memory timestamp cache; admin users bypass limits; includes thread-safe cleanup to prevent unbounded memory growth
