@@ -53,3 +53,36 @@ class PostRevisionModel(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
     is_revert: bool = Field(default=False)
     attempt_count: int = Field(default=0)
+
+
+class CommentModel(SQLModel, table=True):
+    """Comment table model for the discussion bounded context.
+
+    Stores user comments on blog posts with support for flat threading via
+    parent_id, soft deletion, and moderation state. All timestamps are stored
+    as UTC datetimes.
+
+    Attributes:
+        id: Auto-incremented primary key, None before first INSERT.
+        post_id: Foreign key referencing the Post table.
+        author_id: Foreign key referencing the User table.
+        parent_id: Optional self-referential FK for reply threading.
+        text: Raw comment text content.
+        created_at: UTC timestamp set at creation.
+        updated_at: UTC timestamp updated on any state change.
+        is_deleted: Soft delete flag; True hides comment from public views.
+        is_pending_moderation: True when flagged for moderator review.
+    """
+
+    __tablename__ = "comments"
+    id: int | None = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="post.id", index=True)
+    author_id: int = Field(foreign_key="user.id", index=True)
+    parent_id: int | None = Field(
+        default=None, foreign_key="comments.id", index=True
+    )
+    text: str
+    created_at: datetime
+    updated_at: datetime
+    is_deleted: bool = Field(default=False, index=True)
+    is_pending_moderation: bool = Field(default=False)
