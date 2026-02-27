@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Spam detection**: Added `SpamCheckService` scoring comment text 0–100 via URL density, repeated-character, and configurable regex checks; comments scoring ≥ 50 are flagged for moderation rather than blocked
+
+- **Rate limiting**: Added `RateLimitService` enforcing 5 comments per 60-second sliding window per user/IP using an in-memory timestamp cache; admin users bypass limits; includes thread-safe cleanup to prevent unbounded memory growth
+
+- **Comment moderation flag**: Added `is_pending_moderation` field and `mark_as_pending_moderation()` to the `Comment` aggregate
+
+- **PostCommentCommand**: Added frozen dataclass carrying `post_id`, `author_id`, `text`, `ip_address`, and `is_admin` with domain validation in `__post_init__`
+
+- **PostCommentHandler**: Added `handle_post_comment()` orchestrating rate limit check → spam check → `Comment.create()` → moderation flag; raises `RateLimitExceededError` on limit exceeded
+
+- **RateLimitExceededError**: Added exception mapping to HTTP 429 with `reset_after` and `remaining` attributes; registered error handler in Flask app returns `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers
+
 - **Comment domain**: Added `Comment` aggregate root and `CommentText` value object establishing the domain model for the flat comment system; supports root comments and replies via `parent_id`, soft deletion via `mark_as_deleted()`, and runtime contract enforcement via `__post_init__`
 
 - **Docs**: Added `docs/revision-tracking.md` with full API documentation for all four

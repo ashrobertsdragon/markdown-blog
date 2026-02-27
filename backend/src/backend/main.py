@@ -5,6 +5,7 @@ including SPA routing, CORS handling, and blueprint registration.
 """
 
 import logging
+import time
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -23,7 +24,11 @@ from backend.api.routes import (
     users_bp,
 )
 from backend.config import FlaskEnv, FlaskSettings
-from backend.exceptions import AuthenticationError, AuthorizationError
+from backend.exceptions import (
+    AuthenticationError,
+    AuthorizationError,
+    RateLimitExceededError,
+)
 from scripts.create_schema import create_schema
 
 logger = logging.getLogger(__name__)
@@ -101,6 +106,28 @@ def create_app() -> Flask:
         if error.required_role is not None:
             payload["required_role"] = error.required_role
         return jsonify(payload), 403
+
+    @app.errorhandler(RateLimitExceededError)
+    def handle_rate_limit_exceeded_error(
+        error: RateLimitExceededError,
+    ) -> tuple[Response, int]:
+        """Handle rate limit violations with 429 response.
+
+        Args:
+            error: The caught RateLimitExceededError instance.
+
+        Returns:
+            JSON response with error message and 429 status code, including
+            X-RateLimit-Remaining and X-RateLimit-Reset headers.
+        """
+        response = jsonify(
+            {"error": error.message, "code": "rate_limit_exceeded"}
+        )
+        response.headers["X-RateLimit-Remaining"] = str(error.remaining)
+        response.headers["X-RateLimit-Reset"] = str(
+            int(time.time()) + error.reset_after
+        )
+        return response, 429
 
     @app.errorhandler(Exception)
     def handle_unexpected_error(

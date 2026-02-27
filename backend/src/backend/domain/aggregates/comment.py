@@ -33,6 +33,7 @@ class Comment:
     created_at: datetime
     updated_at: datetime
     is_deleted: bool
+    is_pending_moderation: bool
 
     def __post_init__(self) -> None:
         """Enforce runtime type contract for value object fields.
@@ -113,7 +114,17 @@ class Comment:
             created_at=now,
             updated_at=now,
             is_deleted=False,
+            is_pending_moderation=False,
         )
+
+    def mark_as_pending_moderation(self) -> None:
+        """Flag this comment for moderator review.
+
+        Sets is_pending_moderation to True and updates updated_at. Called
+        when the spam score meets or exceeds the moderation threshold.
+        """
+        self.is_pending_moderation = True
+        self.updated_at = datetime.now(UTC)
 
     def mark_as_deleted(self) -> None:
         """Soft-delete this comment.
@@ -152,4 +163,5 @@ class Comment:
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "is_deleted": self.is_deleted,
+            "is_pending_moderation": self.is_pending_moderation,
         }

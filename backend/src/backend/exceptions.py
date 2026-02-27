@@ -97,3 +97,35 @@ class AuthorizationError(Exception):
         self.message = message
         self.required_role = required_role
         super().__init__(message)
+
+
+class RateLimitExceededError(Exception):
+    """Raised when a user exceeds the comment rate limit. Maps to HTTP 429.
+
+    Attributes:
+        message: User-facing description with wait time.
+        reset_after: Seconds until the rate limit window resets.
+        remaining: Number of allowed submissions left (always 0 when raised).
+
+    Example:
+        >>> raise RateLimitExceededError(
+        ...     "Too many comments. Please wait 45 seconds.",
+        ...     reset_after=45,
+        ...     remaining=0,
+        ... )
+    """
+
+    def __init__(
+        self, message: str, reset_after: int | None = None, remaining: int = 0
+    ) -> None:
+        """Initialize rate limit error.
+
+        Args:
+            message: User-facing error description.
+            reset_after: Seconds until window resets; defaults to 60.
+            remaining: Remaining submissions in current window.
+        """
+        self.message = message
+        self.reset_after = reset_after if reset_after is not None else 60
+        self.remaining = remaining
+        super().__init__(message)
