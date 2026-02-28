@@ -48,7 +48,7 @@ jobs:
       - name: Run tests
         run: |
           cd frontend
-          npm test:coverage
+          npm run test:coverage
           npx playwright test
 
       - name: Build
