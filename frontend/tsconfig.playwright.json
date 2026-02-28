@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["@playwright/test"]
   },
-  "include": ["tests/e2e/**/*"],
+  "include": ["tests/e2e/**/*", "tests/acceptance/**/*"],
   "exclude": []
 }
