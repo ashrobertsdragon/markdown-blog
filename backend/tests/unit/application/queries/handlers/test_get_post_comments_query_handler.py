@@ -6,17 +6,17 @@ and total_count calculation. Repository is mocked.
 
 from unittest.mock import Mock
 
-import backend.application.queries.handlers.get_post_comments_query_handler as _h  # noqa: E501
 from backend.application.queries.get_post_comments_query import (
     GetPostCommentsQuery,
     GetPostCommentsResponse,
+)
+from backend.application.queries.handlers.get_post_comments_query_handler import (  # noqa: E501
+    handle_get_post_comments,
 )
 from backend.domain.aggregates.comment import Comment
 from backend.infrastructure.persistence.comment_repository import (
     CommentRepository,
 )
-
-handle_get_post_comments = _h.handle_get_post_comments
 
 
 def _comment(n: int) -> Comment:
