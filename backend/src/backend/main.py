@@ -16,7 +16,9 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response as WerkzeugResponse
 
 from backend.api.routes import (
+    admin_comments_bp,
     auth_bp,
+    comments_bp,
     health_bp,
     posts_bp,
     revisions_bp,
@@ -72,7 +74,9 @@ def create_app() -> Flask:
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(posts_bp, url_prefix="/api/posts")
+    app.register_blueprint(comments_bp, url_prefix="/api/posts")
     app.register_blueprint(revisions_bp, url_prefix="/api/posts")
+    app.register_blueprint(admin_comments_bp, url_prefix="/api/admin")
     app.register_blueprint(test_bp, url_prefix="/api/test")
 
     @app.errorhandler(AuthenticationError)

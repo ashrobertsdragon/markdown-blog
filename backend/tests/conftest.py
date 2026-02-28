@@ -117,11 +117,22 @@ def client(test_settings, test_build_dir, monkeypatch, tmp_path):
     monkeypatch.setenv("GITHUB_REPO", "test_repo")
 
     import backend.api.dependencies
+    import backend.api.routes.comments
     import backend.api.routes.posts
 
     monkeypatch.setattr(backend.api.routes.posts, "_filesystem_settings", None)
     monkeypatch.setattr(backend.api.routes.posts, "_github_settings", None)
     monkeypatch.setattr(backend.api.dependencies, "_github_service", None)
+    monkeypatch.setattr(backend.api.routes.comments, "_post_repository", None)
+    monkeypatch.setattr(
+        backend.api.routes.comments, "_comment_repository", None
+    )
+    monkeypatch.setattr(
+        backend.api.routes.comments, "_rate_limit_service", None
+    )
+    monkeypatch.setattr(
+        backend.api.routes.comments, "_spam_check_service", None
+    )
 
     app = create_app()
 
