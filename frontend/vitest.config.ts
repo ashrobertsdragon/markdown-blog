@@ -22,8 +22,8 @@ export default mergeConfig(
           functions: 80,
           branches: 70,
           statements: 80,
-        }
-      }
+        },
+      },
     },
   })
 )
