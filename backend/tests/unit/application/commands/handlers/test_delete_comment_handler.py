@@ -15,6 +15,7 @@ from backend.application.commands.handlers.delete_comment_handler import (
     handle_delete_comment,
 )
 from backend.domain.aggregates.comment import Comment
+from backend.exceptions import AuthorizationError
 from backend.infrastructure.persistence.comment_repository import (
     CommentRepository,
 )
@@ -66,7 +67,7 @@ def test_non_owner_non_admin_raises_value_error() -> None:
     repo = _repo(comment)
     cmd = DeleteCommentCommand(comment_id=1, author_id=7, user_role="author")
 
-    with pytest.raises(ValueError, match="Cannot delete another user"):
+    with pytest.raises(AuthorizationError, match="Cannot delete another user"):
         handle_delete_comment(cmd, repo)
 
     repo.hard_delete.assert_not_called()

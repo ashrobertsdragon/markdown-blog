@@ -117,6 +117,15 @@ class Comment:
             is_pending_moderation=False,
         )
 
+    def approve(self) -> None:
+        """Clear the pending moderation flag, making the comment visible.
+
+        Sets is_pending_moderation to False and updates updated_at. Called
+        by the moderation handler when an admin approves a flagged comment.
+        """
+        self.is_pending_moderation = False
+        self.updated_at = datetime.now(UTC)
+
     def mark_as_pending_moderation(self) -> None:
         """Flag this comment for moderator review.
 

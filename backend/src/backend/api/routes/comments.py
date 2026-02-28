@@ -187,12 +187,12 @@ def post_comment(slug: str) -> tuple[Response, int]:
             command,
             _get_rate_limit_service(),
             _get_spam_check_service(),
+            _get_comment_repository(),
         )
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    saved = _get_comment_repository().save(comment)
-    return jsonify(saved.to_dict()), 201
+    return jsonify(comment.to_dict()), 201
 
 
 @comments_bp.route("/<slug>/comments/<int:comment_id>/reply", methods=["POST"])
@@ -252,8 +252,7 @@ def post_reply(slug: str, comment_id: int) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 404
         return jsonify({"error": str(e)}), 400
 
-    saved = _get_comment_repository().save(comment)
-    return jsonify(saved.to_dict()), 201
+    return jsonify(comment.to_dict()), 201
 
 
 @comments_bp.route("/<slug>/comments/<int:comment_id>", methods=["DELETE"])
@@ -293,8 +292,6 @@ def delete_comment(slug: str, comment_id: int) -> tuple[Response, int]:
         error_msg = str(e).lower()
         if "not found" in error_msg:
             return jsonify({"error": str(e)}), 404
-        if "another user" in error_msg:
-            return jsonify({"error": str(e)}), 403
         return jsonify({"error": str(e)}), 400
 
     return Response("", status=204), 204
@@ -333,9 +330,6 @@ def approve_comment(comment_id: int) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 404
         return jsonify({"error": str(e)}), 400
 
-    if comment is None:
-        return jsonify({"error": "Comment not found"}), 404
-
     return jsonify(comment.to_dict()), 200
 
 
@@ -343,10 +337,10 @@ def approve_comment(comment_id: int) -> tuple[Response, int]:
 @require_auth
 @require_role("admin")
 def admin_delete_comment(comment_id: int) -> tuple[Response, int]:
-    """Soft-delete a comment as admin.
+    """Soft-delete a comment as admin via moderation reject action.
 
-    Replaces comment text with a moderation notice rather than removing
-    the row, so reply threads remain coherent.
+    Marks the comment as deleted without removing the row, preserving
+    reply thread coherence.
 
     Args:
         comment_id: Comment ID to soft-delete.

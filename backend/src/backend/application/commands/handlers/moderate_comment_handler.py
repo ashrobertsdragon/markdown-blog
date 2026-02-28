@@ -1,7 +1,6 @@
 """Handler for ModerateCommentCommand."""
 
 import logging
-from datetime import UTC, datetime
 
 from backend.application.commands.moderate_comment_command import (
     ModerateCommentCommand,
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 def handle_moderate_comment(
     command: ModerateCommentCommand,
     comment_repository: CommentRepository,
-) -> Comment | None:
+) -> Comment:
     """Handle ModerateCommentCommand to approve, reject, or flag a comment.
 
     Admin-only operation. Orchestration steps:
@@ -25,18 +24,17 @@ def handle_moderate_comment(
     2. Load the comment; raise ValueError if not found.
     3. Execute the action:
        - "approve": clear is_pending_moderation, save and return comment.
-       - "reject": hard-delete the comment, return None.
+       - "reject": soft-delete the comment, save and return comment.
        - "flag": set is_pending_moderation, save and return comment.
 
     Args:
         command: ModerateCommentCommand carrying comment_id, action,
             moderator_id, and user_role.
-        comment_repository: CommentRepository used to load, update,
-            and delete the comment.
+        comment_repository: CommentRepository used to load and update
+            the comment.
 
     Returns:
-        Updated Comment aggregate for approve/flag actions, or None
-        after a reject (hard-delete).
+        Updated Comment aggregate reflecting the moderation action.
 
     Raises:
         ValueError: If user_role is not "admin".
@@ -67,18 +65,17 @@ def handle_moderate_comment(
                 command.moderator_id,
                 command.comment_id,
             )
-            comment.is_pending_moderation = False
-            comment.updated_at = datetime.now(UTC)
+            comment.approve()
             return comment_repository.save(comment)
 
         case "reject":
             logger.info(
-                "Admin %d rejecting (hard-deleting) comment %d",
+                "Admin %d rejecting comment %d",
                 command.moderator_id,
                 command.comment_id,
             )
-            comment_repository.hard_delete(command.comment_id)
-            return None
+            comment.mark_as_deleted()
+            return comment_repository.save(comment)
 
         case "flag":
             logger.info(

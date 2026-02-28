@@ -5,6 +5,7 @@ import logging
 from backend.application.commands.delete_comment_command import (
     DeleteCommentCommand,
 )
+from backend.exceptions import AuthorizationError
 from backend.infrastructure.persistence.comment_repository import (
     CommentRepository,
 )
@@ -40,8 +41,8 @@ def handle_delete_comment(
 
     Raises:
         ValueError: If the comment does not exist.
-        ValueError: If the requesting user is neither admin nor the
-            comment author.
+        AuthorizationError: If the requesting user is neither admin nor
+            the comment author.
     """
     logger.debug("Loading comment %d for deletion", command.comment_id)
     comment = comment_repository.find_by_id(command.comment_id)
@@ -71,4 +72,4 @@ def handle_delete_comment(
         command.comment_id,
         comment.author_id,
     )
-    raise ValueError("Cannot delete another user's comment")
+    raise AuthorizationError("Cannot delete another user's comment")

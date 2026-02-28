@@ -4,6 +4,8 @@ Tests the full interaction between the handler, RateLimitService, and
 SpamCheckService using real service instances.
 """
 
+from unittest.mock import Mock
+
 import pytest
 
 from backend.application.commands.handlers.post_comment_handler import (
@@ -17,6 +19,9 @@ from backend.infrastructure.moderation.rate_limit_service import (
 )
 from backend.infrastructure.moderation.spam_check_service import (
     SpamCheckService,
+)
+from backend.infrastructure.persistence.comment_repository import (
+    CommentRepository,
 )
 
 _IP = "127.0.0.1"
@@ -40,6 +45,14 @@ def spam_check_service() -> SpamCheckService:
     return SpamCheckService()
 
 
+@pytest.fixture()
+def comment_repository() -> Mock:
+    """Provide a CommentRepository mock whose save() returns its argument."""
+    repo = Mock(spec=CommentRepository)
+    repo.save.side_effect = lambda comment: comment
+    return repo
+
+
 def _make_command(
     *,
     post_id: int = 1,
@@ -61,12 +74,13 @@ def _make_command(
 def test_handler_returns_comment_on_success(
     rate_limit_service: RateLimitService,
     spam_check_service: SpamCheckService,
+    comment_repository: Mock,
 ) -> None:
     """Handler returns a Comment with correct post_id, author_id, and text."""
     command = _make_command(post_id=7, author_id=3, text="Hello world.")
 
     result = handle_post_comment(
-        command, rate_limit_service, spam_check_service
+        command, rate_limit_service, spam_check_service, comment_repository
     )
 
     assert isinstance(result, Comment)
@@ -79,6 +93,7 @@ def test_handler_returns_comment_on_success(
 def test_handler_enforces_rate_limit(
     rate_limit_service: RateLimitService,
     spam_check_service: SpamCheckService,
+    comment_repository: Mock,
 ) -> None:
     """The sixth submission within the window raises RateLimitExceededError."""
     for i in range(5):
@@ -86,6 +101,7 @@ def test_handler_enforces_rate_limit(
             _make_command(text=f"Comment {i}"),
             rate_limit_service,
             spam_check_service,
+            comment_repository,
         )
 
     with pytest.raises(RateLimitExceededError):
@@ -93,18 +109,20 @@ def test_handler_enforces_rate_limit(
             _make_command(text="One too many"),
             rate_limit_service,
             spam_check_service,
+            comment_repository,
         )
 
 
 def test_handler_flags_spam_for_moderation(
     rate_limit_service: RateLimitService,
     spam_check_service: SpamCheckService,
+    comment_repository: Mock,
 ) -> None:
     """Text with 3+ URLs scores >= 50 and is flagged for moderation."""
     command = _make_command(text=_SPAM_TEXT)
 
     result = handle_post_comment(
-        command, rate_limit_service, spam_check_service
+        command, rate_limit_service, spam_check_service, comment_repository
     )
 
     assert result.is_pending_moderation is True
@@ -113,12 +131,13 @@ def test_handler_flags_spam_for_moderation(
 def test_handler_allows_clean_comment_through_without_moderation(
     rate_limit_service: RateLimitService,
     spam_check_service: SpamCheckService,
+    comment_repository: Mock,
 ) -> None:
     """Plain text with no spam signals is not flagged for moderation."""
     command = _make_command(text=_CLEAN_TEXT)
 
     result = handle_post_comment(
-        command, rate_limit_service, spam_check_service
+        command, rate_limit_service, spam_check_service, comment_repository
     )
 
     assert result.is_pending_moderation is False
@@ -127,6 +146,7 @@ def test_handler_allows_clean_comment_through_without_moderation(
 def test_handler_allows_admin_to_bypass_rate_limit(
     rate_limit_service: RateLimitService,
     spam_check_service: SpamCheckService,
+    comment_repository: Mock,
 ) -> None:
     """Admin submissions are never blocked, even beyond the normal window."""
     for i in range(10):
@@ -134,6 +154,7 @@ def test_handler_allows_admin_to_bypass_rate_limit(
             _make_command(text=f"Admin comment {i}", is_admin=True),
             rate_limit_service,
             spam_check_service,
+            comment_repository,
         )
         assert isinstance(result, Comment)
 

@@ -17,7 +17,7 @@ from backend.domain.aggregates.user import User
 from backend.domain.value_objects.comment_text import CommentText
 from backend.domain.value_objects.role import Role
 from backend.domain.value_objects.slug import Slug
-from backend.exceptions import RateLimitExceededError
+from backend.exceptions import AuthorizationError, RateLimitExceededError
 
 
 @pytest.fixture
@@ -553,7 +553,9 @@ def test_delete_others_comment_returns_403(
         ),
         patch(
             "backend.api.routes.comments.handle_delete_comment",
-            side_effect=ValueError("Cannot delete another user's comment"),
+            side_effect=AuthorizationError(
+                "Cannot delete another user's comment"
+            ),
         ),
     ):
         response = client.delete(

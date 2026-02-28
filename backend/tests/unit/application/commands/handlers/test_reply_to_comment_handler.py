@@ -61,6 +61,7 @@ def mock_repo(parent_comment: Comment) -> Mock:
     """CommentRepository mock returning the parent comment by default."""
     repo = Mock(spec=CommentRepository)
     repo.find_by_id.return_value = parent_comment
+    repo.save.side_effect = lambda comment: comment
     return repo
 
 

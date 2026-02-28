@@ -58,15 +58,17 @@ def test_approve_clears_pending_flag_and_saves() -> None:
     repo.hard_delete.assert_not_called()
 
 
-def test_reject_hard_deletes_and_returns_none() -> None:
-    """Reject calls hard_delete and returns None."""
-    repo = _repo(_comment())
+def test_reject_soft_deletes_and_saves() -> None:
+    """Reject marks comment as deleted and saves it."""
+    comment = _comment()
+    repo = _repo(comment)
 
     result = handle_moderate_comment(_cmd("reject"), repo)
 
-    assert result is None
-    repo.hard_delete.assert_called_once_with(1)
-    repo.save.assert_not_called()
+    assert result is not None
+    assert result.is_deleted is True
+    repo.save.assert_called_once()
+    repo.hard_delete.assert_not_called()
 
 
 def test_flag_sets_pending_and_saves() -> None:

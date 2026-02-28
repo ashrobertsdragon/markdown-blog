@@ -1,13 +1,14 @@
 """Handler for ReplyToCommentCommand."""
 
 import logging
-import time
 
+from backend.application.commands.handlers._rate_limit_helper import (
+    enforce_rate_limit,
+)
 from backend.application.commands.reply_to_comment_command import (
     ReplyToCommentCommand,
 )
 from backend.domain.aggregates.comment import Comment
-from backend.exceptions import RateLimitExceededError
 from backend.infrastructure.moderation.rate_limit_service import (
     RateLimitService,
 )
@@ -29,11 +30,12 @@ def handle_reply_to_comment(
 ) -> Comment:
     """Handle ReplyToCommentCommand to create a reply to an existing comment.
 
-    Orchestrates reply submission in four steps:
+    Orchestrates reply submission in five steps:
     1. Verify parent comment exists and belongs to the given post.
     2. Rate limit check — raises RateLimitExceededError when exhausted.
     3. Spam check — flags comment for moderation when score >= 50.
     4. Comment creation via domain factory with parent_id set.
+    5. Persistence — saves and returns the persisted aggregate.
 
     Args:
         command: ReplyToCommentCommand carrying post_id, parent_comment_id,
@@ -41,11 +43,12 @@ def handle_reply_to_comment(
         rate_limit_service: RateLimitService used to check and record
             submission timestamps.
         spam_check_service: SpamCheckService used to score the reply text.
-        comment_repository: CommentRepository used to verify parent existence.
+        comment_repository: CommentRepository used to verify parent
+            existence and persist the reply.
 
     Returns:
-        Comment aggregate with parent_id set, optionally flagged for
-        moderation, with id=None (not yet persisted).
+        Persisted Comment aggregate with parent_id set, optionally
+        flagged for moderation.
 
     Raises:
         ValueError: If parent comment does not exist or belongs to a
@@ -69,20 +72,12 @@ def handle_reply_to_comment(
         )
 
     identifier = f"user:{command.author_id}"
-    allowed = rate_limit_service.check_limit(
+    enforce_rate_limit(
         identifier=identifier,
         ip=command.ip_address,
         is_admin=command.is_admin,
+        rate_limit_service=rate_limit_service,
     )
-
-    if not allowed:
-        reset_timestamp = rate_limit_service.get_reset_time(identifier)
-        reset_after = max(1, int(reset_timestamp - time.time()))
-        raise RateLimitExceededError(
-            f"Too many comments. Please wait {reset_after} seconds.",
-            reset_after=reset_after,
-            remaining=0,
-        )
 
     spam_score = spam_check_service.check(command.text)
     is_spam = spam_score >= 50
@@ -103,4 +98,4 @@ def handle_reply_to_comment(
     if is_spam:
         comment.mark_as_pending_moderation()
 
-    return comment
+    return comment_repository.save(comment)
