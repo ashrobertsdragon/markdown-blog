@@ -9,7 +9,7 @@ export default mergeConfig(
       environment: 'jsdom',
       setupFiles: './tests/setup.ts',
       include: ['tests/unit/**/*.test.{ts,tsx}', 'tests/integration/**/*.test.{ts,tsx}'],
-      exclude: ['tests/e2e/**/*'],
+      exclude: ['tests/e2e/**/*', 'tests/acceptance/**/*'],
       env: {
         VITE_CLERK_PUBLISHABLE_KEY: 'pk_test_test-key-for-vitest-testing',
       },
@@ -17,7 +17,13 @@ export default mergeConfig(
         provider: 'v8',
         reporter: ['text', 'json', 'html'],
         exclude: ['node_modules/', 'tests/'],
-      },
+        thresholds: {
+          lines: 80,
+          functions: 80,
+          branches: 70,
+          statements: 80
+        }
+      }
     },
   })
 )

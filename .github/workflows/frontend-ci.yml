@@ -40,16 +40,16 @@ jobs:
           cd frontend
           npm run lint:ci
 
+      - name: Install uv for testing
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
       - name: Run tests
         run: |
           cd frontend
-          npm test & npx playwright test
-
-      - name: Check coverage threshold
-        run: |
-          cd frontend
-          npm test -- --coverage --run --reporter=json \
-            > coverage-summary.json
+          npm test:coverage
+          npx playwright test
 
       - name: Build
         run: |
