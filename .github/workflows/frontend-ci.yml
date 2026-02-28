@@ -11,6 +11,10 @@ on:
 
   workflow_dispatch:
 
+defaults:
+  run:
+    working-directory: frontend
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -28,30 +32,27 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
+        run: npm ci
 
       - name: Lint and typecheck
-        run: |
-          cd frontend
-          npm run lint:ci
+        run: npm run lint:ci
+
+      - name: Run unit & integration tests
+        run: npm run test:coverage
 
       - name: Install uv for testing
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
 
-      - name: Run tests
-        run: |
-          cd frontend
-          npm run test:coverage
-          npx playwright test
-
       - name: Build
-        run: |
-          cd frontend
-          npm run build
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run e2e & acceptance tests
+        run: npx playwright test
