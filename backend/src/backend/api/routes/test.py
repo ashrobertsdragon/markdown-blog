@@ -64,9 +64,6 @@ def seed() -> tuple[Response, int]:
     if guard is not None:
         return guard
 
-    from backend.infrastructure.persistence.database import dispose_engine
-
-    dispose_engine()
     engine = get_engine()
 
     from sqlalchemy import text
@@ -117,12 +114,16 @@ def seed() -> tuple[Response, int]:
             select(Post).where(Post.slug == "test-post")
         ).first()
         if test_post:
+            assert test_post.id is not None
+            assert author.id is not None
+            test_post_id = test_post.id
+            test_author_id = author.id
             revisions = [
                 PostRevisionModel(
                     id=uuid.uuid4(),
-                    post_id=test_post.id,
+                    post_id=test_post_id,
                     commit_sha="c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2",
-                    author_id=author.id,
+                    author_id=test_author_id,
                     commit_message="Revert to initial",
                     markdown_content="# Initial Content\n\nTest content.",
                     is_revert=True,
@@ -131,9 +132,9 @@ def seed() -> tuple[Response, int]:
                 ),
                 PostRevisionModel(
                     id=uuid.uuid4(),
-                    post_id=test_post.id,
+                    post_id=test_post_id,
                     commit_sha="b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1",
-                    author_id=author.id,
+                    author_id=test_author_id,
                     commit_message="Update content",
                     markdown_content="# Updated Content\n\nMore test content.",
                     is_revert=False,
@@ -142,9 +143,9 @@ def seed() -> tuple[Response, int]:
                 ),
                 PostRevisionModel(
                     id=uuid.uuid4(),
-                    post_id=test_post.id,
+                    post_id=test_post_id,
                     commit_sha="a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
-                    author_id=author.id,
+                    author_id=test_author_id,
                     commit_message="Initial post draft",
                     markdown_content="# Initial Content\n\nTest content.",
                     is_revert=False,
