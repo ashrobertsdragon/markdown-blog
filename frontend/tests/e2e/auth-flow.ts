@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { mockClerkUnauthenticated } from '../acceptance/fixtures/clerk-mock'
 import {
   getAuthToken,
   verifyBearerTokenFormat,
@@ -8,6 +9,7 @@ import {
 
 test.describe('Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
+    await mockClerkUnauthenticated(page)
     await page.goto('/')
     await waitForAuthToLoad(page)
   })
@@ -277,6 +279,7 @@ test.describe('Authentication Flow', () => {
 
 test.describe('Role-Based Access Control', () => {
   test.beforeEach(async ({ page }) => {
+    await mockClerkUnauthenticated(page)
     await page.goto('/')
     await waitForAuthToLoad(page)
   })
@@ -317,6 +320,10 @@ test.describe('Role-Based Access Control', () => {
 })
 
 test.describe('Browser Compatibility', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockClerkUnauthenticated(page)
+  })
+
   test('login page renders in all browsers', async ({ page, browserName }) => {
     await page.goto('/login')
 
@@ -352,6 +359,10 @@ test.describe('Browser Compatibility', () => {
 })
 
 test.describe('Performance and Reliability', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockClerkUnauthenticated(page)
+  })
+
   test('initial page load completes within timeout', async ({ page }) => {
     const startTime = Date.now()
 

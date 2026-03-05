@@ -1,9 +1,26 @@
 import { SignIn } from '@clerk/clerk-react'
+import { Component, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 
 interface LocationState {
   from?: {
     pathname: string
+  }
+}
+
+class SignInErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  render() {
+    if (this.state.hasError) return null
+    return this.props.children
   }
 }
 
@@ -20,7 +37,9 @@ export default function Login() {
           Sign In to Your Account
         </h1>
         <div className="flex justify-center">
-          <SignIn redirectUrl={redirectUrl} afterSignInUrl={redirectUrl} />
+          <SignInErrorBoundary>
+            <SignIn redirectUrl={redirectUrl} afterSignInUrl={redirectUrl} />
+          </SignInErrorBoundary>
         </div>
       </div>
     </div>

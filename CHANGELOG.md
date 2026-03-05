@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI/Playwright**: Fixed e2e and acceptance tests failing in CI while passing locally
+  - Vite dev server now starts with `--mode test` so the Clerk mock security gate in
+    `main.tsx` activates, allowing `mockClerkUnauthenticated` to skip `ClerkProvider`
+  - Added `mockClerkUnauthenticated` to three auth-flow describe blocks that lacked it
+    (`Role-Based Access Control`, `Browser Compatibility`, `Performance and Reliability`)
+  - Wrapped `<SignIn>` in an error boundary in `Login.tsx` so the heading remains visible
+    when `ClerkProvider` is absent in test mode
+  - Added `mockClerkUnauthenticated` to foundation acceptance tests to prevent Clerk from
+    hiding the document body when it cannot connect to its servers with a test key
+
 ### Added
 
 - **Docs**: Added `docs/revision-tracking.md` with full API documentation for all four
