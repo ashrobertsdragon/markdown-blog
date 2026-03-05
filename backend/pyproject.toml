@@ -38,7 +38,7 @@ dev = [
 ]
 
 [build-system]
-requires = ["uv_build>=0.9.5,<0.10.0"]
+requires = ["uv_build>=0.9.5,<0.11.0"]
 build-backend = "uv_build"
 
 [tool.mypy]
@@ -80,3 +80,8 @@ ignore-decorators = ["typing.overload"]
 
 [tool.ty.environment]
 root = ["./src", "."]
+
+[tool.uv]
+link-mode = "copy"
+required-version = ">=0.9.5"
+
