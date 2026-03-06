@@ -51,12 +51,12 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
+          version-file: backend/pyproject.toml
 
       - name: Build
         run: npm run build
 
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps
 
       - name: Run e2e & acceptance tests

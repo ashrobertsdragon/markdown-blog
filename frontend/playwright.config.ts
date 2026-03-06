@@ -3,22 +3,22 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './tests',
   testMatch: ['**/e2e/*.ts', '**/acceptance/*.ts'],
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: [
-    ['html'],
-    ['json', { outputFile: 'test-results/results.json' }],
-    ['junit', { outputFile: 'test-results/junit.xml' }],
-    ['list'],
-  ],
+  workers: 1,
+  reporter: process.env.CI
+    ? [['list']]
+    : [
+        ['json', { outputFile: 'test-results/results.json' }],
+        ['junit', { outputFile: 'test-results/junit.xml' }],
+        ['list'],
+      ],
   use: {
     baseURL: 'http://localhost:5556',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    permissions: ['clipboard-read', 'clipboard-write'],
   },
   webServer: [
     {
@@ -28,8 +28,20 @@ export default defineConfig({
       timeout: 120000,
     },
     {
-      command:
-        'cd ../backend && FLASK_ENV=TESTING CLERK_JWKS_URL=http://127.0.0.1:5557/.well-known/jwks.json DRAFTS_PATH=/tmp/test-drafts GITHUB_PERSONAL_ACCESS_TOKEN=test GITHUB_OWNER=test-owner GITHUB_REPO=test-repo CLERK_PUBLISHABLE_KEY=pk_test_123 CLERK_SECRET_KEY=sk_test_123 LOCAL_DB_NAME=test LOCAL_DB_USER=test LOCAL_DB_PASSWORD=test uv run dev_flask',
+      command: 'uv run --directory ../backend dev_flask',
+      env: {
+        FLASK_ENV: 'TESTING',
+        CLERK_JWKS_URL: 'http://127.0.0.1:5557/.well-known/jwks.json',
+        DRAFTS_PATH: '/tmp/test-drafts',
+        GITHUB_PERSONAL_ACCESS_TOKEN: 'test',
+        GITHUB_OWNER: 'test-owner',
+        GITHUB_REPO: 'test-repo',
+        CLERK_PUBLISHABLE_KEY: 'pk_test_123',
+        CLERK_SECRET_KEY: 'sk_test_123',
+        LOCAL_DB_NAME: 'test',
+        LOCAL_DB_USER: 'test',
+        LOCAL_DB_PASSWORD: 'test',
+      },
       url: 'http://localhost:5555/api/health',
       reuseExistingServer: true,
       timeout: 120000,
@@ -45,7 +57,10 @@ export default defineConfig({
     ? [
         {
           name: 'chromium',
-          use: { ...devices['Desktop Chrome'] },
+          use: {
+            ...devices['Desktop Chrome'],
+            permissions: ['clipboard-read', 'clipboard-write'],
+          },
         },
         {
           name: 'firefox',
@@ -59,7 +74,10 @@ export default defineConfig({
     : [
         {
           name: 'chromium',
-          use: { ...devices['Desktop Chrome'] },
+          use: {
+            ...devices['Desktop Chrome'],
+            permissions: ['clipboard-read', 'clipboard-write'],
+          },
         },
       ],
 })
