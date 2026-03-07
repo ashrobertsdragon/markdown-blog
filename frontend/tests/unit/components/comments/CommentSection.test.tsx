@@ -2,12 +2,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CommentSection } from '@/components/comments/CommentSection'
-import { useFetchComments, usePostComment } from '@/hooks/useComments'
+import {
+  useDeleteComment,
+  useFetchComments,
+  usePostComment,
+  useReplyToComment,
+} from '@/hooks/useComments'
 import type { CommentResponse } from '@/services/commentsApi'
 
 vi.mock('@/hooks/useComments', () => ({
   useFetchComments: vi.fn(),
   usePostComment: vi.fn(),
+  useDeleteComment: vi.fn(),
+  useReplyToComment: vi.fn(),
 }))
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: vi.fn(() => ({
@@ -63,6 +70,42 @@ describe('CommentSection', () => {
       failureReason: null,
       isPaused: false,
       status: 'idle',
+      submittedAt: 0,
+      variables: undefined,
+      context: undefined,
+    } as never)
+    vi.mocked(useDeleteComment).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+      isIdle: true,
+      isSuccess: false,
+      reset: vi.fn(),
+      mutateAsync: vi.fn(),
+      data: undefined,
+      failureCount: 0,
+      failureReason: null,
+      isPaused: false,
+      status: 'idle' as const,
+      submittedAt: 0,
+      variables: undefined,
+      context: undefined,
+    } as never)
+    vi.mocked(useReplyToComment).mockReturnValue({
+      mutate: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+      isIdle: true,
+      isSuccess: false,
+      reset: vi.fn(),
+      mutateAsync: vi.fn(),
+      data: undefined,
+      failureCount: 0,
+      failureReason: null,
+      isPaused: false,
+      status: 'idle' as const,
       submittedAt: 0,
       variables: undefined,
       context: undefined,
@@ -206,8 +249,8 @@ describe('CommentSection', () => {
 
     renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
-    expect(screen.getByText('7')).toBeInTheDocument()
-    expect(screen.getByText('99')).toBeInTheDocument()
+    expect(screen.getByText(/user 7/i)).toBeInTheDocument()
+    expect(screen.getByText(/user 99/i)).toBeInTheDocument()
   })
 
   /**

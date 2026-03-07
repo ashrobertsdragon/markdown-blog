@@ -1,11 +1,52 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CommentList } from '@/components/comments/CommentList'
+import { useDeleteComment, useReplyToComment } from '@/hooks/useComments'
 import {
   createMockComment,
   createMockDeletedComment,
   createMockReplyComment,
 } from '../../../fixtures/comments.fixtures'
+
+vi.mock('@/hooks/useComments', () => ({
+  useDeleteComment: vi.fn(),
+  useReplyToComment: vi.fn(),
+}))
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: vi.fn(() => ({
+    isSignedIn: true,
+    getToken: vi.fn(async () => 'mock-token'),
+    isLoaded: true,
+    user: null,
+    role: 'authenticated',
+  })),
+}))
+
+const createTestQueryClient = () =>
+  new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+
+const renderWithQueryClient = (component: React.ReactElement) =>
+  render(<QueryClientProvider client={createTestQueryClient()}>{component}</QueryClientProvider>)
+
+const mockMutation = {
+  mutate: vi.fn(),
+  isPending: false,
+  isError: false,
+  error: null,
+  isIdle: true,
+  isSuccess: false,
+  reset: vi.fn(),
+  mutateAsync: vi.fn(),
+  data: undefined,
+  failureCount: 0,
+  failureReason: null,
+  isPaused: false,
+  status: 'idle' as const,
+  submittedAt: 0,
+  variables: undefined,
+  context: undefined,
+}
 
 /**
  * Test suite for CommentList component
@@ -14,12 +55,18 @@ import {
  * handling, author badge display, and reply threading indicators.
  */
 describe('CommentList', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(useDeleteComment).mockReturnValue(mockMutation as never)
+    vi.mocked(useReplyToComment).mockReturnValue(mockMutation as never)
+  })
+
   /**
    * Empty list must show appropriate message so users know comments have
    * been disabled or not posted yet rather than loading forever.
    */
   it('renders empty message when comments array is empty', () => {
-    render(<CommentList comments={[]} postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentList comments={[]} postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByText(/no comments yet|empty/i)).toBeInTheDocument()
   })
@@ -35,7 +82,9 @@ describe('CommentList', () => {
       createMockComment({ id: 3, text: 'Third comment' }),
     ]
 
-    render(<CommentList comments={comments} postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(
+      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
+    )
 
     expect(screen.getByText('First comment')).toBeInTheDocument()
     expect(screen.getByText('Second comment')).toBeInTheDocument()
@@ -46,17 +95,17 @@ describe('CommentList', () => {
    * The list must pass postAuthorId to each CommentItem so they can
    * determine if they should show the "Author" badge.
    */
-  it('passes postAuthorId to each CommentItem', () => {
-    const postAuthorId = 42
+  it('shows Author badge for comments where author_id matches postAuthorId', () => {
     const comments = [
-      createMockComment({ id: 1, author_id: 42 }),
-      createMockComment({ id: 2, author_id: 100 }),
+      createMockComment({ id: 1, author_id: 42, text: 'Post author comment' }),
+      createMockComment({ id: 2, author_id: 100, text: 'Reader comment' }),
     ]
 
-    render(<CommentList comments={comments} postSlug="test-post" postAuthorId={postAuthorId} />)
+    renderWithQueryClient(
+      <CommentList comments={comments} postSlug="test-post" postAuthorId={42} />
+    )
 
-    // Each CommentItem should be present (test via presence of comments)
-    expect(screen.getByText(createMockComment({ id: 1, author_id: 42 }).text)).toBeInTheDocument()
+    expect(screen.getByText('Author')).toBeInTheDocument()
   })
 
   /**
@@ -69,7 +118,9 @@ describe('CommentList', () => {
       createMockDeletedComment({ id: 2 }),
     ]
 
-    render(<CommentList comments={comments} postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(
+      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
+    )
 
     expect(screen.getByText('Normal comment')).toBeInTheDocument()
     expect(screen.getByText(/\[deleted\]/i)).toBeInTheDocument()
@@ -80,19 +131,11 @@ describe('CommentList', () => {
    * showing they are replies to a specific comment so the threading
    * is clear even in a flat list.
    */
-  it('shows "Reply to @username" for comments with parent_id', () => {
-    const parentComment = createMockComment({
-      id: 1,
-      author_id: 100,
-      text: 'Original comment',
-    })
-    const replyComment = createMockReplyComment(1, {
-      id: 2,
-      author_id: 200,
-      text: 'I reply to the above',
-    })
+  it('shows "Reply to" indicator for comments with parent_id', () => {
+    const parentComment = createMockComment({ id: 1, author_id: 100, text: 'Original comment' })
+    const replyComment = createMockReplyComment(1, { id: 2, author_id: 200, text: 'My reply' })
 
-    render(
+    renderWithQueryClient(
       <CommentList
         comments={[parentComment, replyComment]}
         postSlug="test-post"
@@ -100,16 +143,12 @@ describe('CommentList', () => {
       />
     )
 
-    // The reply should show context of what it's replying to
-    expect(screen.getByText('I reply to the above')).toBeInTheDocument()
-    // Should indicate it's a reply (specific text depends on implementation)
+    expect(screen.getByText('My reply')).toBeInTheDocument()
     expect(screen.getByText(/reply to/i)).toBeInTheDocument()
   })
 
   /**
-   * All comments should have unique keys for React reconciliation,
-   * verified by rendering and checking both are present (would fail
-   * if keys were duplicated or missing).
+   * All comments should render without key conflicts.
    */
   it('renders multiple comments with unique keys', () => {
     const comments = [
@@ -118,34 +157,33 @@ describe('CommentList', () => {
       createMockComment({ id: 3, text: 'Comment 3' }),
     ]
 
-    render(<CommentList comments={comments} postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(
+      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
+    )
 
-    // Verify all comments rendered (React reconciliation works)
     expect(screen.getByText('Comment 1')).toBeInTheDocument()
     expect(screen.getByText('Comment 2')).toBeInTheDocument()
     expect(screen.getByText('Comment 3')).toBeInTheDocument()
   })
 
   /**
-   * Large comment lists must handle rendering without performance issues.
-   * This test creates a list with many comments to ensure pagination or
-   * virtualization handles it correctly.
+   * Large comment lists must render without errors.
    */
   it('renders large list (50+ comments) without errors', () => {
     const comments = Array.from({ length: 60 }, (_, i) =>
       createMockComment({ id: i + 1, text: `Comment ${i + 1}` })
     )
 
-    render(<CommentList comments={comments} postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(
+      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
+    )
 
-    // Spot check that comments rendered
     expect(screen.getByText('Comment 1')).toBeInTheDocument()
     expect(screen.getByText('Comment 60')).toBeInTheDocument()
   })
 
   /**
-   * Chronological ordering must be preserved so the discussion thread
-   * is readable in the correct sequence.
+   * Comment order from the input array must be preserved in the rendered list.
    */
   it('maintains comment order in the rendered list', () => {
     const comments = [
@@ -154,30 +192,26 @@ describe('CommentList', () => {
       createMockComment({ id: 3, text: 'Third' }),
     ]
 
-    render(<CommentList comments={comments} postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(
+      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
+    )
 
-    // Check that comments appear in order
-    const first = screen.getByText('First')
-    const second = screen.getByText('Second')
-    const third = screen.getByText('Third')
-
-    // Simple check: they should all exist (order preservation tested implicitly)
-    expect(first).toBeInTheDocument()
-    expect(second).toBeInTheDocument()
-    expect(third).toBeInTheDocument()
+    expect(screen.getByText('First')).toBeInTheDocument()
+    expect(screen.getByText('Second')).toBeInTheDocument()
+    expect(screen.getByText('Third')).toBeInTheDocument()
   })
 
   /**
    * postSlug must be passed through to children so nested operations
-   * (like reply submission) have the context they need.
+   * like reply submission have the correct post context.
    */
-  it('passes postSlug prop to each CommentItem', () => {
+  it('passes postSlug to each CommentItem', () => {
     const comments = [createMockComment({ id: 1, text: 'A comment' })]
-    const postSlug = 'my-special-slug'
 
-    render(<CommentList comments={comments} postSlug={postSlug} postAuthorId={999} />)
+    renderWithQueryClient(
+      <CommentList comments={comments} postSlug="my-special-slug" postAuthorId={999} />
+    )
 
-    // CommentItem receives postSlug indirectly through the list
     expect(screen.getByText('A comment')).toBeInTheDocument()
   })
 })
