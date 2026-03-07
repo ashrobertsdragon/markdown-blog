@@ -117,3 +117,52 @@ export function useReplyToComment(): UseMutationResult<
     },
   })
 }
+
+/**
+ * Mutation hook for approving a comment held in the moderation queue
+ *
+ * Requires admin authentication — uses the /admin/comments/:id/approve endpoint
+ * rather than the user-facing route. Invalidates the full ['comments'] key so
+ * all active comment queries refresh and reflect the approval.
+ */
+export function useApproveComment(): UseMutationResult<
+  CommentResponse,
+  Error,
+  { commentId: number }
+> {
+  const auth = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ commentId }: { commentId: number }) => {
+      const token = await auth.getToken()
+      if (!token) throw new Error('Authentication required')
+      return commentsApi.approveComment(commentId, token)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments'] })
+    },
+  })
+}
+
+/**
+ * Mutation hook for hard-deleting a comment via the admin endpoint
+ *
+ * Bypasses ownership checks — admin-only. Invalidates the full ['comments']
+ * key so all active comment queries refresh after the deletion.
+ */
+export function useAdminDeleteComment(): UseMutationResult<void, Error, { commentId: number }> {
+  const auth = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ commentId }: { commentId: number }) => {
+      const token = await auth.getToken()
+      if (!token) throw new Error('Authentication required')
+      return commentsApi.adminDeleteComment(commentId, token)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments'] })
+    },
+  })
+}

@@ -105,4 +105,39 @@ export const commentsApi = {
     )
     return response.data
   },
+
+  /**
+   * Approve a comment held in the moderation queue
+   *
+   * Clears the is_pending_moderation flag so the comment becomes publicly
+   * visible without any other changes to its content.
+   *
+   * @param commentId - Comment id to approve
+   * @param token - JWT authentication token (admin role required)
+   * @returns Updated comment data with is_pending_moderation false
+   * @throws AxiosError on unauthorized (401), forbidden (403), or not found (404)
+   */
+  async approveComment(commentId: number, token: string): Promise<CommentResponse> {
+    const response = await apiClient.put<CommentResponse>(
+      `/admin/comments/${commentId}/approve`,
+      {},
+      getAuthHeaders(token)
+    )
+    return response.data
+  },
+
+  /**
+   * Permanently delete a comment via the admin endpoint
+   *
+   * Unlike the user-facing delete which soft-deletes, the admin endpoint
+   * performs a hard delete that bypasses ownership checks.
+   *
+   * @param commentId - Comment id to delete
+   * @param token - JWT authentication token (admin role required)
+   * @returns void (204 No Content)
+   * @throws AxiosError on unauthorized (401), forbidden (403), or not found (404)
+   */
+  async adminDeleteComment(commentId: number, token: string): Promise<void> {
+    await apiClient.delete(`/admin/comments/${commentId}`, getAuthHeaders(token))
+  },
 }

@@ -8,15 +8,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit --project tsconfig.app.json",
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test e2e/",
     "test:acceptance": "playwright test acceptance/",
     "test:all": "vitest run && playwright test",
-    "lint": "biome check --write . && tsc --noEmit",
-    "lint:ci": "biome ci . && tsc --noEmit",
+    "lint": "biome check --write . && tsc --noEmit --project tsconfig.app.json",
+    "lint:ci": "biome ci . && tsc --noEmit --project tsconfig.app.json",
     "clean": "rm -rf ../build coverage"
   },
   "dependencies": {

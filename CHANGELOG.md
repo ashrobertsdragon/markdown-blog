@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin moderation UI**: Added `ModerationPanel` (admin comment table with All/Pending/Deleted filters, status badges, and CSV export) and `CommentModerateButton` (inline Approve + Delete with AlertDialog confirmation). Added `useApproveComment` and `useAdminDeleteComment` mutation hooks and `approveComment`/`adminDeleteComment` API methods. Added `tsconfig.app.json` to scope type-checking to source files only.
+
 - **Comment UI components**: Added `CommentList` (flat list rendering with deleted comment handling), `CommentItem` (single comment display with author badge, relative timestamps, and reply threading indicators), and `ReplyForm` (reply submission form with pre-filled @mention) for Task 7. Added test fixtures factory functions (`createMockComment`, `createMockReplyComment`, `createMockDeletedComment`, `createMockPendingModerationComment`, `createMockListCommentsResponse`) for comprehensive test coverage.
 
 - **Comment application layer**: Added `ReplyToCommentCommand` and handler (parent validation, rate limiting, spam detection, reply creation); `DeleteCommentCommand` and handler (admin soft-delete vs author hard-delete, authorization checks); `ModerateCommentCommand` and handler (approve/reject/flag actions, admin-only); `GetPostCommentsQuery` and handler (public vs admin pagination with `has_more`); `GetCommentQuery` and handler (single comment lookup). All follow the established command/query pattern with frozen dataclasses, `__post_init__` validation, and 5-step handler orchestration.
