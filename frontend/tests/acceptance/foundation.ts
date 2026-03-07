@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { mockClerkUnauthenticated } from './fixtures/clerk-mock'
+import { mockClerkUnauthenticated } from '../fixtures/clerk-mock'
 
 /**
  * Acceptance tests for Foundation spec - Frontend UI.

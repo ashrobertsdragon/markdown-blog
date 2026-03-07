@@ -12,14 +12,34 @@ class SignInErrorBoundary extends Component<{ children: ReactNode }, { hasError:
   constructor(props: { children: ReactNode }) {
     super(props)
     this.state = { hasError: false }
+    this.handleRetry = this.handleRetry.bind(this)
   }
 
   static getDerivedStateFromError() {
     return { hasError: true }
   }
 
+  handleRetry() {
+    this.setState({ hasError: false })
+  }
+
   render() {
-    if (this.state.hasError) return null
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center p-4 text-center">
+          <p className="mb-2 text-sm text-red-600">
+            Something went wrong while loading the sign-in form.
+          </p>
+          <button
+            type="button"
+            onClick={this.handleRetry}
+            className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      )
+    }
     return this.props.children
   }
 }
@@ -37,7 +57,7 @@ export default function Login() {
           Sign In to Your Account
         </h1>
         <div className="flex justify-center">
-          <SignInErrorBoundary>
+          <SignInErrorBoundary key={location.key}>
             <SignIn redirectUrl={redirectUrl} afterSignInUrl={redirectUrl} />
           </SignInErrorBoundary>
         </div>

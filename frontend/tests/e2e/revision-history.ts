@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../acceptance/fixtures/clerk-mock'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
+import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 /**
  * E2E tests for revision tracking workflow.

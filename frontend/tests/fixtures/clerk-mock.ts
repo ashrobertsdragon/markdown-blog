@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { makeTestJwt } from '../../fixtures/test-jwt'
+import { makeTestJwt } from './test-jwt'
 
 declare global {
   interface Window {

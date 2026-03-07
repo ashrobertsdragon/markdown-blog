@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth, mockClerkUnauthenticated } from './fixtures/clerk-mock'
+import { mockClerkAuth, mockClerkUnauthenticated } from '../fixtures/clerk-mock'
 
 /**
  * Acceptance tests for Authentication spec - Frontend UI.

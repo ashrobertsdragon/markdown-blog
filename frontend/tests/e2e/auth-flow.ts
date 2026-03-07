@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { mockClerkUnauthenticated } from '../acceptance/fixtures/clerk-mock'
+import { mockClerkUnauthenticated } from '../fixtures/clerk-mock'
 import {
   getAuthToken,
   verifyBearerTokenFormat,
@@ -322,6 +322,7 @@ test.describe('Role-Based Access Control', () => {
 test.describe('Browser Compatibility', () => {
   test.beforeEach(async ({ page }) => {
     await mockClerkUnauthenticated(page)
+    await waitForAuthToLoad(page)
   })
 
   test('login page renders in all browsers', async ({ page, browserName }) => {
@@ -361,6 +362,7 @@ test.describe('Browser Compatibility', () => {
 test.describe('Performance and Reliability', () => {
   test.beforeEach(async ({ page }) => {
     await mockClerkUnauthenticated(page)
+    await waitForAuthToLoad(page)
   })
 
   test('initial page load completes within timeout', async ({ page }) => {

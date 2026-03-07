@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from './fixtures/clerk-mock'
+import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 /**
  * Acceptance tests for Admin Dashboard spec - Frontend UI.

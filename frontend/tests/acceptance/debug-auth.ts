@@ -1,5 +1,5 @@
 import { test } from '@playwright/test'
-import { mockClerkAuth } from './fixtures/clerk-mock'
+import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 test('debug auth and page content', async ({ page }) => {
   await mockClerkAuth(page, { role: 'author' })
