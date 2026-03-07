@@ -81,7 +81,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
@@ -98,7 +98,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByText(/loading comments/i)).toBeInTheDocument()
   })
@@ -115,7 +115,7 @@ describe('CommentSection', () => {
       error: new Error('Network error'),
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByText(/failed to load comments/i)).toBeInTheDocument()
   })
@@ -133,7 +133,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByText(/no comments yet/i)).toBeInTheDocument()
   })
@@ -153,7 +153,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByText('Great article!')).toBeInTheDocument()
   })
@@ -178,7 +178,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByText('First comment')).toBeInTheDocument()
     expect(screen.getByText('Second comment')).toBeInTheDocument()
@@ -204,7 +204,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByText('7')).toBeInTheDocument()
     expect(screen.getByText('99')).toBeInTheDocument()
@@ -229,7 +229,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
 
     expect(screen.getByText('Approved comment')).toBeInTheDocument()
     expect(screen.queryByText('Pending comment')).not.toBeInTheDocument()

@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comment UI components**: Added `CommentList` (flat list rendering with deleted comment handling), `CommentItem` (single comment display with author badge, relative timestamps, and reply threading indicators), and `ReplyForm` (reply submission form with pre-filled @mention) for Task 7. Added test fixtures factory functions (`createMockComment`, `createMockReplyComment`, `createMockDeletedComment`, `createMockPendingModerationComment`, `createMockListCommentsResponse`) for comprehensive test coverage.
+
 - **Comment application layer**: Added `ReplyToCommentCommand` and handler (parent validation, rate limiting, spam detection, reply creation); `DeleteCommentCommand` and handler (admin soft-delete vs author hard-delete, authorization checks); `ModerateCommentCommand` and handler (approve/reject/flag actions, admin-only); `GetPostCommentsQuery` and handler (public vs admin pagination with `has_more`); `GetCommentQuery` and handler (single comment lookup). All follow the established command/query pattern with frozen dataclasses, `__post_init__` validation, and 5-step handler orchestration.
 
 - **Comment persistence**: Added `CommentModel` SQLModel table with self-referential `parent_id` FK for flat threading, `is_deleted` and `is_pending_moderation` flags with indexes, and foreign keys to `posts` and `users`. Added `CommentRepository` with `save`, `find_by_id`, `list_by_post` (public), `list_by_post_admin` (admin view), `hard_delete`, and `soft_delete` operations following the established repository pattern.
