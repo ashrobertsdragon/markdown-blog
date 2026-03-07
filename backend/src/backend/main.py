@@ -5,6 +5,7 @@ including SPA routing, CORS handling, and blueprint registration.
 """
 
 import logging
+import time
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -15,7 +16,9 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import Response as WerkzeugResponse
 
 from backend.api.routes import (
+    admin_comments_bp,
     auth_bp,
+    comments_bp,
     health_bp,
     posts_bp,
     revisions_bp,
@@ -23,7 +26,11 @@ from backend.api.routes import (
     users_bp,
 )
 from backend.config import FlaskEnv, FlaskSettings
-from backend.exceptions import AuthenticationError, AuthorizationError
+from backend.exceptions import (
+    AuthenticationError,
+    AuthorizationError,
+    RateLimitExceededError,
+)
 from scripts.create_schema import create_schema
 
 logger = logging.getLogger(__name__)
@@ -67,7 +74,9 @@ def create_app() -> Flask:
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(posts_bp, url_prefix="/api/posts")
+    app.register_blueprint(comments_bp, url_prefix="/api/posts")
     app.register_blueprint(revisions_bp, url_prefix="/api/posts")
+    app.register_blueprint(admin_comments_bp, url_prefix="/api/admin")
     app.register_blueprint(test_bp, url_prefix="/api/test")
 
     @app.errorhandler(AuthenticationError)
@@ -101,6 +110,28 @@ def create_app() -> Flask:
         if error.required_role is not None:
             payload["required_role"] = error.required_role
         return jsonify(payload), 403
+
+    @app.errorhandler(RateLimitExceededError)
+    def handle_rate_limit_exceeded_error(
+        error: RateLimitExceededError,
+    ) -> tuple[Response, int]:
+        """Handle rate limit violations with 429 response.
+
+        Args:
+            error: The caught RateLimitExceededError instance.
+
+        Returns:
+            JSON response with error message and 429 status code, including
+            X-RateLimit-Remaining and X-RateLimit-Reset headers.
+        """
+        response = jsonify(
+            {"error": error.message, "code": "rate_limit_exceeded"}
+        )
+        response.headers["X-RateLimit-Remaining"] = str(int(error.remaining))
+        response.headers["X-RateLimit-Reset"] = str(
+            int(time.time()) + int(error.reset_after)
+        )
+        return response, 429
 
     @app.errorhandler(Exception)
     def handle_unexpected_error(
