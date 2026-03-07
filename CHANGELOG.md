@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Rate limiting**: Added `RateLimitService` enforcing 5 comments per 60-second sliding window per user/IP using an in-memory timestamp cache; admin users bypass limits; includes thread-safe cleanup to prevent unbounded memory growth
 
+- **Comment frontend components**: Added `CommentSection` and `CommentForm` React components with `commentsApi` service and `useComments` hooks. `CommentForm` uses an uncontrolled textarea with live character counter (0–5000 limit), auth gate, rate-limit error display (shows specific wait time from `retryAfter`), and `onCommentPosted` callback. `CommentSection` composes the form with `useFetchComments`, handling loading/error/empty states and filtering `is_pending_moderation` comments for non-admins. All four CRUD operations (`listComments`, `postComment`, `deleteComment`, `replyToComment`) are wired through React Query with cache invalidation on mutation success.
+
 - **Comment moderation flag**: Added `is_pending_moderation` field and `mark_as_pending_moderation()` to the `Comment` aggregate
 
 - **PostCommentCommand**: Added frozen dataclass carrying `post_id`, `author_id`, `text`, `ip_address`, and `is_admin` with domain validation in `__post_init__`
