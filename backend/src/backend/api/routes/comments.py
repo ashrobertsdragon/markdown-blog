@@ -131,9 +131,13 @@ def list_comments(slug: str) -> tuple[Response, int]:
     )
     result = handle_get_post_comments(query, _get_comment_repository())
 
+    post_author_id = post.author_id
     return jsonify(
         {
-            "comments": [c.to_dict() for c in result.comments],
+            "comments": [
+                {**c.to_dict(), "is_post_author": c.author_id == post_author_id}
+                for c in result.comments
+            ],
             "total_count": result.total_count,
             "has_more": result.has_more,
         }
@@ -192,7 +196,12 @@ def post_comment(slug: str) -> tuple[Response, int]:
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    return jsonify(comment.to_dict()), 201
+    return jsonify(
+        {
+            **comment.to_dict(),
+            "is_post_author": comment.author_id == post.author_id,
+        }
+    ), 201
 
 
 @comments_bp.route("/<slug>/comments/<int:comment_id>/reply", methods=["POST"])
@@ -252,7 +261,12 @@ def post_reply(slug: str, comment_id: int) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 404
         return jsonify({"error": str(e)}), 400
 
-    return jsonify(comment.to_dict()), 201
+    return jsonify(
+        {
+            **comment.to_dict(),
+            "is_post_author": comment.author_id == post.author_id,
+        }
+    ), 201
 
 
 @comments_bp.route("/<slug>/comments/<int:comment_id>", methods=["DELETE"])
