@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comment API `is_post_author` flag**: All comment list, post, and reply responses now include `is_post_author: bool` computed server-side by comparing `comment.author_id` against `post.author_id`. Eliminates the need for clients to receive the post's internal `author_id` to render author badges.
+
 - **Admin moderation UI**: Added `ModerationPanel` (admin comment table with All/Pending/Deleted filters, status badges, and CSV export) and `CommentModerateButton` (inline Approve + Delete with AlertDialog confirmation). Added `useApproveComment` and `useAdminDeleteComment` mutation hooks and `approveComment`/`adminDeleteComment` API methods. Added `tsconfig.app.json` to scope type-checking to source files only.
 
 - **Comment UI components**: Added `CommentList` (flat list rendering with deleted comment handling), `CommentItem` (single comment display with author badge, relative timestamps, and reply threading indicators), and `ReplyForm` (reply submission form with pre-filled @mention) for Task 7. Added test fixtures factory functions (`createMockComment`, `createMockReplyComment`, `createMockDeletedComment`, `createMockPendingModerationComment`, `createMockListCommentsResponse`) for comprehensive test coverage.
