@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider, type UseMutationResult } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CommentForm } from '@/components/comments/CommentForm'
@@ -179,7 +179,9 @@ describe('CommentForm', () => {
     await user.click(screen.getByRole('button', { name: /submit/i }))
 
     const onSuccessCallback = mockMutate.mock.calls[0][1].onSuccess
-    onSuccessCallback()
+    act(() => {
+      onSuccessCallback()
+    })
 
     expect(screen.getByRole('textbox')).toHaveValue('')
   })
@@ -197,7 +199,9 @@ describe('CommentForm', () => {
     await user.click(screen.getByRole('button', { name: /submit/i }))
 
     const onSuccessCallback = mockMutate.mock.calls[0][1].onSuccess
-    onSuccessCallback()
+    act(() => {
+      onSuccessCallback()
+    })
 
     expect(onCommentPosted).toHaveBeenCalledTimes(1)
   })

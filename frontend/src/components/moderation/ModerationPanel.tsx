@@ -8,7 +8,6 @@ type FilterState = 'all' | 'pending' | 'deleted'
 
 export interface ModerationPanelProps {
   postSlug: string
-  postAuthorId: number
 }
 
 /** Derive a human-readable status label from a comment's flags */
@@ -51,11 +50,11 @@ function StatusBadge({ status }: { status: ReturnType<typeof getCommentStatus> }
  * away — the anchor click is programmatic and the element is removed immediately.
  */
 function downloadCommentsCSV(comments: CommentResponse[]) {
-  const header = 'id,post_id,author_id,text,status,created_at'
+  const header = 'id,post_id,is_post_author,text,status,created_at'
   const rows = comments.map(c => {
     const status = getCommentStatus(c)
     const escapedText = `"${c.text.replace(/"/g, '""')}"`
-    return `${c.id},${c.post_id},${c.author_id},${escapedText},${status},${c.created_at}`
+    return `${c.id},${c.post_id},${c.is_post_author},${escapedText},${status},${c.created_at}`
   })
   const csv = [header, ...rows].join('\n')
   const blob = new Blob([csv], { type: 'text/csv' })
@@ -77,7 +76,7 @@ function downloadCommentsCSV(comments: CommentResponse[]) {
  * Deleted rows intentionally omit the CommentModerateButton because
  * approve is nonsensical and the delete action has already been taken.
  */
-export function ModerationPanel({ postSlug, postAuthorId: _postAuthorId }: ModerationPanelProps) {
+export function ModerationPanel({ postSlug }: ModerationPanelProps) {
   const [filter, setFilter] = useState<FilterState>('all')
   const { data, isLoading } = useFetchComments(postSlug, { limit: 100 })
 
@@ -146,7 +145,7 @@ export function ModerationPanel({ postSlug, postAuthorId: _postAuthorId }: Moder
 
             return (
               <tr key={comment.id} data-testid="comment-row" className="border-b">
-                <td className="py-2 pr-4">{comment.author_id}</td>
+                <td className="py-2 pr-4">{comment.id}</td>
                 <td className="py-2 pr-4">{truncated}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">
                   {new Date(comment.created_at).toLocaleDateString()}

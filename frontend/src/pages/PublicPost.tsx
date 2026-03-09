@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
+import { CommentSection } from '@/components/comments/CommentSection'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -81,6 +82,8 @@ export default function PublicPost() {
           </Link>
         </div>
       </article>
+
+      <CommentSection postSlug={slug ?? ''} />
     </div>
   )
 }

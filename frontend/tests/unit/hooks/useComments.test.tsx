@@ -62,7 +62,7 @@ describe('useComments hooks', () => {
         {
           id: 1,
           post_id: 10,
-          author_id: 42,
+          is_post_author: false,
           text: 'First comment',
           parent_id: null,
           created_at: '2026-03-01T10:00:00Z',
@@ -187,7 +187,7 @@ describe('useComments hooks', () => {
     const mockComment: CommentResponse = {
       id: 5,
       post_id: 10,
-      author_id: 42,
+      is_post_author: false,
       text: 'Hello!',
       parent_id: null,
       created_at: '2026-03-01T12:00:00Z',
@@ -397,7 +397,7 @@ describe('useComments hooks', () => {
     const mockReply: CommentResponse = {
       id: 20,
       post_id: 10,
-      author_id: 42,
+      is_post_author: false,
       text: '@alice agreed.',
       parent_id: 5,
       created_at: '2026-03-01T13:00:00Z',

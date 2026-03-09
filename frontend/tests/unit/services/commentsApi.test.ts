@@ -53,7 +53,7 @@ describe('commentsApi', () => {
             {
               id: 1,
               post_id: 10,
-              author_id: 42,
+              is_post_author: false,
               text: 'Great post!',
               parent_id: null,
               created_at: '2026-03-01T10:00:00Z',
@@ -106,7 +106,7 @@ describe('commentsApi', () => {
       const comment = {
         id: 7,
         post_id: 3,
-        author_id: 99,
+        is_post_author: false,
         text: 'Interesting take.',
         parent_id: null,
         created_at: '2026-03-02T08:00:00Z',
@@ -171,7 +171,7 @@ describe('commentsApi', () => {
         data: {
           id: 5,
           post_id: 10,
-          author_id: 42,
+          is_post_author: false,
           text: 'This is my comment.',
           parent_id: null,
           created_at: '2026-03-01T12:00:00Z',
@@ -197,7 +197,7 @@ describe('commentsApi', () => {
       const created = {
         id: 12,
         post_id: 3,
-        author_id: 7,
+        is_post_author: false,
         text: 'Hello world.',
         parent_id: null,
         created_at: '2026-03-05T09:00:00Z',
@@ -394,7 +394,7 @@ describe('commentsApi', () => {
         data: {
           id: 20,
           post_id: 10,
-          author_id: 42,
+          is_post_author: false,
           text: '@alice Great point!',
           parent_id: 5,
           created_at: '2026-03-01T13:00:00Z',
@@ -425,7 +425,7 @@ describe('commentsApi', () => {
       const reply = {
         id: 21,
         post_id: 10,
-        author_id: 42,
+        is_post_author: false,
         text: '@bob agreed.',
         parent_id: 8,
         created_at: '2026-03-05T10:00:00Z',

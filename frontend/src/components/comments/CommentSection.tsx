@@ -7,7 +7,6 @@ import { CommentList } from './CommentList'
  */
 export interface CommentSectionProps {
   postSlug: string
-  postAuthorId: number
 }
 
 /**
@@ -17,7 +16,7 @@ export interface CommentSectionProps {
  * submission form. Filters out comments pending moderation so they are
  * not visible to non-admin readers.
  */
-export function CommentSection({ postSlug, postAuthorId }: CommentSectionProps) {
+export function CommentSection({ postSlug }: CommentSectionProps) {
   const { data, isLoading, isError } = useFetchComments(postSlug)
 
   const visibleComments = data?.comments.filter(c => !c.is_pending_moderation) ?? []
@@ -27,9 +26,7 @@ export function CommentSection({ postSlug, postAuthorId }: CommentSectionProps) 
       <CommentForm postSlug={postSlug} />
       {isLoading && <p>Loading comments...</p>}
       {isError && <p>Failed to load comments.</p>}
-      {!isLoading && !isError && (
-        <CommentList comments={visibleComments} postSlug={postSlug} postAuthorId={postAuthorId} />
-      )}
+      {!isLoading && !isError && <CommentList comments={visibleComments} postSlug={postSlug} />}
     </section>
   )
 }

@@ -7,7 +7,6 @@ import { ReplyForm } from './ReplyForm'
 export interface CommentItemProps {
   comment: CommentResponse
   postSlug: string
-  postAuthorId: number
 }
 
 /**
@@ -17,14 +16,13 @@ export interface CommentItemProps {
  * Deleted comments show "[deleted]" placeholder. Replies show "Reply to @username"
  * prefix to indicate threading in the flat comment list.
  */
-export function CommentItem({ comment, postSlug, postAuthorId }: CommentItemProps) {
-  const { user } = useAuth()
+export function CommentItem({ comment, postSlug }: CommentItemProps) {
+  const { isSignedIn } = useAuth()
   const [showReplyForm, setShowReplyForm] = useState(false)
   const deleteCommentMutation = useDeleteComment()
 
-  const isPostAuthor = comment.author_id === postAuthorId
-  const isCommentAuthor = user && Number(user.id) === comment.author_id
-  const canDelete = isCommentAuthor
+  const isPostAuthor = comment.is_post_author
+  const canDelete = isSignedIn
 
   const handleDelete = () => {
     if (window.confirm('Delete this comment?')) {
@@ -49,7 +47,7 @@ export function CommentItem({ comment, postSlug, postAuthorId }: CommentItemProp
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-semibold">User {comment.author_id}</span>
+            <span className="font-semibold">Comment author</span>
             {isPostAuthor && (
               <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Author</span>
             )}

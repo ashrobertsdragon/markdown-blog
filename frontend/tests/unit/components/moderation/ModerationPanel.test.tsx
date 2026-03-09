@@ -74,9 +74,9 @@ const makeQueryResult = (
 })
 
 const mockComments = [
-  createMockComment({ id: 1, author_id: 10, text: 'Normal approved comment', post_id: 5 }),
-  createMockPendingModerationComment({ id: 2, author_id: 20, post_id: 5 }),
-  createMockDeletedComment({ id: 3, author_id: 30, post_id: 5 }),
+  createMockComment({ id: 1, is_post_author: false, text: 'Normal approved comment', post_id: 5 }),
+  createMockPendingModerationComment({ id: 2, is_post_author: false, post_id: 5 }),
+  createMockDeletedComment({ id: 3, is_post_author: false, post_id: 5 }),
 ]
 
 /**
@@ -102,7 +102,7 @@ describe('ModerationPanel', () => {
    * deleted and pending items.
    */
   it('renders all comments including pending and deleted', () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     expect(screen.getByText('Normal approved comment')).toBeInTheDocument()
     expect(screen.getByText('This comment looks suspicious and needs review')).toBeInTheDocument()
@@ -113,7 +113,7 @@ describe('ModerationPanel', () => {
    * workload at a glance without counting rows.
    */
   it('shows comment count', () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     expect(screen.getByText(/3 of 3/)).toBeInTheDocument()
   })
@@ -123,7 +123,7 @@ describe('ModerationPanel', () => {
    * moderation, hiding normal and deleted entries.
    */
   it('shows only pending comments when Pending filter is active', async () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     await userEvent.click(screen.getByRole('button', { name: /pending/i }))
 
@@ -136,7 +136,7 @@ describe('ModerationPanel', () => {
    * so admins can audit removed content.
    */
   it('shows only deleted comments when Deleted filter is active', async () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     await userEvent.click(screen.getByRole('button', { name: /^deleted$/i }))
 
@@ -150,7 +150,7 @@ describe('ModerationPanel', () => {
    * Switching back to All after using a filter must restore the full list.
    */
   it('shows all comments when All filter is active', async () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     await userEvent.click(screen.getByRole('button', { name: /pending/i }))
     await userEvent.click(screen.getByRole('button', { name: /^all$/i }))
@@ -164,7 +164,7 @@ describe('ModerationPanel', () => {
    * delete action has already been taken and approve makes no sense.
    */
   it('does not render moderation buttons for deleted comments', async () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     await userEvent.click(screen.getByRole('button', { name: /^deleted$/i }))
 
@@ -176,7 +176,7 @@ describe('ModerationPanel', () => {
    * identify items needing action at a glance.
    */
   it('shows Pending badge for comments with is_pending_moderation true', () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     const pendingElements = screen.getAllByText('Pending')
     const hasBadge = pendingElements.some(el => el.tagName === 'SPAN')
@@ -188,7 +188,7 @@ describe('ModerationPanel', () => {
    * them from active comments in the all-comments view.
    */
   it('shows Deleted badge for comments with is_deleted true', () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     const deletedElements = screen.getAllByText('Deleted')
     const hasBadge = deletedElements.some(el => el.tagName === 'SPAN')
@@ -208,7 +208,7 @@ describe('ModerationPanel', () => {
       writable: true,
     })
 
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     const clickSpy = vi.fn()
     const anchorElement = { href: '', download: '', click: clickSpy, style: {} }
@@ -251,7 +251,7 @@ describe('ModerationPanel', () => {
       }) as never
     )
 
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     expect(screen.getByRole('status') ?? screen.getByText(/loading/i)).toBeInTheDocument()
   })
@@ -268,7 +268,7 @@ describe('ModerationPanel', () => {
       ) as never
     )
 
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     expect(screen.queryByText(longText)).not.toBeInTheDocument()
     expect(screen.getByText(new RegExp(`${'A'.repeat(97)}`))).toBeInTheDocument()
@@ -285,7 +285,7 @@ describe('ModerationPanel', () => {
       ) as never
     )
 
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument()
@@ -296,7 +296,7 @@ describe('ModerationPanel', () => {
    * so tests can assert per-row button presence without false positives.
    */
   it('renders deleted comment row without moderation buttons in all-comments view', () => {
-    renderWithQueryClient(<ModerationPanel postSlug="test-post" postAuthorId={99} />)
+    renderWithQueryClient(<ModerationPanel postSlug="test-post" />)
 
     const deletedBadge = screen.getAllByText('Deleted').find(el => el.tagName === 'SPAN')
     expect(deletedBadge).toBeDefined()

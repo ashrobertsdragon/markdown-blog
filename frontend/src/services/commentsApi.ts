@@ -6,7 +6,7 @@ import { apiClient } from './postsApi'
 export interface CommentResponse {
   id: number
   post_id: number
-  author_id: number
+  is_post_author: boolean
   text: string
   parent_id: number | null
   created_at: string

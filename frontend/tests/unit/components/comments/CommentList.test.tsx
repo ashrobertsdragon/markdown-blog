@@ -66,7 +66,7 @@ describe('CommentList', () => {
    * been disabled or not posted yet rather than loading forever.
    */
   it('renders empty message when comments array is empty', () => {
-    renderWithQueryClient(<CommentList comments={[]} postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentList comments={[]} postSlug="test-post" />)
 
     expect(screen.getByText(/no comments yet|empty/i)).toBeInTheDocument()
   })
@@ -82,9 +82,7 @@ describe('CommentList', () => {
       createMockComment({ id: 3, text: 'Third comment' }),
     ]
 
-    renderWithQueryClient(
-      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
-    )
+    renderWithQueryClient(<CommentList comments={comments} postSlug="test-post" />)
 
     expect(screen.getByText('First comment')).toBeInTheDocument()
     expect(screen.getByText('Second comment')).toBeInTheDocument()
@@ -92,18 +90,16 @@ describe('CommentList', () => {
   })
 
   /**
-   * The list must pass postAuthorId to each CommentItem so they can
-   * determine if they should show the "Author" badge.
+   * The "Author" badge must appear for comments where is_post_author is true
+   * so readers can identify the post author's contributions.
    */
-  it('shows Author badge for comments where author_id matches postAuthorId', () => {
+  it('shows Author badge for comments where is_post_author is true', () => {
     const comments = [
-      createMockComment({ id: 1, author_id: 42, text: 'Post author comment' }),
-      createMockComment({ id: 2, author_id: 100, text: 'Reader comment' }),
+      createMockComment({ id: 1, is_post_author: true, text: 'Post author comment' }),
+      createMockComment({ id: 2, is_post_author: false, text: 'Reader comment' }),
     ]
 
-    renderWithQueryClient(
-      <CommentList comments={comments} postSlug="test-post" postAuthorId={42} />
-    )
+    renderWithQueryClient(<CommentList comments={comments} postSlug="test-post" />)
 
     expect(screen.getByText('Author')).toBeInTheDocument()
   })
@@ -118,9 +114,7 @@ describe('CommentList', () => {
       createMockDeletedComment({ id: 2 }),
     ]
 
-    renderWithQueryClient(
-      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
-    )
+    renderWithQueryClient(<CommentList comments={comments} postSlug="test-post" />)
 
     expect(screen.getByText('Normal comment')).toBeInTheDocument()
     expect(screen.getByText(/\[deleted\]/i)).toBeInTheDocument()
@@ -132,15 +126,19 @@ describe('CommentList', () => {
    * is clear even in a flat list.
    */
   it('shows "Reply to" indicator for comments with parent_id', () => {
-    const parentComment = createMockComment({ id: 1, author_id: 100, text: 'Original comment' })
-    const replyComment = createMockReplyComment(1, { id: 2, author_id: 200, text: 'My reply' })
+    const parentComment = createMockComment({
+      id: 1,
+      is_post_author: false,
+      text: 'Original comment',
+    })
+    const replyComment = createMockReplyComment(1, {
+      id: 2,
+      is_post_author: false,
+      text: 'My reply',
+    })
 
     renderWithQueryClient(
-      <CommentList
-        comments={[parentComment, replyComment]}
-        postSlug="test-post"
-        postAuthorId={999}
-      />
+      <CommentList comments={[parentComment, replyComment]} postSlug="test-post" />
     )
 
     expect(screen.getByText('My reply')).toBeInTheDocument()
@@ -157,9 +155,7 @@ describe('CommentList', () => {
       createMockComment({ id: 3, text: 'Comment 3' }),
     ]
 
-    renderWithQueryClient(
-      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
-    )
+    renderWithQueryClient(<CommentList comments={comments} postSlug="test-post" />)
 
     expect(screen.getByText('Comment 1')).toBeInTheDocument()
     expect(screen.getByText('Comment 2')).toBeInTheDocument()
@@ -174,9 +170,7 @@ describe('CommentList', () => {
       createMockComment({ id: i + 1, text: `Comment ${i + 1}` })
     )
 
-    renderWithQueryClient(
-      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
-    )
+    renderWithQueryClient(<CommentList comments={comments} postSlug="test-post" />)
 
     expect(screen.getByText('Comment 1')).toBeInTheDocument()
     expect(screen.getByText('Comment 60')).toBeInTheDocument()
@@ -192,9 +186,7 @@ describe('CommentList', () => {
       createMockComment({ id: 3, text: 'Third' }),
     ]
 
-    renderWithQueryClient(
-      <CommentList comments={comments} postSlug="test-post" postAuthorId={999} />
-    )
+    renderWithQueryClient(<CommentList comments={comments} postSlug="test-post" />)
 
     expect(screen.getByText('First')).toBeInTheDocument()
     expect(screen.getByText('Second')).toBeInTheDocument()
@@ -208,9 +200,7 @@ describe('CommentList', () => {
   it('passes postSlug to each CommentItem', () => {
     const comments = [createMockComment({ id: 1, text: 'A comment' })]
 
-    renderWithQueryClient(
-      <CommentList comments={comments} postSlug="my-special-slug" postAuthorId={999} />
-    )
+    renderWithQueryClient(<CommentList comments={comments} postSlug="my-special-slug" />)
 
     expect(screen.getByText('A comment')).toBeInTheDocument()
   })

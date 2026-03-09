@@ -36,7 +36,7 @@ const renderWithQueryClient = (component: React.ReactElement) => {
 const makeComment = (overrides: Partial<CommentResponse> = {}): CommentResponse => ({
   id: 1,
   post_id: 10,
-  author_id: 42,
+  is_post_author: false,
   text: 'A comment',
   parent_id: null,
   created_at: '2026-03-01T10:00:00Z',
@@ -124,7 +124,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" />)
 
     expect(screen.getByRole('textbox')).toBeInTheDocument()
   })
@@ -141,7 +141,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" />)
 
     expect(screen.getByText(/loading comments/i)).toBeInTheDocument()
   })
@@ -158,7 +158,7 @@ describe('CommentSection', () => {
       error: new Error('Network error'),
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" />)
 
     expect(screen.getByText(/failed to load comments/i)).toBeInTheDocument()
   })
@@ -176,7 +176,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" />)
 
     expect(screen.getByText(/no comments yet/i)).toBeInTheDocument()
   })
@@ -196,7 +196,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" />)
 
     expect(screen.getByText('Great article!')).toBeInTheDocument()
   })
@@ -221,7 +221,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" />)
 
     expect(screen.getByText('First comment')).toBeInTheDocument()
     expect(screen.getByText('Second comment')).toBeInTheDocument()
@@ -229,15 +229,15 @@ describe('CommentSection', () => {
   })
 
   /**
-   * The author identifier must be visible for each comment so readers
-   * can attribute remarks to the correct user.
+   * Comment text must be visible for each comment so readers can read
+   * the discussion content.
    */
-  it('shows the author_id for each comment', () => {
+  it('renders comment text for each comment', () => {
     vi.mocked(useFetchComments).mockReturnValue({
       data: {
         comments: [
-          makeComment({ id: 1, author_id: 7, text: 'Hello' }),
-          makeComment({ id: 2, author_id: 99, text: 'World' }),
+          makeComment({ id: 1, is_post_author: false, text: 'Hello' }),
+          makeComment({ id: 2, is_post_author: false, text: 'World' }),
         ],
         total_count: 2,
         has_more: false,
@@ -247,10 +247,10 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" />)
 
-    expect(screen.getByText(/user 7/i)).toBeInTheDocument()
-    expect(screen.getByText(/user 99/i)).toBeInTheDocument()
+    expect(screen.getByText('Hello')).toBeInTheDocument()
+    expect(screen.getByText('World')).toBeInTheDocument()
   })
 
   /**
@@ -272,7 +272,7 @@ describe('CommentSection', () => {
       error: null,
     } as never)
 
-    renderWithQueryClient(<CommentSection postSlug="test-post" postAuthorId={999} />)
+    renderWithQueryClient(<CommentSection postSlug="test-post" />)
 
     expect(screen.getByText('Approved comment')).toBeInTheDocument()
     expect(screen.queryByText('Pending comment')).not.toBeInTheDocument()

@@ -4,7 +4,6 @@ import { CommentItem } from './CommentItem'
 export interface CommentListProps {
   comments: CommentResponse[]
   postSlug: string
-  postAuthorId: number
 }
 
 /**
@@ -14,7 +13,7 @@ export interface CommentListProps {
  * as placeholders. Reply comments are prefixed with "Reply to @username"
  * to show threading without nesting.
  */
-export function CommentList({ comments, postSlug, postAuthorId }: CommentListProps) {
+export function CommentList({ comments, postSlug }: CommentListProps) {
   if (comments.length === 0) {
     return <p>No comments yet</p>
   }
@@ -22,12 +21,7 @@ export function CommentList({ comments, postSlug, postAuthorId }: CommentListPro
   return (
     <section aria-label="Comments">
       {comments.map(comment => (
-        <CommentItem
-          key={comment.id}
-          comment={comment}
-          postSlug={postSlug}
-          postAuthorId={postAuthorId}
-        />
+        <CommentItem key={comment.id} comment={comment} postSlug={postSlug} />
       ))}
     </section>
   )

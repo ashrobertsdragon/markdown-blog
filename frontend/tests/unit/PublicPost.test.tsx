@@ -25,6 +25,13 @@ vi.mock('@/hooks/usePosts', () => ({
 }))
 
 /**
+ * Mock CommentSection to isolate PublicPost rendering from comment infrastructure
+ */
+vi.mock('@/components/comments/CommentSection', () => ({
+  CommentSection: () => null,
+}))
+
+/**
  * Test suite for PublicPost page component
  *
  * Tests comprehensive public post viewing functionality including:

@@ -22,7 +22,7 @@ export function ReplyForm({ parentComment, postSlug, onCancel }: ReplyFormProps)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [charCount, setCharCount] = useState(0)
 
-  const parentMention = `@User${parentComment.author_id} `
+  const parentMention = `@comment${parentComment.id} `
   const isDisabled =
     charCount === 0 || charCount + parentMention.length > MAX_LENGTH || mutation.isPending
 

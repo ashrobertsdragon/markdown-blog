@@ -10,7 +10,7 @@ export function createMockComment(overrides: Partial<CommentResponse> = {}): Com
   return {
     id: 1,
     post_id: 10,
-    author_id: 100,
+    is_post_author: false,
     text: 'This is a great post!',
     parent_id: null,
     created_at: '2026-02-01T10:00:00Z',
@@ -34,7 +34,6 @@ export function createMockReplyComment(
 ): CommentResponse {
   return createMockComment({
     id: 2,
-    author_id: 200,
     text: 'I disagree because...',
     parent_id: parentId,
     ...overrides,
