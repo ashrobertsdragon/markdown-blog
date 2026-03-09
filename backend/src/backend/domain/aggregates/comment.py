@@ -174,3 +174,25 @@ class Comment:
             "is_deleted": self.is_deleted,
             "is_pending_moderation": self.is_pending_moderation,
         }
+
+    def to_public_dict(self) -> dict[str, object]:
+        """Serialize the Comment for public API responses.
+
+        Identical to to_dict() but omits author_id to avoid leaking internal
+        user identifiers in public endpoints. Callers that need to compute
+        author-based flags (e.g. is_post_author) should read self.author_id
+        directly before calling this method.
+
+        Returns:
+            Dictionary with all Comment fields except author_id.
+        """
+        return {
+            "id": self.id,
+            "post_id": self.post_id,
+            "text": str(self._text),
+            "parent_id": self.parent_id,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "is_deleted": self.is_deleted,
+            "is_pending_moderation": self.is_pending_moderation,
+        }

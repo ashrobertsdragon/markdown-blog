@@ -33,6 +33,8 @@ from backend.application.queries.get_post_comments_query import (
 from backend.application.queries.handlers import (
     handle_get_post_comments,
 )
+from backend.domain.aggregates.comment import Comment
+from backend.domain.aggregates.post import Post
 from backend.infrastructure.moderation.rate_limit_service import (
     RateLimitService,
 )
@@ -47,6 +49,29 @@ from backend.infrastructure.persistence.post_repository import PostRepository
 comments_bp = Blueprint("comments", __name__)
 admin_comments_bp = Blueprint("admin_comments", __name__)
 logger = logging.getLogger(__name__)
+
+
+def _comment_to_response_dict(
+    comment: Comment, post: Post
+) -> dict[str, object]:
+    """Build a public comment response dict with the is_post_author flag.
+
+    Centralises the pattern used by list_comments, post_comment, and
+    post_reply so the logic stays consistent and author_id is never
+    included in public API responses.
+
+    Args:
+        comment: The comment aggregate to serialise.
+        post: The post the comment belongs to, used to compute is_post_author.
+
+    Returns:
+        Public comment dict with is_post_author appended.
+    """
+    return {
+        **comment.to_public_dict(),
+        "is_post_author": comment.author_id == post.author_id,
+    }
+
 
 _post_repository: PostRepository | None = None
 _comment_repository: CommentRepository | None = None
@@ -131,12 +156,10 @@ def list_comments(slug: str) -> tuple[Response, int]:
     )
     result = handle_get_post_comments(query, _get_comment_repository())
 
-    post_author_id = post.author_id
     return jsonify(
         {
             "comments": [
-                {**c.to_dict(), "is_post_author": c.author_id == post_author_id}
-                for c in result.comments
+                _comment_to_response_dict(c, post) for c in result.comments
             ],
             "total_count": result.total_count,
             "has_more": result.has_more,
@@ -196,12 +219,7 @@ def post_comment(slug: str) -> tuple[Response, int]:
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    return jsonify(
-        {
-            **comment.to_dict(),
-            "is_post_author": comment.author_id == post.author_id,
-        }
-    ), 201
+    return jsonify(_comment_to_response_dict(comment, post)), 201
 
 
 @comments_bp.route("/<slug>/comments/<int:comment_id>/reply", methods=["POST"])
@@ -261,12 +279,7 @@ def post_reply(slug: str, comment_id: int) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 404
         return jsonify({"error": str(e)}), 400
 
-    return jsonify(
-        {
-            **comment.to_dict(),
-            "is_post_author": comment.author_id == post.author_id,
-        }
-    ), 201
+    return jsonify(_comment_to_response_dict(comment, post)), 201
 
 
 @comments_bp.route("/<slug>/comments/<int:comment_id>", methods=["DELETE"])
