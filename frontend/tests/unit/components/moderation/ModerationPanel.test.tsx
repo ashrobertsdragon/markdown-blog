@@ -196,12 +196,16 @@ describe('ModerationPanel', () => {
   })
 
   /**
-   * The Export CSV button must trigger a file download rather than a
-   * navigation so the admin stays on the page. URL.createObjectURL is
-   * the browser API that creates the download blob URL.
+   * The Export CSV button must trigger a download with the correct header
+   * and data rows so admins get usable exports. Asserts both the download
+   * flow (createObjectURL, anchor click) and the blob content.
    */
-  it('triggers CSV download when Export CSV button is clicked', async () => {
-    const createObjectURL = vi.fn(() => 'blob:mock-url')
+  it('triggers CSV download with correct content when Export CSV button is clicked', async () => {
+    let capturedBlob: Blob | null = null
+    const createObjectURL = vi.fn((blob: Blob) => {
+      capturedBlob = blob
+      return 'blob:mock-url'
+    })
     const revokeObjectURL = vi.fn()
     Object.defineProperty(window, 'URL', {
       value: { createObjectURL, revokeObjectURL },
@@ -231,6 +235,24 @@ describe('ModerationPanel', () => {
 
       expect(createObjectURL).toHaveBeenCalledOnce()
       expect(clickSpy).toHaveBeenCalledOnce()
+
+      expect(capturedBlob).not.toBeNull()
+      const csvContent = await new Promise<string>(resolve => {
+        const reader = new FileReader()
+        reader.onload = e => resolve(e.target?.result as string)
+        reader.readAsText(capturedBlob as unknown as Blob)
+      })
+      const lines = csvContent.split('\n')
+
+      expect(lines[0]).toBe('id,post_id,is_post_author,text,status,created_at')
+
+      const firstDataRow = lines[1]
+      expect(firstDataRow).toContain('1')
+      expect(firstDataRow).toContain('5')
+      expect(firstDataRow).toContain('false')
+      expect(firstDataRow).toContain('Normal approved comment')
+      expect(firstDataRow).toContain('published')
+      expect(firstDataRow).toContain('2026-02-01T10:00:00Z')
     } finally {
       createElementSpy.mockRestore()
       appendChildSpy.mockRestore()

@@ -240,7 +240,7 @@ describe('useComments hooks', () => {
       expect(commentsApi.postComment).not.toHaveBeenCalled()
     })
 
-    it('should invalidate ["comments", slug, {}] cache on success', async () => {
+    it('should invalidate ["comments", slug] cache on success', async () => {
       vi.mocked(commentsApi.postComment).mockResolvedValueOnce(mockComment)
       const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
 
@@ -251,7 +251,7 @@ describe('useComments hooks', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
       expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['comments', 'test-post', {}],
+        queryKey: ['comments', 'test-post'],
       })
     })
 

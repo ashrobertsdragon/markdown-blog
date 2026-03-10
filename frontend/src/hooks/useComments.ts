@@ -54,7 +54,7 @@ export function usePostComment(): UseMutationResult<
       return commentsApi.postComment(slug, text, token)
     },
     onSuccess: (_data, { slug }) => {
-      queryClient.invalidateQueries({ queryKey: ['comments', slug, {}] })
+      queryClient.invalidateQueries({ queryKey: ['comments', slug] })
     },
   })
 }

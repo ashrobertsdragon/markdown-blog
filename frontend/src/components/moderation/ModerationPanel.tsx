@@ -130,7 +130,7 @@ export function ModerationPanel({ postSlug }: ModerationPanelProps) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b text-left text-xs text-gray-500">
-            <th className="pb-2 pr-4">Author ID</th>
+            <th className="pb-2 pr-4">Comment ID</th>
             <th className="pb-2 pr-4">Text</th>
             <th className="pb-2 pr-4">Date</th>
             <th className="pb-2 pr-4">Status</th>
