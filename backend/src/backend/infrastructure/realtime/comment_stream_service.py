@@ -4,6 +4,21 @@ import json
 import threading
 from collections import deque
 from collections.abc import Generator
+from typing import TypedDict
+
+
+class CommentPayload(TypedDict):
+    """Typed structure for comment data broadcast over the SSE stream."""
+
+    id: int
+    post_id: int
+    is_post_author: bool
+    text: str
+    parent_id: int | None
+    created_at: str
+    updated_at: str
+    is_deleted: bool
+    is_pending_moderation: bool
 
 
 class CommentStreamService:
@@ -23,9 +38,9 @@ class CommentStreamService:
     def __init__(self) -> None:
         """Initialise an empty broker with no subscribers."""
         self._lock = threading.Condition(threading.Lock())
-        self._queues: dict[str, list[deque[dict[str, object]]]] = {}
+        self._queues: dict[str, list[deque[CommentPayload]]] = {}
 
-    def publish(self, post_slug: str, comment_dict: dict[str, object]) -> None:
+    def publish(self, post_slug: str, comment_dict: CommentPayload) -> None:
         """Broadcast a comment to all subscribers of the given slug.
 
         Pending-moderation comments are dropped before delivery. Each active
@@ -66,7 +81,7 @@ class CommentStreamService:
             SSE-formatted strings: either ``"data: {...}\n\n"`` for comment
             events or ``": keep-alive\n\n"`` for heartbeats.
         """
-        queue: deque[dict[str, object]] = deque()
+        queue: deque[CommentPayload] = deque()
 
         with self._lock:
             self._queues.setdefault(post_slug, []).append(queue)

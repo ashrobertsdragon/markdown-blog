@@ -142,24 +142,19 @@ export function useCommentStream(
 
     const handleComment = (event: MessageEvent) => {
       try {
-        const payload = JSON.parse(event.data) as ListCommentsResponse | CommentResponse
-        if ('comments' in payload) {
-          queryClient.setQueryData(['comments', slug, COMMENTS_CACHE_KEY_DEFAULTS], payload)
-        } else {
-          const newComment = payload as CommentResponse
-          queryClient.setQueryData<ListCommentsResponse>(
-            ['comments', slug, COMMENTS_CACHE_KEY_DEFAULTS],
-            prev => {
-              if (!prev) return prev
-              if (prev.comments.some(c => c.id === newComment.id)) return prev
-              return {
-                ...prev,
-                comments: [...prev.comments, newComment],
-                total_count: prev.total_count + 1,
-              }
+        const newComment = JSON.parse(event.data) as CommentResponse
+        queryClient.setQueryData<ListCommentsResponse>(
+          ['comments', slug, COMMENTS_CACHE_KEY_DEFAULTS],
+          prev => {
+            if (!prev) return prev
+            if (prev.comments.some(c => c.id === newComment.id)) return prev
+            return {
+              ...prev,
+              comments: [...prev.comments, newComment],
+              total_count: prev.total_count + 1,
             }
-          )
-        }
+          }
+        )
       } catch {
         // Malformed SSE frame — skip without corrupting cache
       }
