@@ -21,6 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comment frontend `is_post_author` refactor**: Removed `postAuthorId` prop from `CommentSection`, `CommentList`, and `CommentItem`. Author badge now uses `comment.is_post_author` from the API response. Updated `CommentResponse` type to include `is_post_author: boolean` and remove `author_id`. Added `CommentSection` to `PublicPost` page.
+
+- **Comment API `is_post_author` flag**: All comment list, post, and reply responses now include `is_post_author: bool` computed server-side by comparing `comment.author_id` against `post.author_id`. Eliminates the need for clients to receive the post's internal `author_id` to render author badges.
+
+- **Admin moderation UI**: Added `ModerationPanel` (admin comment table with All/Pending/Deleted filters, status badges, and CSV export) and `CommentModerateButton` (inline Approve + Delete with AlertDialog confirmation). Added `useApproveComment` and `useAdminDeleteComment` mutation hooks and `approveComment`/`adminDeleteComment` API methods. Added `tsconfig.app.json` to scope type-checking to source files only.
+
+- **Comment UI components**: Added `CommentList` (flat list rendering with deleted comment handling), `CommentItem` (single comment display with author badge, relative timestamps, and reply threading indicators), and `ReplyForm` (reply submission form with pre-filled @mention) for Task 7. Added test fixtures factory functions (`createMockComment`, `createMockReplyComment`, `createMockDeletedComment`, `createMockPendingModerationComment`, `createMockListCommentsResponse`) for comprehensive test coverage.
+
 - **Comment application layer**: Added `ReplyToCommentCommand` and handler (parent validation, rate limiting, spam detection, reply creation); `DeleteCommentCommand` and handler (admin soft-delete vs author hard-delete, authorization checks); `ModerateCommentCommand` and handler (approve/reject/flag actions, admin-only); `GetPostCommentsQuery` and handler (public vs admin pagination with `has_more`); `GetCommentQuery` and handler (single comment lookup). All follow the established command/query pattern with frozen dataclasses, `__post_init__` validation, and 5-step handler orchestration.
 
 - **Comment persistence**: Added `CommentModel` SQLModel table with self-referential `parent_id` FK for flat threading, `is_deleted` and `is_pending_moderation` flags with indexes, and foreign keys to `posts` and `users`. Added `CommentRepository` with `save`, `find_by_id`, `list_by_post` (public), `list_by_post_admin` (admin view), `hard_delete`, and `soft_delete` operations following the established repository pattern.
@@ -28,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Spam detection**: Added `SpamCheckService` scoring comment text 0–100 via URL density, repeated-character, and configurable regex checks; comments scoring ≥ 50 are flagged for moderation rather than blocked
 
 - **Rate limiting**: Added `RateLimitService` enforcing 5 comments per 60-second sliding window per user/IP using an in-memory timestamp cache; admin users bypass limits; includes thread-safe cleanup to prevent unbounded memory growth
+
+- **Comment frontend components**: Added `CommentSection` and `CommentForm` React components with `commentsApi` service and `useComments` hooks. `CommentForm` uses an uncontrolled textarea with live character counter (0–5000 limit), auth gate, rate-limit error display (shows specific wait time from `retryAfter`), and `onCommentPosted` callback. `CommentSection` composes the form with `useFetchComments`, handling loading/error/empty states and filtering `is_pending_moderation` comments for non-admins. All four CRUD operations (`listComments`, `postComment`, `deleteComment`, `replyToComment`) are wired through React Query with cache invalidation on mutation success.
 
 - **Comment moderation flag**: Added `is_pending_moderation` field and `mark_as_pending_moderation()` to the `Comment` aggregate
 

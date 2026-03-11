@@ -403,6 +403,282 @@ def test_list_comments_returns_200_with_array(
     assert len(data["comments"]) == 1
 
 
+def test_list_comments_includes_is_post_author_flag(
+    client: Any,
+    published_post: Post,
+    reader_user: User,
+) -> None:
+    """GET /api/posts/{slug}/comments includes is_post_author on each comment.
+
+    Comments by the post author should have is_post_author=True; comments
+    by other users should have is_post_author=False.
+    """
+    from backend.application.queries.get_post_comments_query import (
+        GetPostCommentsResponse,
+    )
+
+    assert published_post.id is not None
+    assert published_post.author_id is not None
+    assert reader_user.id is not None
+
+    comment_by_reader = Comment(
+        id=100,
+        post_id=published_post.id,
+        author_id=reader_user.id,
+        _text=CommentText("Great post!"),
+        parent_id=None,
+        created_at=datetime(2024, 6, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 6, 1, tzinfo=UTC),
+        is_deleted=False,
+        is_pending_moderation=False,
+    )
+    comment_by_author = Comment(
+        id=101,
+        post_id=published_post.id,
+        author_id=published_post.author_id,
+        _text=CommentText("Thanks everyone!"),
+        parent_id=None,
+        created_at=datetime(2024, 6, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 6, 1, tzinfo=UTC),
+        is_deleted=False,
+        is_pending_moderation=False,
+    )
+
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_slug.return_value = published_post
+
+    mock_response = GetPostCommentsResponse(
+        comments=[comment_by_reader, comment_by_author],
+        total_count=2,
+        has_more=False,
+    )
+
+    with (
+        patch(
+            "backend.api.routes.comments._get_post_repository",
+            return_value=mock_post_repo,
+        ),
+        patch(
+            "backend.api.routes.comments._get_comment_repository",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments.handle_get_post_comments",
+            return_value=mock_response,
+        ),
+    ):
+        response = client.get("/api/posts/test-post/comments")
+
+    assert response.status_code == 200
+    data = response.get_json()
+    comments = data["comments"]
+    assert comments[0]["is_post_author"] is False
+    assert comments[1]["is_post_author"] is True
+
+
+def test_post_comment_includes_is_post_author_flag(
+    client: Any,
+    valid_jwt_payload: dict[str, Any],
+    published_post: Post,
+) -> None:
+    """POST /api/posts/{slug}/comments includes is_post_author in the response.
+
+    When the commenter is also the post author, is_post_author must be True.
+    """
+    assert published_post.id is not None
+    assert published_post.author_id is not None
+
+    author_user = User(
+        id=published_post.author_id,
+        clerk_user_id="clerk_user_123",
+        email="author@example.com",
+        role=Role.AUTHOR,
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+    )
+    author_comment = Comment(
+        id=200,
+        post_id=published_post.id,
+        author_id=published_post.author_id,
+        _text=CommentText("My own post!"),
+        parent_id=None,
+        created_at=datetime(2024, 6, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 6, 1, tzinfo=UTC),
+        is_deleted=False,
+        is_pending_moderation=False,
+    )
+
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_slug.return_value = published_post
+
+    clerk_patch, user_patch = _make_auth_patches(valid_jwt_payload, author_user)
+
+    with (
+        clerk_patch,
+        user_patch,
+        patch(
+            "backend.api.routes.comments._get_post_repository",
+            return_value=mock_post_repo,
+        ),
+        patch(
+            "backend.api.routes.comments._get_comment_repository",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments._get_rate_limit_service",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments._get_spam_check_service",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments.handle_post_comment",
+            return_value=author_comment,
+        ),
+    ):
+        response = client.post(
+            "/api/posts/test-post/comments",
+            json={"text": "My own post!"},
+            headers={"Authorization": "Bearer fake_token"},
+        )
+
+    assert response.status_code == 201
+    data = response.get_json()
+    assert data["is_post_author"] is True
+
+
+def test_post_comment_is_post_author_false_for_non_author(
+    client: Any,
+    valid_jwt_payload: dict[str, Any],
+    published_post: Post,
+    reader_user: User,
+) -> None:
+    """POST comment returns is_post_author=False for non-authors."""
+    assert published_post.id is not None
+    assert reader_user.id is not None
+    assert reader_user.id != published_post.author_id
+
+    reader_comment = Comment(
+        id=201,
+        post_id=published_post.id,
+        author_id=reader_user.id,
+        _text=CommentText("Great read!"),
+        parent_id=None,
+        created_at=datetime(2024, 6, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 6, 1, tzinfo=UTC),
+        is_deleted=False,
+        is_pending_moderation=False,
+    )
+
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_slug.return_value = published_post
+
+    clerk_patch, user_patch = _make_auth_patches(valid_jwt_payload, reader_user)
+
+    with (
+        clerk_patch,
+        user_patch,
+        patch(
+            "backend.api.routes.comments._get_post_repository",
+            return_value=mock_post_repo,
+        ),
+        patch(
+            "backend.api.routes.comments._get_comment_repository",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments._get_rate_limit_service",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments._get_spam_check_service",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments.handle_post_comment",
+            return_value=reader_comment,
+        ),
+    ):
+        response = client.post(
+            "/api/posts/test-post/comments",
+            json={"text": "Great read!"},
+            headers={"Authorization": "Bearer fake_token"},
+        )
+
+    assert response.status_code == 201
+    data = response.get_json()
+    assert data["is_post_author"] is False
+
+
+def test_post_reply_includes_is_post_author_flag(
+    client: Any,
+    valid_jwt_payload: dict[str, Any],
+    published_post: Post,
+    sample_comment: Comment,
+) -> None:
+    """POST reply returns is_post_author=True when replier is post author."""
+    assert published_post.id is not None
+    assert published_post.author_id is not None
+
+    author_user = User(
+        id=published_post.author_id,
+        clerk_user_id="clerk_user_123",
+        email="author@example.com",
+        role=Role.AUTHOR,
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+    )
+    author_reply = Comment(
+        id=202,
+        post_id=published_post.id,
+        author_id=published_post.author_id,
+        _text=CommentText("Thanks for the kind words!"),
+        parent_id=sample_comment.id,
+        created_at=datetime(2024, 6, 2, tzinfo=UTC),
+        updated_at=datetime(2024, 6, 2, tzinfo=UTC),
+        is_deleted=False,
+        is_pending_moderation=False,
+    )
+
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_slug.return_value = published_post
+
+    clerk_patch, user_patch = _make_auth_patches(valid_jwt_payload, author_user)
+
+    with (
+        clerk_patch,
+        user_patch,
+        patch(
+            "backend.api.routes.comments._get_post_repository",
+            return_value=mock_post_repo,
+        ),
+        patch(
+            "backend.api.routes.comments._get_comment_repository",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments._get_rate_limit_service",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments._get_spam_check_service",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "backend.api.routes.comments.handle_reply_to_comment",
+            return_value=author_reply,
+        ),
+    ):
+        response = client.post(
+            f"/api/posts/test-post/comments/{sample_comment.id}/reply",
+            json={"text": "Thanks for the kind words!"},
+            headers={"Authorization": "Bearer fake_token"},
+        )
+
+    assert response.status_code == 201
+    data = response.get_json()
+    assert data["is_post_author"] is True
+
+
 def test_list_comments_unknown_slug_returns_404(client: Any) -> None:
     """GET for a slug that does not exist returns 404."""
     mock_post_repo = MagicMock()
