@@ -46,6 +46,7 @@ from backend.infrastructure.persistence.comment_repository import (
 )
 from backend.infrastructure.persistence.post_repository import PostRepository
 from backend.infrastructure.realtime.comment_stream_service import (
+    CommentPayload,
     CommentStreamService,
 )
 
@@ -54,9 +55,7 @@ admin_comments_bp = Blueprint("admin_comments", __name__)
 logger = logging.getLogger(__name__)
 
 
-def _comment_to_response_dict(
-    comment: Comment, post: Post
-) -> dict[str, object]:
+def _comment_to_response_dict(comment: Comment, post: Post) -> CommentPayload:
     """Build a public comment response dict with the is_post_author flag.
 
     Centralizes the pattern used by list_comments, post_comment, and
@@ -70,10 +69,18 @@ def _comment_to_response_dict(
     Returns:
         Public comment dict with is_post_author appended.
     """
-    return {
-        **comment.to_public_dict(),
-        "is_post_author": comment.author_id == post.author_id,
-    }
+    assert comment.id is not None
+    return CommentPayload(
+        id=comment.id,
+        post_id=comment.post_id,
+        text=str(comment.text),
+        parent_id=comment.parent_id,
+        created_at=comment.created_at.isoformat(),
+        updated_at=comment.updated_at.isoformat(),
+        is_deleted=comment.is_deleted,
+        is_pending_moderation=comment.is_pending_moderation,
+        is_post_author=comment.author_id == post.author_id,
+    )
 
 
 _post_repository: PostRepository | None = None

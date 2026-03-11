@@ -137,22 +137,35 @@ describe('useCommentStream', () => {
    * useFetchComments will re-render with the new data automatically.
    */
   it('updates query cache when comment event is received', async () => {
-    const mockCommentData: ListCommentsResponse = {
-      comments: [
-        {
-          id: 42,
-          post_id: 1,
-          is_post_author: false,
-          text: 'Streamed comment',
-          parent_id: null,
-          created_at: '2026-03-10T12:00:00Z',
-          updated_at: '2026-03-10T12:00:00Z',
-          is_deleted: false,
-          is_pending_moderation: false,
-        },
-      ],
+    const existingComment = {
+      id: 1,
+      post_id: 1,
+      is_post_author: true,
+      text: 'Existing comment',
+      parent_id: null,
+      created_at: '2026-03-10T11:00:00Z',
+      updated_at: '2026-03-10T11:00:00Z',
+      is_deleted: false,
+      is_pending_moderation: false,
+    }
+    const cacheKey = ['comments', 'my-post', { skip: 0, limit: 50, asAdmin: false }]
+    const initialCache: ListCommentsResponse = {
+      comments: [existingComment],
       total_count: 1,
       has_more: false,
+    }
+    queryClient.setQueryData(cacheKey, initialCache)
+
+    const newComment = {
+      id: 42,
+      post_id: 1,
+      is_post_author: false,
+      text: 'Streamed comment',
+      parent_id: null,
+      created_at: '2026-03-10T12:00:00Z',
+      updated_at: '2026-03-10T12:00:00Z',
+      is_deleted: false,
+      is_pending_moderation: false,
     }
 
     renderHook(() => useCommentStream('my-post'), { wrapper: createWrapper() })
@@ -161,16 +174,16 @@ describe('useCommentStream', () => {
     expect(commentHandler).toBeDefined()
 
     act(() => {
-      commentHandler?.(buildCommentEvent(mockCommentData))
+      commentHandler?.(buildCommentEvent(newComment))
     })
 
     await waitFor(() => {
-      const cached = queryClient.getQueryData([
-        'comments',
-        'my-post',
-        { skip: 0, limit: 50, asAdmin: false },
-      ])
-      expect(cached).toEqual(mockCommentData)
+      const cached = queryClient.getQueryData(cacheKey) as ListCommentsResponse
+      expect(cached).toEqual({
+        comments: [existingComment, newComment],
+        total_count: 2,
+        has_more: false,
+      })
     })
   })
 

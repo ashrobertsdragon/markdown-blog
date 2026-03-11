@@ -19,6 +19,25 @@ import pytest
 
 from backend.domain.aggregates.comment import Comment
 from backend.domain.value_objects.comment_text import CommentText
+from backend.infrastructure.realtime.comment_stream_service import (
+    CommentPayload,
+)
+
+
+def _to_payload(comment: Comment) -> CommentPayload:
+    """Build a CommentPayload from a Comment aggregate."""
+    assert comment.id is not None
+    return CommentPayload(
+        id=comment.id,
+        post_id=comment.post_id,
+        text=str(comment.text),
+        parent_id=comment.parent_id,
+        created_at=comment.created_at.isoformat(),
+        updated_at=comment.updated_at.isoformat(),
+        is_deleted=comment.is_deleted,
+        is_pending_moderation=comment.is_pending_moderation,
+        is_post_author=False,
+    )
 
 
 @pytest.fixture
@@ -100,7 +119,7 @@ def test_service_publish_broadcasts_to_subscriber(
     sub_thread.start()
     ready.wait(timeout=5)
 
-    service.publish("test-post", approved_comment.to_public_dict())
+    service.publish("test-post", _to_payload(approved_comment))
     sub_thread.join(timeout=5)
 
     assert len(received) == 1
@@ -150,7 +169,7 @@ def test_service_publish_broadcasts_to_all_subscribers(
     ready_a.wait(timeout=5)
     ready_b.wait(timeout=5)
 
-    service.publish("test-post", approved_comment.to_public_dict())
+    service.publish("test-post", _to_payload(approved_comment))
 
     t_a.join(timeout=5)
     t_b.join(timeout=5)
@@ -185,7 +204,7 @@ def test_service_publish_does_not_cross_contaminate_slugs(
     t_b = threading.Thread(target=subscriber_b)
     t_b.start()
 
-    service.publish("post-a", approved_comment.to_public_dict())
+    service.publish("post-a", _to_payload(approved_comment))
     published.set()
     t_b.join(timeout=5)
 
@@ -222,7 +241,7 @@ def test_service_subscribe_with_last_comment_id_filters_older_events(
     t.start()
     ready.wait(timeout=5)
 
-    service.publish("test-post", approved_comment.to_public_dict())
+    service.publish("test-post", _to_payload(approved_comment))
     t.join(timeout=3)
 
     assert len(received) == 0
@@ -260,7 +279,7 @@ def test_service_subscribe_with_last_comment_id_delivers_newer_events(
     t.start()
     ready.wait(timeout=5)
 
-    service.publish("test-post", approved_comment.to_public_dict())
+    service.publish("test-post", _to_payload(approved_comment))
     t.join(timeout=5)
 
     assert len(received) == 1
@@ -294,7 +313,7 @@ def test_service_publish_excludes_pending_moderation_comments(
     t = threading.Thread(target=subscriber)
     t.start()
 
-    service.publish("test-post", pending_comment.to_public_dict())
+    service.publish("test-post", _to_payload(pending_comment))
     published.set()
     t.join(timeout=5)
 
@@ -330,7 +349,7 @@ def test_service_subscribe_yields_sse_formatted_strings(
     t.start()
     ready.wait(timeout=5)
 
-    service.publish("test-post", approved_comment.to_public_dict())
+    service.publish("test-post", _to_payload(approved_comment))
     t.join(timeout=5)
 
     assert len(received) == 1
