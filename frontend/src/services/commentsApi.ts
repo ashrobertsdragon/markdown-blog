@@ -36,16 +36,28 @@ const getAuthHeaders = (token: string) => ({
  */
 export const commentsApi = {
   /**
-   * List comments for a post (public — no auth required)
+   * List comments for a post
+   *
+   * Pass a token to make an authenticated request — required for admin
+   * views that need to see pending and deleted comments. Without a token
+   * the backend returns only published comments.
    *
    * @param slug - Post slug identifier
    * @param skip - Number of comments to skip (offset)
    * @param limit - Maximum number of comments to return
+   * @param token - Optional JWT token for authenticated (admin) requests
    * @returns Paginated list of comments
    * @throws AxiosError on not found (404)
    */
-  async listComments(slug: string, skip: number, limit: number): Promise<ListCommentsResponse> {
+  async listComments(
+    slug: string,
+    skip: number,
+    limit: number,
+    token?: string
+  ): Promise<ListCommentsResponse> {
+    const authConfig = token ? getAuthHeaders(token) : {}
     const response = await apiClient.get<ListCommentsResponse>(`/posts/${slug}/comments`, {
+      ...authConfig,
       params: { skip, limit },
     })
     return response.data

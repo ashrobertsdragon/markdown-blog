@@ -67,7 +67,7 @@ describe('CommentModerateButton', () => {
    * hunting through menus.
    */
   it('renders Approve and Delete buttons', () => {
-    renderWithQueryClient(<CommentModerateButton commentId={1} postSlug="test-post" />)
+    renderWithQueryClient(<CommentModerateButton commentId={1} />)
 
     expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
@@ -82,12 +82,12 @@ describe('CommentModerateButton', () => {
     const approveMutate = vi.fn()
     mockApprove.mockReturnValue(makeMockMutation({ mutate: approveMutate }))
 
-    renderWithQueryClient(<CommentModerateButton commentId={42} postSlug="test-post" />)
+    renderWithQueryClient(<CommentModerateButton commentId={42} />)
 
     await userEvent.click(screen.getByRole('button', { name: /approve/i }))
 
     expect(approveMutate).toHaveBeenCalledOnce()
-    expect(approveMutate).toHaveBeenCalledWith({ commentId: 42 })
+    expect(approveMutate).toHaveBeenCalledWith({ commentId: 42 }, { onSuccess: undefined })
   })
 
   /**
@@ -96,7 +96,7 @@ describe('CommentModerateButton', () => {
    * accidental permanent removal.
    */
   it('opens confirmation dialog when Delete button is clicked', async () => {
-    renderWithQueryClient(<CommentModerateButton commentId={1} postSlug="test-post" />)
+    renderWithQueryClient(<CommentModerateButton commentId={1} />)
 
     await userEvent.click(screen.getByRole('button', { name: /delete/i }))
 
@@ -111,14 +111,14 @@ describe('CommentModerateButton', () => {
     const deleteMutate = vi.fn()
     mockAdminDelete.mockReturnValue(makeMockMutation({ mutate: deleteMutate }))
 
-    renderWithQueryClient(<CommentModerateButton commentId={7} postSlug="test-post" />)
+    renderWithQueryClient(<CommentModerateButton commentId={7} />)
 
     await userEvent.click(screen.getByRole('button', { name: /delete/i }))
     const confirmButton = await screen.findByRole('button', { name: /confirm|yes|delete/i })
     await userEvent.click(confirmButton)
 
     expect(deleteMutate).toHaveBeenCalledOnce()
-    expect(deleteMutate).toHaveBeenCalledWith({ commentId: 7 })
+    expect(deleteMutate).toHaveBeenCalledWith({ commentId: 7 }, { onSuccess: undefined })
   })
 
   /**
@@ -129,7 +129,7 @@ describe('CommentModerateButton', () => {
     const deleteMutate = vi.fn()
     mockAdminDelete.mockReturnValue(makeMockMutation({ mutate: deleteMutate }))
 
-    renderWithQueryClient(<CommentModerateButton commentId={1} postSlug="test-post" />)
+    renderWithQueryClient(<CommentModerateButton commentId={1} />)
 
     await userEvent.click(screen.getByRole('button', { name: /delete/i }))
     const cancelButton = await screen.findByRole('button', { name: /cancel/i })
@@ -145,7 +145,7 @@ describe('CommentModerateButton', () => {
   it('disables both buttons while approve mutation isPending', () => {
     mockApprove.mockReturnValue(makeMockMutation({ isPending: true, status: 'pending' }))
 
-    renderWithQueryClient(<CommentModerateButton commentId={1} postSlug="test-post" />)
+    renderWithQueryClient(<CommentModerateButton commentId={1} />)
 
     expect(screen.getByRole('button', { name: /approve/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /delete/i })).toBeDisabled()
@@ -158,7 +158,7 @@ describe('CommentModerateButton', () => {
   it('disables both buttons while admin delete mutation isPending', () => {
     mockAdminDelete.mockReturnValue(makeMockMutation({ isPending: true, status: 'pending' }))
 
-    renderWithQueryClient(<CommentModerateButton commentId={1} postSlug="test-post" />)
+    renderWithQueryClient(<CommentModerateButton commentId={1} />)
 
     expect(screen.getByRole('button', { name: /approve/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /delete/i })).toBeDisabled()
@@ -175,9 +175,7 @@ describe('CommentModerateButton', () => {
     })
     mockApprove.mockReturnValue(makeMockMutation({ mutate: approveMutate }))
 
-    renderWithQueryClient(
-      <CommentModerateButton commentId={1} postSlug="test-post" onModerated={onModerated} />
-    )
+    renderWithQueryClient(<CommentModerateButton commentId={1} onModerated={onModerated} />)
 
     await userEvent.click(screen.getByRole('button', { name: /approve/i }))
 

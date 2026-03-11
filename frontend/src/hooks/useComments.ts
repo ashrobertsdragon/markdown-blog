@@ -15,20 +15,26 @@ import {
 /**
  * Query hook for fetching paginated comments on a post
  *
- * Disabled when slug is empty to prevent spurious requests.
+ * Disabled when slug is empty to prevent spurious requests. Pass
+ * `asAdmin: true` to include the auth token so the backend returns
+ * pending and deleted comments for admin moderation views.
  *
  * @param slug - Post slug identifier
- * @param options - Optional pagination parameters
+ * @param options - Optional pagination and auth parameters
  */
 export function useFetchComments(
   slug: string,
-  options: { skip?: number; limit?: number } = {}
+  options: { skip?: number; limit?: number; asAdmin?: boolean } = {}
 ): UseQueryResult<ListCommentsResponse, Error> {
-  const { skip = 0, limit = 50 } = options
+  const { skip = 0, limit = 50, asAdmin = false } = options
+  const auth = useAuth()
 
   return useQuery({
-    queryKey: ['comments', slug, { skip, limit }],
-    queryFn: () => commentsApi.listComments(slug, skip, limit),
+    queryKey: ['comments', slug, { skip, limit, asAdmin }],
+    queryFn: async () => {
+      const token = asAdmin ? ((await auth.getToken()) ?? undefined) : undefined
+      return commentsApi.listComments(slug, skip, limit, token)
+    },
     enabled: Boolean(slug),
   })
 }

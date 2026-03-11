@@ -14,7 +14,6 @@ import { useAdminDeleteComment, useApproveComment } from '@/hooks/useComments'
 
 export interface CommentModerateButtonProps {
   commentId: number
-  postSlug: string
   onModerated?: () => void
 }
 
@@ -32,19 +31,11 @@ export function CommentModerateButton({ commentId, onModerated }: CommentModerat
   const isPending = approveMutation.isPending || deleteMutation.isPending
 
   const handleApprove = () => {
-    if (onModerated) {
-      approveMutation.mutate({ commentId }, { onSuccess: onModerated })
-    } else {
-      approveMutation.mutate({ commentId })
-    }
+    approveMutation.mutate({ commentId }, { onSuccess: onModerated })
   }
 
   const handleDelete = () => {
-    if (onModerated) {
-      deleteMutation.mutate({ commentId }, { onSuccess: onModerated })
-    } else {
-      deleteMutation.mutate({ commentId })
-    }
+    deleteMutation.mutate({ commentId }, { onSuccess: onModerated })
   }
 
   return (

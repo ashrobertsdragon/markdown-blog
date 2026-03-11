@@ -53,7 +53,8 @@ function downloadCommentsCSV(comments: CommentResponse[]) {
   const header = 'id,post_id,is_post_author,text,status,created_at'
   const rows = comments.map(c => {
     const status = getCommentStatus(c)
-    const escapedText = `"${c.text.replace(/"/g, '""')}"`
+    const sanitized = /^[=+\-@\t\r]/.test(c.text) ? `'${c.text}` : c.text
+    const escapedText = `"${sanitized.replace(/"/g, '""')}"`
     return `${c.id},${c.post_id},${c.is_post_author},${escapedText},${status},${c.created_at}`
   })
   const csv = [header, ...rows].join('\n')
@@ -78,7 +79,7 @@ function downloadCommentsCSV(comments: CommentResponse[]) {
  */
 export function ModerationPanel({ postSlug }: ModerationPanelProps) {
   const [filter, setFilter] = useState<FilterState>('all')
-  const { data, isLoading } = useFetchComments(postSlug, { limit: 100 })
+  const { data, isLoading } = useFetchComments(postSlug, { limit: 100, asAdmin: true })
 
   if (isLoading) {
     return <output aria-label="Loading comments">Loading...</output>
@@ -154,9 +155,7 @@ export function ModerationPanel({ postSlug }: ModerationPanelProps) {
                   <StatusBadge status={status} />
                 </td>
                 <td className="py-2">
-                  {status !== 'deleted' && (
-                    <CommentModerateButton commentId={comment.id} postSlug={postSlug} />
-                  )}
+                  {status !== 'deleted' && <CommentModerateButton commentId={comment.id} />}
                 </td>
               </tr>
             )

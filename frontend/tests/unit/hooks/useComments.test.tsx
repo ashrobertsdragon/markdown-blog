@@ -84,7 +84,7 @@ describe('useComments hooks', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-      expect(commentsApi.listComments).toHaveBeenCalledWith('test-post', 0, 50)
+      expect(commentsApi.listComments).toHaveBeenCalledWith('test-post', 0, 50, undefined)
       expect(commentsApi.listComments).toHaveBeenCalledTimes(1)
     })
 
@@ -97,7 +97,7 @@ describe('useComments hooks', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-      expect(commentsApi.listComments).toHaveBeenCalledWith('test-post', 0, 50)
+      expect(commentsApi.listComments).toHaveBeenCalledWith('test-post', 0, 50, undefined)
     })
 
     it('should return data on successful fetch', async () => {
@@ -148,7 +148,7 @@ describe('useComments hooks', () => {
       expect(commentsApi.listComments).not.toHaveBeenCalled()
     })
 
-    it('should cache under queryKey ["comments", slug, { skip, limit }]', async () => {
+    it('should cache under queryKey ["comments", slug, { skip, limit, asAdmin }]', async () => {
       vi.mocked(commentsApi.listComments).mockResolvedValueOnce(mockListResponse)
 
       const { result } = renderHook(() => useFetchComments('test-post', { skip: 10, limit: 25 }), {
@@ -157,8 +157,24 @@ describe('useComments hooks', () => {
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
-      const cached = queryClient.getQueryData(['comments', 'test-post', { skip: 10, limit: 25 }])
+      const cached = queryClient.getQueryData([
+        'comments',
+        'test-post',
+        { skip: 10, limit: 25, asAdmin: false },
+      ])
       expect(cached).toEqual(mockListResponse)
+    })
+
+    it('should pass auth token when asAdmin is true', async () => {
+      vi.mocked(commentsApi.listComments).mockResolvedValueOnce(mockListResponse)
+
+      const { result } = renderHook(() => useFetchComments('test-post', { asAdmin: true }), {
+        wrapper: createWrapper(),
+      })
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+
+      expect(commentsApi.listComments).toHaveBeenCalledWith('test-post', 0, 50, 'mock-token')
     })
 
     it('should handle empty comment list', async () => {
