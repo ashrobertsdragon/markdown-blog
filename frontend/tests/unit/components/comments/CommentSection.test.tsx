@@ -16,6 +16,13 @@ vi.mock('@/hooks/useComments', () => ({
   useDeleteComment: vi.fn(),
   useReplyToComment: vi.fn(),
 }))
+vi.mock('@/hooks/useCommentStream', () => ({
+  useCommentStream: vi.fn(() => ({
+    isConnected: false,
+    isStreaming: false,
+    connectionError: null,
+  })),
+}))
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: vi.fn(() => ({
     isSignedIn: true,

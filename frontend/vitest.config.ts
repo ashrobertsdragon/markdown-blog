@@ -13,6 +13,16 @@ export default mergeConfig(
       env: {
         VITE_CLERK_PUBLISHABLE_KEY: 'pk_test_test-key-for-vitest-testing',
       },
+      fakeTimers: {
+        toFake: [
+          'setTimeout',
+          'clearTimeout',
+          'setInterval',
+          'clearInterval',
+          'Date',
+          'queueMicrotask',
+        ],
+      },
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],

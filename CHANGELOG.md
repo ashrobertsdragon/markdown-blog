@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Real-time comment streaming via SSE**: Added `GET /api/posts/<slug>/comments/stream` endpoint returning a `text/event-stream` response with `Cache-Control: no-cache` and `X-Accel-Buffering: no` headers for correct proxy behaviour. `CommentStreamService` provides thread-safe in-process pub/sub using `threading.Condition` and per-subscriber `deque` queues; `publish()` is called after each successful comment or reply creation. Added `useCommentStream` React hook that opens an `EventSource`, merges individual comment payloads into the React Query cache, and falls back to REST polling when SSE fails. `CommentSection` now shows a "● Live" / "↻ Updating" status indicator driven by the hook.
+
 - **Comment frontend `is_post_author` refactor**: Removed `postAuthorId` prop from `CommentSection`, `CommentList`, and `CommentItem`. Author badge now uses `comment.is_post_author` from the API response. Updated `CommentResponse` type to include `is_post_author: boolean` and remove `author_id`. Added `CommentSection` to `PublicPost` page.
 
 - **Comment API `is_post_author` flag**: All comment list, post, and reply responses now include `is_post_author: bool` computed server-side by comparing `comment.author_id` against `post.author_id`. Eliminates the need for clients to receive the post's internal `author_id` to render author badges.

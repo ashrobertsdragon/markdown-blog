@@ -2,7 +2,7 @@
 
 import logging
 
-from flask import Blueprint, Response, g, jsonify, request
+from flask import Blueprint, Response, g, jsonify, request, stream_with_context
 
 from backend.api.middleware.auth_middleware import require_auth, require_role
 from backend.application.commands.delete_comment_command import (
@@ -45,6 +45,9 @@ from backend.infrastructure.persistence.comment_repository import (
     CommentRepository,
 )
 from backend.infrastructure.persistence.post_repository import PostRepository
+from backend.infrastructure.realtime.comment_stream_service import (
+    CommentStreamService,
+)
 
 comments_bp = Blueprint("comments", __name__)
 admin_comments_bp = Blueprint("admin_comments", __name__)
@@ -56,12 +59,12 @@ def _comment_to_response_dict(
 ) -> dict[str, object]:
     """Build a public comment response dict with the is_post_author flag.
 
-    Centralises the pattern used by list_comments, post_comment, and
+    Centralizes the pattern used by list_comments, post_comment, and
     post_reply so the logic stays consistent and author_id is never
     included in public API responses.
 
     Args:
-        comment: The comment aggregate to serialise.
+        comment: The comment aggregate to serialize.
         post: The post the comment belongs to, used to compute is_post_author.
 
     Returns:
@@ -77,6 +80,7 @@ _post_repository: PostRepository | None = None
 _comment_repository: CommentRepository | None = None
 _rate_limit_service: RateLimitService | None = None
 _spam_check_service: SpamCheckService | None = None
+_comment_stream_service: CommentStreamService | None = None
 
 
 def _get_post_repository() -> PostRepository:
@@ -109,6 +113,14 @@ def _get_spam_check_service() -> SpamCheckService:
     if _spam_check_service is None:
         _spam_check_service = SpamCheckService()
     return _spam_check_service
+
+
+def _get_comment_stream_service() -> CommentStreamService:
+    """Lazily initialize CommentStreamService instance."""
+    global _comment_stream_service
+    if _comment_stream_service is None:
+        _comment_stream_service = CommentStreamService()
+    return _comment_stream_service
 
 
 @comments_bp.route("/<slug>/comments", methods=["GET"])
@@ -167,6 +179,52 @@ def list_comments(slug: str) -> tuple[Response, int]:
     ), 200
 
 
+@comments_bp.route("/<slug>/comments/stream", methods=["GET"])
+def stream_comments(slug: str) -> tuple[Response, int] | Response:
+    """Stream new comments for a post as Server-Sent Events.
+
+    Public endpoint — no authentication required. Returns a
+    ``text/event-stream`` response that yields SSE-formatted strings as
+    new comments are published. Clients may pass ``last_comment_id`` to
+    resume after a reconnect and receive only comments posted since then.
+
+    Args:
+        slug: Post slug identifier.
+
+    Returns:
+        Streaming SSE response with mimetype ``text/event-stream``, or a
+        404 JSON response if the post does not exist.
+
+    Raises:
+        404: Post not found.
+    """
+    post = _get_post_repository().find_by_slug(slug)
+    if post is None:
+        return jsonify({"error": "Post not found"}), 404
+
+    raw_last_id = request.args.get("last_comment_id")
+    last_comment_id: int | None = None
+    if raw_last_id is not None:
+        try:
+            last_comment_id = int(raw_last_id)
+        except ValueError:
+            return jsonify({"error": "last_comment_id must be an integer"}), 400
+
+    generator = _get_comment_stream_service().subscribe(
+        slug, last_comment_id=last_comment_id
+    )
+
+    response = Response(
+        stream_with_context(generator),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+    return response
+
+
 @comments_bp.route("/<slug>/comments", methods=["POST"])
 @require_auth
 def post_comment(slug: str) -> tuple[Response, int]:
@@ -219,7 +277,10 @@ def post_comment(slug: str) -> tuple[Response, int]:
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    return jsonify(_comment_to_response_dict(comment, post)), 201
+    comment_dict = _comment_to_response_dict(comment, post)
+    _get_comment_stream_service().publish(slug, comment_dict)
+
+    return jsonify(comment_dict), 201
 
 
 @comments_bp.route("/<slug>/comments/<int:comment_id>/reply", methods=["POST"])
@@ -279,7 +340,10 @@ def post_reply(slug: str, comment_id: int) -> tuple[Response, int]:
             return jsonify({"error": str(e)}), 404
         return jsonify({"error": str(e)}), 400
 
-    return jsonify(_comment_to_response_dict(comment, post)), 201
+    comment_dict = _comment_to_response_dict(comment, post)
+    _get_comment_stream_service().publish(slug, comment_dict)
+
+    return jsonify(comment_dict), 201
 
 
 @comments_bp.route("/<slug>/comments/<int:comment_id>", methods=["DELETE"])
@@ -299,7 +363,7 @@ def delete_comment(slug: str, comment_id: int) -> tuple[Response, int]:
 
     Raises:
         401: Missing or invalid authentication.
-        403: User not authorised to delete this comment.
+        403: User not authorized to delete this comment.
         404: Post or comment not found.
     """
     post = _get_post_repository().find_by_slug(slug)
