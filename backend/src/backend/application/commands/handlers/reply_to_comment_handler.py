@@ -70,7 +70,6 @@ def handle_reply_to_comment(
             f"Parent comment {command.parent_comment_id} does not belong"
             f" to post {command.post_id}"
         )
-
     identifier = f"user:{command.author_id}"
     enforce_rate_limit(
         identifier=identifier,

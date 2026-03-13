@@ -55,6 +55,51 @@ class PostRevisionModel(SQLModel, table=True):
     attempt_count: int = Field(default=0)
 
 
+class NotificationModel(SQLModel, table=True):
+    """Notification queue model for the notification bounded context.
+
+    Stores pending and processed notification records that are created when
+    domain events fire (e.g. comment posted, reply received). A background
+    worker reads rows with status='pending' and delivers them via email.
+
+    Attributes:
+        id: Auto-incremented primary key, None before first INSERT.
+        recipient_id: FK to User who should receive the notification.
+        sender_id: FK to User who triggered the event.
+        event_type: Discriminator string — 'comment_posted' or
+            'reply_received'.
+        post_id: FK to the Post the event is associated with.
+        comment_id: FK to the Comment that triggered the event.
+        status: Delivery state — 'pending', 'sent', or 'failed'.
+        attempt_count: Number of delivery attempts made so far.
+        created_at: UTC timestamp set when the row is first inserted.
+        sent_at: UTC timestamp set when the notification is delivered.
+        error_message: Last error string on delivery failure, else None.
+    """
+
+    __tablename__ = "notifications"
+    __table_args__ = (
+        UniqueConstraint(
+            "comment_id",
+            "event_type",
+            "recipient_id",
+            name="uq_notification_comment_event_recipient",
+        ),
+    )
+
+    id: int | None = Field(default=None, primary_key=True)
+    recipient_id: int = Field(foreign_key="user.id", index=True)
+    sender_id: int = Field(foreign_key="user.id", index=True)
+    event_type: str
+    post_id: int = Field(foreign_key="post.id", index=True)
+    comment_id: int = Field(foreign_key="comments.id", index=True)
+    status: str = Field(default="pending", index=True)
+    attempt_count: int = Field(default=0)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
+    sent_at: datetime | None = Field(default=None)
+    error_message: str | None = Field(default=None)
+
+
 class CommentModel(SQLModel, table=True):
     """Comment table model for the discussion bounded context.
 

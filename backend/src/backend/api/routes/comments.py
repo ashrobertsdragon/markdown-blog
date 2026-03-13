@@ -27,6 +27,10 @@ from backend.application.commands.post_comment_command import PostCommentCommand
 from backend.application.commands.reply_to_comment_command import (
     ReplyToCommentCommand,
 )
+from backend.application.handlers.comment_event_handler import (
+    notify_comment_posted,
+    notify_reply_received,
+)
 from backend.application.queries.get_post_comments_query import (
     GetPostCommentsQuery,
 )
@@ -40,6 +44,9 @@ from backend.infrastructure.moderation.rate_limit_service import (
 )
 from backend.infrastructure.moderation.spam_check_service import (
     SpamCheckService,
+)
+from backend.infrastructure.notification.comment_notification_handler import (
+    CommentNotificationHandler,
 )
 from backend.infrastructure.persistence.comment_repository import (
     CommentRepository,
@@ -88,6 +95,7 @@ _comment_repository: CommentRepository | None = None
 _rate_limit_service: RateLimitService | None = None
 _spam_check_service: SpamCheckService | None = None
 _comment_stream_service: CommentStreamService | None = None
+_comment_notification_handler: CommentNotificationHandler | None = None
 
 
 def _get_post_repository() -> PostRepository:
@@ -128,6 +136,14 @@ def _get_comment_stream_service() -> CommentStreamService:
     if _comment_stream_service is None:
         _comment_stream_service = CommentStreamService()
     return _comment_stream_service
+
+
+def _get_comment_notification_handler() -> CommentNotificationHandler:
+    """Lazily initialize CommentNotificationHandler instance."""
+    global _comment_notification_handler
+    if _comment_notification_handler is None:
+        _comment_notification_handler = CommentNotificationHandler()
+    return _comment_notification_handler
 
 
 @comments_bp.route("/<slug>/comments", methods=["GET"])
@@ -287,6 +303,14 @@ def post_comment(slug: str) -> tuple[Response, int]:
     comment_dict = _comment_to_response_dict(comment, post)
     _get_comment_stream_service().publish(slug, comment_dict)
 
+    if post.author_id is not None:
+        notify_comment_posted(
+            comment=comment,
+            post_author_id=post.author_id,
+            sender_id=comment.author_id,
+            handler=_get_comment_notification_handler(),
+        )
+
     return jsonify(comment_dict), 201
 
 
@@ -349,6 +373,21 @@ def post_reply(slug: str, comment_id: int) -> tuple[Response, int]:
 
     comment_dict = _comment_to_response_dict(comment, post)
     _get_comment_stream_service().publish(slug, comment_dict)
+
+    parent = _get_comment_repository().find_by_id(comment_id)
+    if parent is None:
+        logger.warning(
+            "parent_author_id unavailable for reply comment %s;"
+            " skipping notification",
+            comment.id,
+        )
+    else:
+        notify_reply_received(
+            comment=comment,
+            parent_author_id=parent.author_id,
+            sender_id=comment.author_id,
+            handler=_get_comment_notification_handler(),
+        )
 
     return jsonify(comment_dict), 201
 

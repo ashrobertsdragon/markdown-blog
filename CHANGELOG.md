@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Comment notification event publishing**: Added `CommentPostedEvent` and `ReplyReceivedEvent` frozen dataclasses in the domain events layer. Added `NotificationModel` SQLModel table for the notifications queue. Added `CommentNotificationHandler` infrastructure class that persists pending notification rows when events fire. Added `notify_comment_posted` and `notify_reply_received` application handler functions that are fire-and-forget (no-op for self-comments/self-replies, log and swallow errors). Wired both handlers into the `POST /<slug>/comments` and `POST /<slug>/comments/<id>/reply` routes after successful creation.
+
 - **Real-time comment streaming via SSE**: Added `GET /api/posts/<slug>/comments/stream` endpoint returning a `text/event-stream` response with `Cache-Control: no-cache` and `X-Accel-Buffering: no` headers for correct proxy behaviour. `CommentStreamService` provides thread-safe in-process pub/sub using `threading.Condition` and per-subscriber `deque` queues; `publish()` is called after each successful comment or reply creation. Added `useCommentStream` React hook that opens an `EventSource`, merges individual comment payloads into the React Query cache, and falls back to REST polling when SSE fails. `CommentSection` now shows a "● Live" / "↻ Updating" status indicator driven by the hook.
 
 - **Comment frontend `is_post_author` refactor**: Removed `postAuthorId` prop from `CommentSection`, `CommentList`, and `CommentItem`. Author badge now uses `comment.is_post_author` from the API response. Updated `CommentResponse` type to include `is_post_author: boolean` and remove `author_id`. Added `CommentSection` to `PublicPost` page.
