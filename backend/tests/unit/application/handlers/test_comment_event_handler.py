@@ -114,7 +114,7 @@ class TestNotifyCommentPosted:
     def test_logs_handler_exception(
         self, mock_handler: MagicMock, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """Handler exceptions are logged at ERROR level."""
+        """Handler exceptions are logged at ERROR level with exc_info."""
         mock_handler.queue_comment_posted.side_effect = RuntimeError("boom")
         comment = _make_comment(comment_id=1, post_id=10, author_id=5)
         with caplog.at_level(logging.ERROR):
@@ -124,7 +124,15 @@ class TestNotifyCommentPosted:
                 sender_id=5,
                 handler=mock_handler,
             )
-        assert any("boom" in r.message for r in caplog.records)
+        assert any(
+            "Failed to queue comment_posted notification" in r.message
+            for r in caplog.records
+        )
+        assert any(
+            r.exc_info is not None
+            for r in caplog.records
+            if "Failed to queue comment_posted notification" in r.message
+        )
 
 
 class TestNotifyReplyReceived:
@@ -197,7 +205,7 @@ class TestNotifyReplyReceived:
     def test_logs_handler_exception(
         self, mock_handler: MagicMock, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """Handler exceptions are logged at ERROR level."""
+        """Handler exceptions are logged at ERROR level with exc_info."""
         mock_handler.queue_reply_received.side_effect = RuntimeError("crash")
         comment = _make_comment(
             comment_id=2, post_id=10, author_id=5, parent_id=1
@@ -209,4 +217,12 @@ class TestNotifyReplyReceived:
                 sender_id=5,
                 handler=mock_handler,
             )
-        assert any("crash" in r.message for r in caplog.records)
+        assert any(
+            "Failed to queue reply_received notification" in r.message
+            for r in caplog.records
+        )
+        assert any(
+            r.exc_info is not None
+            for r in caplog.records
+            if "Failed to queue reply_received notification" in r.message
+        )

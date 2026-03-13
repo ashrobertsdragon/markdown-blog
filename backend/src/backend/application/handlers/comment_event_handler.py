@@ -48,8 +48,8 @@ def notify_comment_posted(
 
     try:
         handler.queue_comment_posted(event)
-    except Exception as exc:
-        logger.error("Failed to queue comment_posted notification: %s", exc)
+    except Exception:
+        logger.exception("Failed to queue comment_posted notification")
 
 
 def notify_reply_received(
@@ -83,5 +83,5 @@ def notify_reply_received(
 
     try:
         handler.queue_reply_received(event)
-    except Exception as exc:
-        logger.error("Failed to queue reply_received notification: %s", exc)
+    except Exception:
+        logger.exception("Failed to queue reply_received notification")

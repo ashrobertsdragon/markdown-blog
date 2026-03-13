@@ -665,7 +665,7 @@ def test_post_reply_includes_is_post_author_flag(
         ),
         patch(
             "backend.api.routes.comments.handle_reply_to_comment",
-            return_value=author_reply,
+            return_value=(author_reply, 10),
         ),
     ):
         response = client.post(
@@ -744,7 +744,7 @@ def test_post_reply_returns_201_with_parent_id(
         ),
         patch(
             "backend.api.routes.comments.handle_reply_to_comment",
-            return_value=reply,
+            return_value=(reply, 10),
         ),
     ):
         response = client.post(

@@ -89,16 +89,19 @@ def test_handler_returns_reply_comment(
     spam_service: SpamCheckService,
     mock_repo: Mock,
 ) -> None:
-    """Handler returns a Comment with parent_id set and id=None."""
+    """Handler returns (Comment, parent_author_id) tuple; id=None on reply."""
     cmd = _make()
 
-    result = handle_reply_to_comment(cmd, rate_service, spam_service, mock_repo)
+    comment, parent_author_id = handle_reply_to_comment(
+        cmd, rate_service, spam_service, mock_repo
+    )
 
-    assert isinstance(result, Comment)
-    assert result.parent_id == 10
-    assert result.post_id == 1
-    assert result.author_id == 5
-    assert result.id is None
+    assert isinstance(comment, Comment)
+    assert comment.parent_id == 10
+    assert comment.post_id == 1
+    assert comment.author_id == 5
+    assert comment.id is None
+    assert parent_author_id == 99
 
 
 def test_handler_raises_when_parent_not_found(
@@ -145,11 +148,12 @@ def test_handler_flags_spam_reply(
     mock_repo: Mock,
 ) -> None:
     """Spam reply is flagged for moderation."""
-    result = handle_reply_to_comment(
+    comment, parent_author_id = handle_reply_to_comment(
         _make(text=_SPAM_TEXT), rate_service, spam_service, mock_repo
     )
 
-    assert result.is_pending_moderation is True
+    assert comment.is_pending_moderation is True
+    assert parent_author_id == 99
 
 
 def test_handler_enforces_rate_limit(
@@ -176,10 +180,11 @@ def test_handler_admin_bypasses_rate_limit(
 ) -> None:
     """Admin submissions bypass rate limiting."""
     for i in range(10):
-        result = handle_reply_to_comment(
+        comment, parent_author_id = handle_reply_to_comment(
             _make(text=f"Admin reply {i}", is_admin=True),
             rate_service,
             spam_service,
             mock_repo,
         )
-        assert isinstance(result, Comment)
+        assert isinstance(comment, Comment)
+        assert parent_author_id == 99
