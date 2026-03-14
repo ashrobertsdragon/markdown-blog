@@ -14,6 +14,21 @@ import {
 } from '@/services/commentsApi'
 
 /**
+ * Re-throws 429 rate-limit errors with a `retryAfter` property.
+ * All other errors are re-thrown unchanged.
+ */
+function rethrowWithRetryAfter(err: unknown): never {
+  if (isAxiosError(err) && err.response?.status === 429) {
+    const retryAfter = (err.response.data?.retry_after as number | undefined) ?? 60
+    const message = err.response.data?.error
+      ? String(err.response.data.error)
+      : 'Too many requests. Please wait before posting again.'
+    throw Object.assign(new Error(message), { retryAfter })
+  }
+  throw err
+}
+
+/**
  * Query hook for fetching paginated comments on a post
  *
  * Disabled when slug is empty to prevent spurious requests. Pass
@@ -61,14 +76,7 @@ export function usePostComment(): UseMutationResult<
       try {
         return await commentsApi.postComment(slug, text, token)
       } catch (err) {
-        if (isAxiosError(err) && err.response?.status === 429) {
-          const retryAfter = (err.response.data?.retry_after as number | undefined) ?? 60
-          const message = err.response.data?.error
-            ? String(err.response.data.error)
-            : 'Too many requests. Please wait before posting again.'
-          throw Object.assign(new Error(message), { retryAfter })
-        }
-        throw err
+        rethrowWithRetryAfter(err)
       }
     },
     onSuccess: (_data, { slug }) => {
@@ -131,14 +139,7 @@ export function useReplyToComment(): UseMutationResult<
       try {
         return await commentsApi.replyToComment(slug, parentId, text, token)
       } catch (err) {
-        if (isAxiosError(err) && err.response?.status === 429) {
-          const retryAfter = (err.response.data?.retry_after as number | undefined) ?? 60
-          const message = err.response.data?.error
-            ? String(err.response.data.error)
-            : 'Too many requests. Please wait before posting again.'
-          throw Object.assign(new Error(message), { retryAfter })
-        }
-        throw err
+        rethrowWithRetryAfter(err)
       }
     },
     onSuccess: (_data, { slug }) => {

@@ -306,6 +306,47 @@ describe('useComments hooks', () => {
       })
     })
 
+    it('should use default retryAfter of 60 when backend 429 omits retry_after', async () => {
+      const rateLimitError = {
+        isAxiosError: true,
+        response: { status: 429, data: { error: 'Rate limit exceeded' } },
+      }
+      vi.mocked(commentsApi.postComment).mockRejectedValueOnce(rateLimitError)
+
+      const { result } = renderHook(() => usePostComment(), { wrapper: createWrapper() })
+
+      result.current.mutate({ slug: 'test-post', text: 'Hello!' })
+
+      await waitFor(() => expect(result.current.isError).toBe(true))
+
+      expect(result.current.error).toMatchObject({
+        message: 'Rate limit exceeded',
+        retryAfter: 60,
+      })
+    })
+
+    it('should propagate non-429 errors unchanged', async () => {
+      const serverError = {
+        isAxiosError: true,
+        response: { status: 500, data: { error: 'Internal Server Error' } },
+      }
+      vi.mocked(commentsApi.postComment).mockRejectedValueOnce(serverError)
+
+      const { result } = renderHook(() => usePostComment(), { wrapper: createWrapper() })
+
+      result.current.mutate({ slug: 'test-post', text: 'Hello!' })
+
+      await waitFor(() => expect(result.current.isError).toBe(true))
+
+      expect(result.current.error).toMatchObject({
+        isAxiosError: true,
+        response: { status: 500 },
+      })
+      expect(
+        (result.current.error as unknown as { retryAfter?: number }).retryAfter
+      ).toBeUndefined()
+    })
+
     it('should be in pending state during mutation', async () => {
       vi.mocked(commentsApi.postComment).mockImplementation(() => new Promise(() => {}))
 

@@ -38,8 +38,6 @@ test.describe('Comments E2E Tests', () => {
     test('1.1: Comment form appears on published post for authenticated user', async ({ page }) => {
       await page.goto(POST_URL)
       await expect(page.locator('textarea[name="text"]')).toBeVisible()
-
-      await expect(page.locator('textarea[name="text"]')).toBeVisible()
       await expect(page.locator('button[type="submit"]')).toBeVisible()
       await expect(page.getByText('Sign in to comment')).not.toBeVisible()
     })
@@ -108,9 +106,7 @@ test.describe('Comments E2E Tests', () => {
 
       await page.locator('button:has-text("Reply")').first().click()
 
-      // TODO: replace with data-testid="reply-form" after code agent adds attribute
       await expect(page.locator('[data-testid="reply-form"]')).toBeVisible()
-      await expect(page.locator('textarea[name="reply-text"]')).toBeVisible()
     })
 
     test('2.3: Reply form pre-fills with @mention of parent author', async ({ page }) => {
@@ -239,6 +235,43 @@ test.describe('Comments E2E Tests', () => {
       const errorText = await errorAlert.textContent()
       expect(errorText).toMatch(/\d+/)
     })
+
+    test('3.4: Reply endpoint is also rate limited after flooding replies', async ({ page }) => {
+      await page.goto(POST_URL)
+      await expect(page.locator('textarea[name="text"]')).toBeVisible()
+
+      await seedCommentViaUi(page, 'Base comment for reply rate limit test')
+
+      for (let i = 1; i <= 5; i++) {
+        await page.locator('button:has-text("Reply")').first().click()
+        const replyForm = page.locator('[data-testid="reply-form"]')
+        await expect(replyForm).toBeVisible()
+        const replyTextarea = replyForm.locator('textarea[name="reply-text"]')
+        await replyTextarea.fill(`Rate limit reply ${i}`)
+        const replyResponsePromise = page.waitForResponse(
+          response => response.url().includes('/reply') && response.request().method() === 'POST'
+        )
+        await replyForm.locator('button[type="submit"]').click()
+        await replyResponsePromise
+      }
+
+      await page.locator('button:has-text("Reply")').first().click()
+      const replyForm = page.locator('[data-testid="reply-form"]')
+      await expect(replyForm).toBeVisible()
+      const replyTextarea = replyForm.locator('textarea[name="reply-text"]')
+      await replyTextarea.fill('This reply should be rate limited')
+      const rateLimitResponsePromise = page.waitForResponse(
+        response => response.url().includes('/reply') && response.request().method() === 'POST'
+      )
+      await replyForm.locator('button[type="submit"]').click()
+      const rateLimitResponse = await rateLimitResponsePromise
+
+      expect(rateLimitResponse.status()).toBe(429)
+      const errorAlert = page.locator('[role="alert"]')
+      await expect(errorAlert).toBeVisible()
+      await expect(errorAlert).toContainText(/wait|rate/i)
+      await expect(errorAlert).toContainText(/\d+/)
+    })
   })
 
   test.describe('Test Group 4: Comment Moderation', () => {
@@ -281,6 +314,43 @@ test.describe('Comments E2E Tests', () => {
       await expect(
         page.locator('section[aria-label="Comments"]').locator('text=[deleted]')
       ).toBeVisible()
+    })
+
+    test('4.4: Non-admin users do not see [deleted] placeholder after soft delete', async ({
+      page,
+    }) => {
+      page.on('dialog', async dialog => {
+        await dialog.accept()
+      })
+
+      await page.goto(POST_URL)
+      await expect(page.locator('textarea[name="text"]')).toBeVisible()
+
+      await seedCommentViaUi(page, 'Comment to be soft deleted by admin')
+
+      await mockClerkAuth(page, {
+        role: 'admin',
+        userId: 'user_test_admin',
+        email: 'admin@example.com',
+      })
+      await page.reload()
+      await waitForAuthToLoad(page)
+
+      const deleteResponsePromise = page.waitForResponse(
+        response =>
+          response.url().includes('/comments/') && response.request().method() === 'DELETE'
+      )
+      await page.locator('button:has-text("Delete")').first().click()
+      await deleteResponsePromise
+
+      await mockClerkUnauthenticated(page)
+      await page.reload()
+      await waitForAuthToLoad(page)
+      await expect(page.locator('section[aria-label="Comments"]')).toBeVisible()
+
+      await expect(
+        page.locator('section[aria-label="Comments"]').locator('text=[deleted]')
+      ).not.toBeVisible()
     })
 
     test('4.3: Unauthenticated users cannot see delete button', async ({ page }) => {

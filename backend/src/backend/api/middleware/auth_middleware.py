@@ -37,6 +37,7 @@ Usage:
         ...     return get_all_users()
 """
 
+import logging
 from collections.abc import Callable
 from functools import wraps
 from typing import Any
@@ -227,7 +228,9 @@ def _try_authenticate_request() -> None:
         if user is not None:
             g.current_user = user
     except Exception:
-        pass
+        logging.getLogger(__name__).warning(
+            "Optional authentication failed", exc_info=True
+        )
 
 
 def require_role(
