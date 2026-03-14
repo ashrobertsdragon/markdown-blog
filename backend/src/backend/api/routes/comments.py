@@ -27,6 +27,10 @@ from backend.application.commands.post_comment_command import PostCommentCommand
 from backend.application.commands.reply_to_comment_command import (
     ReplyToCommentCommand,
 )
+from backend.application.handlers.comment_event_handler import (
+    notify_comment_posted,
+    notify_reply_received,
+)
 from backend.application.queries.get_post_comments_query import (
     GetPostCommentsQuery,
 )
@@ -41,6 +45,9 @@ from backend.infrastructure.moderation.rate_limit_service import (
 from backend.infrastructure.moderation.spam_check_service import (
     SpamCheckService,
 )
+from backend.infrastructure.notification.comment_notification_handler import (
+    CommentNotificationHandler,
+)
 from backend.infrastructure.persistence.comment_repository import (
     CommentRepository,
 )
@@ -53,6 +60,24 @@ from backend.infrastructure.realtime.comment_stream_service import (
 comments_bp = Blueprint("comments", __name__)
 admin_comments_bp = Blueprint("admin_comments", __name__)
 logger = logging.getLogger(__name__)
+
+
+def _safe_error(exc: Exception, generic: str) -> str:
+    """Return a user-safe error message, stripping internal identifiers.
+
+    Args:
+        exc: The exception whose message may contain internal identifiers.
+        generic: Fallback message to return when the exception message
+            references a resource that was not found.
+
+    Returns:
+        The generic message when the exception mentions 'not found',
+        otherwise the original exception message.
+    """
+    msg = str(exc).lower()
+    if "not found" in msg:
+        return generic
+    return str(exc)
 
 
 def _comment_to_response_dict(comment: Comment, post: Post) -> CommentPayload:
@@ -88,6 +113,7 @@ _comment_repository: CommentRepository | None = None
 _rate_limit_service: RateLimitService | None = None
 _spam_check_service: SpamCheckService | None = None
 _comment_stream_service: CommentStreamService | None = None
+_comment_notification_handler: CommentNotificationHandler | None = None
 
 
 def _get_post_repository() -> PostRepository:
@@ -128,6 +154,14 @@ def _get_comment_stream_service() -> CommentStreamService:
     if _comment_stream_service is None:
         _comment_stream_service = CommentStreamService()
     return _comment_stream_service
+
+
+def _get_comment_notification_handler() -> CommentNotificationHandler:
+    """Lazily initialize CommentNotificationHandler instance."""
+    global _comment_notification_handler
+    if _comment_notification_handler is None:
+        _comment_notification_handler = CommentNotificationHandler()
+    return _comment_notification_handler
 
 
 @comments_bp.route("/<slug>/comments", methods=["GET"])
@@ -282,10 +316,18 @@ def post_comment(slug: str) -> tuple[Response, int]:
             _get_comment_repository(),
         )
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": _safe_error(e, "Post not found")}), 400
 
     comment_dict = _comment_to_response_dict(comment, post)
     _get_comment_stream_service().publish(slug, comment_dict)
+
+    if post.author_id is not None:
+        notify_comment_posted(
+            comment=comment,
+            post_author_id=post.author_id,
+            sender_id=comment.author_id,
+            handler=_get_comment_notification_handler(),
+        )
 
     return jsonify(comment_dict), 201
 
@@ -335,7 +377,7 @@ def post_reply(slug: str, comment_id: int) -> tuple[Response, int]:
     )
 
     try:
-        comment = handle_reply_to_comment(
+        comment, parent_author_id = handle_reply_to_comment(
             command,
             _get_rate_limit_service(),
             _get_spam_check_service(),
@@ -344,11 +386,25 @@ def post_reply(slug: str, comment_id: int) -> tuple[Response, int]:
     except ValueError as e:
         error_msg = str(e).lower()
         if "not found" in error_msg:
-            return jsonify({"error": str(e)}), 404
-        return jsonify({"error": str(e)}), 400
+            return jsonify({"error": _safe_error(e, "Comment not found")}), 404
+        return jsonify({"error": _safe_error(e, "Resource not found")}), 400
 
     comment_dict = _comment_to_response_dict(comment, post)
     _get_comment_stream_service().publish(slug, comment_dict)
+
+    if parent_author_id == 0:
+        logger.warning(
+            "parent_author_id unavailable for reply comment %s;"
+            " skipping notification",
+            comment.id,
+        )
+    else:
+        notify_reply_received(
+            comment=comment,
+            parent_author_id=parent_author_id,
+            sender_id=comment.author_id,
+            handler=_get_comment_notification_handler(),
+        )
 
     return jsonify(comment_dict), 201
 
@@ -389,8 +445,8 @@ def delete_comment(slug: str, comment_id: int) -> tuple[Response, int]:
     except ValueError as e:
         error_msg = str(e).lower()
         if "not found" in error_msg:
-            return jsonify({"error": str(e)}), 404
-        return jsonify({"error": str(e)}), 400
+            return jsonify({"error": _safe_error(e, "Comment not found")}), 404
+        return jsonify({"error": _safe_error(e, "Resource not found")}), 400
 
     return Response("", status=204), 204
 
@@ -425,8 +481,8 @@ def approve_comment(comment_id: int) -> tuple[Response, int]:
     except ValueError as e:
         error_msg = str(e).lower()
         if "not found" in error_msg:
-            return jsonify({"error": str(e)}), 404
-        return jsonify({"error": str(e)}), 400
+            return jsonify({"error": _safe_error(e, "Comment not found")}), 404
+        return jsonify({"error": _safe_error(e, "Resource not found")}), 400
 
     return jsonify(comment.to_dict()), 200
 
@@ -464,7 +520,7 @@ def admin_delete_comment(comment_id: int) -> tuple[Response, int]:
     except ValueError as e:
         error_msg = str(e).lower()
         if "not found" in error_msg:
-            return jsonify({"error": str(e)}), 404
-        return jsonify({"error": str(e)}), 400
+            return jsonify({"error": _safe_error(e, "Comment not found")}), 404
+        return jsonify({"error": _safe_error(e, "Resource not found")}), 400
 
     return Response("", status=204), 204

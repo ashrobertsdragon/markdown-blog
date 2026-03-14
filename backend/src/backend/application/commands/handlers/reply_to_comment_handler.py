@@ -27,7 +27,7 @@ def handle_reply_to_comment(
     rate_limit_service: RateLimitService,
     spam_check_service: SpamCheckService,
     comment_repository: CommentRepository,
-) -> Comment:
+) -> tuple[Comment, int]:
     """Handle ReplyToCommentCommand to create a reply to an existing comment.
 
     Orchestrates reply submission in five steps:
@@ -47,8 +47,8 @@ def handle_reply_to_comment(
             existence and persist the reply.
 
     Returns:
-        Persisted Comment aggregate with parent_id set, optionally
-        flagged for moderation.
+        Tuple of (persisted Comment aggregate, parent comment author_id).
+        The Comment has parent_id set and is optionally flagged for moderation.
 
     Raises:
         ValueError: If parent comment does not exist or belongs to a
@@ -70,7 +70,7 @@ def handle_reply_to_comment(
             f"Parent comment {command.parent_comment_id} does not belong"
             f" to post {command.post_id}"
         )
-
+    parent_author_id = parent.author_id
     identifier = f"user:{command.author_id}"
     enforce_rate_limit(
         identifier=identifier,
@@ -98,4 +98,4 @@ def handle_reply_to_comment(
     if is_spam:
         comment.mark_as_pending_moderation()
 
-    return comment_repository.save(comment)
+    return comment_repository.save(comment), parent_author_id
