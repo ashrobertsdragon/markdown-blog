@@ -47,7 +47,7 @@ shopt -s inherit_errexit
 IFS=$'\n\t'
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-readonly PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd -P)"
+readonly PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
 readonly DOMAIN=$DOMAIN
 readonly APP_NAME="MarkdownBlog"
 readonly BASE_URI="/"
@@ -100,28 +100,28 @@ upload_code() {
     --exclude '__pycache__' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/src/backend/" \
+    "${PROJECT_ROOT}/backend/src/backend/" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/backend/" || return 1
 
   rsync -avz --perms --checksum \
     --exclude '__pycache__' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/src/scripts/" \
+    "${PROJECT_ROOT}/backend/src/scripts/" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/scripts/" || return 1
 
   rsync -avz --perms --checksum \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/requirements.txt" \
+    "${PROJECT_ROOT}/backend/requirements.txt" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/requirements.txt" || return 1
 
-  if [[ ! -d "${PROJECT_ROOT}/monorepo/build" ]]; then
+  if [[ ! -d "${PROJECT_ROOT}/build" ]]; then
     printf "WARNING: Frontend build directory does not exist\n" >&2
     return 1
   fi
 
-  local frontend_src="${PROJECT_ROOT}/monorepo/build/"
+  local frontend_src="${PROJECT_ROOT}/build/"
   if [[ -z "$(ls -A "$frontend_src" 2>/dev/null || true)" ]]; then
     printf "WARNING: Frontend build directory is empty\n" >&2
   else

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Deployment**: Fixed incorrect PROJECT_ROOT and monorepo path prefixes in deployment scripts that caused CI failures when the monorepo is used as a submodule.
 - **CI/Playwright**: Fixed e2e and acceptance tests failing in CI while passing locally
   - Vite dev server now starts with `--mode test` so the Clerk mock security gate in
     `main.tsx` activates, allowing `mockClerkUnauthenticated` to skip `ClerkProvider`

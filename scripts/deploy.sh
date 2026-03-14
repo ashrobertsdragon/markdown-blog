@@ -59,7 +59,7 @@ shopt -s inherit_errexit
 IFS=$'\n\t'
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
-readonly PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd -P)"
+readonly PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
 readonly DOMAIN=$DOMAIN
 readonly APP_NAME="MarkdownBlog"
 readonly BASE_URI="/"
@@ -103,7 +103,7 @@ upload_code() {
   local remote_path
   remote_path="$(get_remote_app_path)"
 
-  local backend_src="${PROJECT_ROOT}/monorepo/backend/src/backend/"
+  local backend_src="${PROJECT_ROOT}/backend/src/backend/"
   if [[ ! -d "$backend_src" ]] || [[ -z "$(ls -A "$backend_src" 2>/dev/null || true)" ]]; then
     printf "ERROR: Backend source directory is empty or missing\n" >&2
     return 1
@@ -130,7 +130,7 @@ upload_code() {
   rsync -avz --perms --checksum \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/src/passenger_wsgi.py" \
+    "${PROJECT_ROOT}/backend/src/passenger_wsgi.py" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
 
   logger -t deploy.sh -p user.info "Uploading scripts directory to ${SERVER_IP_ADDRESS}"
@@ -139,19 +139,19 @@ upload_code() {
     --exclude '*.pyc' \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/src/scripts/" \
+    "${PROJECT_ROOT}/backend/src/scripts/" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/src/scripts/" || return 1
 
   logger -t deploy.sh -p user.info "Uploading pyproject.toml and uv.lock to ${SERVER_IP_ADDRESS}"
   rsync -avz --perms --checksum \
     -e "ssh -i \"$SSH_PRIVATE_KEY_PATH\" -p \"$SSH_PORT\" \
     -o StrictHostKeyChecking=accept-new" \
-    "${PROJECT_ROOT}/monorepo/backend/pyproject.toml" \
-    "${PROJECT_ROOT}/monorepo/backend/uv.lock" \
+    "${PROJECT_ROOT}/backend/pyproject.toml" \
+    "${PROJECT_ROOT}/backend/uv.lock" \
     "${CPANEL_USERNAME}@${SERVER_IP_ADDRESS}:${remote_path}/" || return 1
 
-  if [[ -d "${PROJECT_ROOT}/monorepo/build" ]]; then
-    local frontend_src="${PROJECT_ROOT}/monorepo/build/"
+  if [[ -d "${PROJECT_ROOT}/build" ]]; then
+    local frontend_src="${PROJECT_ROOT}/build/"
     if [[ -z "$(ls -A "$frontend_src" 2>/dev/null || true)" ]]; then
       printf "WARNING: Frontend build directory is empty\n" >&2
     else
