@@ -79,6 +79,7 @@ jobs:
           VENV_PATH: ${{ secrets.VENV_PATH }}
           LITESPEED: ${{ vars.LITESPEED || secrets.LITESPEED }}
         run: |
+          chmod +x scripts/deploy.sh scripts/litespeed_deploy.sh
           if [ "$LITESPEED" = "true" ]; then
             echo "Using LiteSpeed deployment script..."
             scripts/litespeed_deploy.sh
