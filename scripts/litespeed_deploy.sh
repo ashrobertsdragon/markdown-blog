@@ -347,7 +347,7 @@ verify_deployment() {
   local max_retries=5
   local base_delay=2
 
-  for endpoint in "/health" "/health/db" "/health/github"; do
+  for endpoint in "/api/health" "/api/health/db" "/api/health/github"; do
     if ! retry_with_backoff "$max_retries" "$base_delay" curl -sS -f -m 10 "https://${DOMAIN}${endpoint}" >/dev/null 2>&1; then
       printf "ERROR: Health check failed for endpoint %s after %d retries\n" "$endpoint" "$max_retries" >&2
       return 1
