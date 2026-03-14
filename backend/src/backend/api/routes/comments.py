@@ -4,7 +4,11 @@ import logging
 
 from flask import Blueprint, Response, g, jsonify, request, stream_with_context
 
-from backend.api.middleware.auth_middleware import require_auth, require_role
+from backend.api.middleware.auth_middleware import (
+    optional_auth,
+    require_auth,
+    require_role,
+)
 from backend.application.commands.delete_comment_command import (
     DeleteCommentCommand,
 )
@@ -165,6 +169,7 @@ def _get_comment_notification_handler() -> CommentNotificationHandler:
 
 
 @comments_bp.route("/<slug>/comments", methods=["GET"])
+@optional_auth
 def list_comments(slug: str) -> tuple[Response, int]:
     """List published comments for a post with pagination.
 

@@ -53,7 +53,7 @@ export function ReplyForm({ parentComment, postSlug, onCancel }: ReplyFormProps)
     : mutation.error?.message
 
   return (
-    <form onSubmit={handleSubmit} className="reply-form">
+    <form onSubmit={handleSubmit} className="reply-form" data-testid="reply-form">
       <textarea
         name="reply-text"
         ref={textareaRef}

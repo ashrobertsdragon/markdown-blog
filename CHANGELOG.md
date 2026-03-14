@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **E2E tests for comment workflow**: Added `frontend/tests/e2e/comments.ts` with 17 Playwright tests covering post comment, reply, rate limiting, moderation, and author badge flows against the real Flask backend. Added `optional_auth` decorator to auth middleware so the public comment listing endpoint optionally authenticates callers — admins now see soft-deleted comments as `[deleted]` placeholders. Rate limit cache is cleared on each seed call so tests start with a fresh window. Backend 429 responses now include `retry_after` in the JSON body. `usePostComment` and `useReplyToComment` parse 429 errors and rethrow with a `retryAfter` property so the comment form displays a human-readable wait time. `CommentSection` fetches with admin auth when the signed-in user is an admin.
+
 ### Fixed
 
 - **Deployment**: Fixed incorrect PROJECT_ROOT and monorepo path prefixes in deployment scripts that caused CI failures when the monorepo is used as a submodule.

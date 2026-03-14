@@ -43,7 +43,7 @@ export function CommentItem({ comment, postSlug }: CommentItemProps) {
   }
 
   return (
-    <article className="border-b pb-4 mb-4">
+    <article className="border-b pb-4 mb-4" data-testid="comment-item">
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-2">

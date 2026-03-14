@@ -175,6 +175,61 @@ def require_auth(f: Callable[..., Any]) -> Callable[..., Any]:
     return decorated
 
 
+def optional_auth(f: Callable[..., Any]) -> Callable[..., Any]:
+    """Optionally authenticate the request if a Bearer token is present.
+
+    Attempts JWT validation and user lookup when an Authorization header
+    exists. On success, injects the user into ``g.current_user``. On any
+    failure (missing header, invalid token, unknown user), proceeds without
+    setting ``g.current_user`` so public endpoints remain accessible.
+
+    Use this on public endpoints that serve richer data to authenticated
+    callers (e.g. admins see deleted comments).
+
+    Args:
+        f: Flask endpoint function to decorate.
+
+    Returns:
+        Decorated function that optionally sets ``g.current_user``.
+
+    Example:
+        >>> @app.route("/posts/<slug>/comments")
+        >>> @optional_auth
+        >>> def list_comments(slug: str):
+        ...     is_admin = (
+        ...         hasattr(g, "current_user")
+        ...         and g.current_user.role.can_access_admin_endpoints()
+        ...     )
+    """
+
+    @wraps(f)
+    def decorated(*args: Any, **kwargs: Any) -> Any:
+        _try_authenticate_request()
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+def _try_authenticate_request() -> None:
+    """Parse Bearer token and set g.current_user when valid.
+
+    Silently no-ops on missing header, malformed tokens, or unknown users.
+    """
+    auth_header = request.headers.get("Authorization")
+    parts = auth_header.split() if auth_header else []
+    if len(parts) != 2 or parts[0] != "Bearer" or not parts[1].strip():
+        return
+    try:
+        clerk_adapter = clerk_auth_adapter or _get_clerk_adapter()
+        user_repo = user_repository or _get_user_repository()
+        payload = clerk_adapter.verify_token(parts[1].strip())
+        user = user_repo.find_by_clerk_user_id(payload["sub"])
+        if user is not None:
+            g.current_user = user
+    except Exception:
+        pass
+
+
 def require_role(
     required_role: str,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:

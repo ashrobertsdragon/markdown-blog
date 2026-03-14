@@ -301,8 +301,8 @@ describe('useComments hooks', () => {
       await waitFor(() => expect(result.current.isError).toBe(true))
 
       expect(result.current.error).toMatchObject({
-        isAxiosError: true,
-        response: { status: 429, data: { retry_after: 30 } },
+        message: 'Rate limit exceeded',
+        retryAfter: 30,
       })
     })
 
@@ -484,8 +484,8 @@ describe('useComments hooks', () => {
       await waitFor(() => expect(result.current.isError).toBe(true))
 
       expect(result.current.error).toMatchObject({
-        isAxiosError: true,
-        response: { status: 429, data: { retry_after: 60 } },
+        message: 'Rate limit exceeded',
+        retryAfter: 60,
       })
     })
 

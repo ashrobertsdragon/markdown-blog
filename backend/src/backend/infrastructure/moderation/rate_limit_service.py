@@ -112,6 +112,14 @@ class RateLimitService:
 
             return int(min(valid) + self._window_seconds)
 
+    def clear(self) -> None:
+        """Remove all rate limit entries from the cache.
+
+        Intended for test environments to reset state between test runs.
+        """
+        with self._lock:
+            self._cache.clear()
+
     def _cleanup_expired_entries(self) -> None:
         """Remove cache entries whose entire timestamp list has expired.
 

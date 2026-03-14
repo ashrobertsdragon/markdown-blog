@@ -5,6 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
+import { isAxiosError } from 'axios'
 import { useAuth } from '@/hooks/useAuth'
 import {
   type CommentResponse,
@@ -42,8 +43,8 @@ export function useFetchComments(
 /**
  * Mutation hook for posting a top-level comment
  *
- * Throws when getToken returns null rather than silently sending an
- * unauthenticated request. Invalidates the comments cache on success.
+ * Re-throws 429 errors with a `retryAfter` property so the form can
+ * surface a human-readable wait time. Invalidates the comments cache on success.
  */
 export function usePostComment(): UseMutationResult<
   CommentResponse,
@@ -57,7 +58,18 @@ export function usePostComment(): UseMutationResult<
     mutationFn: async ({ slug, text }: { slug: string; text: string }) => {
       const token = await auth.getToken()
       if (!token) throw new Error('Authentication required')
-      return commentsApi.postComment(slug, text, token)
+      try {
+        return await commentsApi.postComment(slug, text, token)
+      } catch (err) {
+        if (isAxiosError(err) && err.response?.status === 429) {
+          const retryAfter = (err.response.data?.retry_after as number | undefined) ?? 60
+          const message = err.response.data?.error
+            ? String(err.response.data.error)
+            : 'Too many requests. Please wait before posting again.'
+          throw Object.assign(new Error(message), { retryAfter })
+        }
+        throw err
+      }
     },
     onSuccess: (_data, { slug }) => {
       queryClient.invalidateQueries({ queryKey: ['comments', slug] })
@@ -116,7 +128,18 @@ export function useReplyToComment(): UseMutationResult<
     }) => {
       const token = await auth.getToken()
       if (!token) throw new Error('Authentication required')
-      return commentsApi.replyToComment(slug, parentId, text, token)
+      try {
+        return await commentsApi.replyToComment(slug, parentId, text, token)
+      } catch (err) {
+        if (isAxiosError(err) && err.response?.status === 429) {
+          const retryAfter = (err.response.data?.retry_after as number | undefined) ?? 60
+          const message = err.response.data?.error
+            ? String(err.response.data.error)
+            : 'Too many requests. Please wait before posting again.'
+          throw Object.assign(new Error(message), { retryAfter })
+        }
+        throw err
+      }
     },
     onSuccess: (_data, { slug }) => {
       queryClient.invalidateQueries({ queryKey: ['comments', slug] })

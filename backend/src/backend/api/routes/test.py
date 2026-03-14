@@ -64,6 +64,10 @@ def seed() -> tuple[Response, int]:
     if guard is not None:
         return guard
 
+    from backend.api.routes.comments import _get_rate_limit_service
+
+    _get_rate_limit_service().clear()
+
     engine = get_engine()
 
     from sqlalchemy import text
@@ -104,6 +108,7 @@ def seed() -> tuple[Response, int]:
                     title=title,
                     html_content=html,
                     published=published,
+                    published_at=now if published else None,
                     author_id=author.id,
                 )
             )
