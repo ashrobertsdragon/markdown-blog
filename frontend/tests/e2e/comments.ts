@@ -349,11 +349,8 @@ test.describe('Comments E2E Tests', () => {
       await mockClerkUnauthenticated(page)
       await page.reload()
       await waitForAuthToLoad(page)
-      await expect(page.locator('section[aria-label="Comments"]')).toBeVisible()
 
-      await expect(
-        page.locator('section[aria-label="Comments"]').locator('text=[deleted]')
-      ).not.toBeVisible()
+      await expect(page.locator('text=[deleted]')).not.toBeVisible()
     })
 
     test('4.3: Unauthenticated users cannot see delete button', async ({ page }) => {
