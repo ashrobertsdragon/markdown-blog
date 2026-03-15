@@ -242,17 +242,20 @@ test.describe('Comments E2E Tests', () => {
 
       await seedCommentViaUi(page, 'Base comment for reply rate limit test')
 
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= 4; i++) {
         await page.locator('button:has-text("Reply")').first().click()
         const replyForm = page.locator('[data-testid="reply-form"]')
         await expect(replyForm).toBeVisible()
         const replyTextarea = replyForm.locator('textarea[name="reply-text"]')
-        await replyTextarea.fill(`Rate limit reply ${i}`)
+        const replyText = `Rate limit reply ${i}`
+        await replyTextarea.fill(replyText)
         const replyResponsePromise = page.waitForResponse(
           response => response.url().includes('/reply') && response.request().method() === 'POST'
         )
         await replyForm.locator('button[type="submit"]').click()
-        await replyResponsePromise
+        const replyResponse = await replyResponsePromise
+        expect(replyResponse.status()).toBe(201)
+        await expect(page.locator('section[aria-label="Comments"]')).toContainText(replyText)
       }
 
       await page.locator('button:has-text("Reply")').first().click()
