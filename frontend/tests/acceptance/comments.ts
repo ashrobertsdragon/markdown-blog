@@ -223,11 +223,18 @@ test.describe('Comments - Frontend UI', () => {
     await page.route('**/comments', async route => {
       if (route.request().method() === 'POST') {
         await route.fulfill({
-          status: 202,
+          status: 201,
           contentType: 'application/json',
           body: JSON.stringify({
-            message: 'Your comment is pending moderation',
-            status: 'pending',
+            id: 999,
+            post_id: 1,
+            text: 'http://spam.com http://more-spam.com',
+            parent_id: null,
+            is_post_author: false,
+            is_pending_moderation: true,
+            is_deleted: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           }),
         })
       } else {
