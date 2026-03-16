@@ -289,6 +289,371 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /posts/{slug}/comments:
+    get:
+      operationId: listComments
+      summary: List published comments for a post
+      description: >
+        Returns paginated comments for a post. Authentication is optional.
+        Unauthenticated users see only published comments. Admins see
+        pending and deleted comments. Comments are returned sorted by
+        creation time.
+      tags:
+        - Comments
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+        - name: skip
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of records to skip for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+          description: Maximum number of records to return per page
+      responses:
+        '200':
+          description: Paginated list of comments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListResponse'
+              example:
+                comments:
+                  - id: 1
+                    post_id: 42
+                    text: "Great post!"
+                    parent_id: null
+                    created_at: "2024-11-15T10:30:00+00:00"
+                    updated_at: "2024-11-15T10:30:00+00:00"
+                    is_deleted: false
+                    is_pending_moderation: false
+                    is_post_author: false
+                total_count: 5
+                has_more: false
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidLimit:
+                  value:
+                    error: "limit must be between 1 and 100"
+        '404':
+          $ref: '#/components/responses/PostNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      operationId: postComment
+      summary: Post a new comment on a post
+      description: >
+        Creates a new comment on a published post. Requires authentication.
+        Rate-limited to 5 comments per minute per user; bypassed for admins.
+        Comments may be flagged for moderation based on spam detection.
+        Returns the created comment with 201 status. Publishes new comment
+        to SSE stream.
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+            example:
+              text: "This is a great post!"
+      responses:
+        '201':
+          description: Comment created successfully
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Maximum requests allowed per time window
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Requests remaining in current time window
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: Unix timestamp when rate limit resets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Missing or invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notJson:
+                  value:
+                    error: "Request body must be JSON"
+                missingText:
+                  value:
+                    error: "Missing required field: text"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/PostNotFound'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Requests remaining (always 0)
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: Unix timestamp when rate limit resets
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /posts/{slug}/comments/stream:
+    get:
+      operationId: streamComments
+      summary: Stream new comments as Server-Sent Events
+      description: >
+        Opens a persistent connection that streams new comments as
+        Server-Sent Events. Authentication is optional. Clients may pass
+        last_comment_id query parameter to receive only comments posted
+        after a specific comment ID (useful for reconnection). Returns
+        text/event-stream response with data: fields containing JSON
+        comment objects.
+      tags:
+        - Comments
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+        - name: last_comment_id
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Comment ID to resume after on reconnect
+      responses:
+        '200':
+          description: Server-Sent Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                data: {
+                  "id": 1,
+                  "post_id": 42,
+                  "text": "Great post!",
+                  "parent_id": null,
+                  "created_at": "2024-11-15T10:30:00+00:00",
+                  "updated_at": "2024-11-15T10:30:00+00:00",
+                  "is_deleted": false,
+                  "is_pending_moderation": false,
+                  "is_post_author": false
+                }
+        '400':
+          description: Invalid last_comment_id parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "last_comment_id must be an integer"
+        '404':
+          $ref: '#/components/responses/PostNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /posts/{slug}/comments/{comment_id}/reply:
+    post:
+      operationId: postReply
+      summary: Post a reply to an existing comment
+      description: >
+        Creates a reply to an existing comment. Verifies the parent comment
+        belongs to the given post. Requires authentication. Subject to the
+        same rate limiting and spam detection as top-level comments. The
+        convention is to prefix reply text with @username for mentions.
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+        - $ref: '#/components/parameters/CommentIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+            example:
+              text: "@username Great point!"
+      responses:
+        '201':
+          description: Reply created successfully
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Maximum requests allowed per time window
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Requests remaining in current time window
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: Unix timestamp when rate limit resets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '400':
+          description: Missing or invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notJson:
+                  value:
+                    error: "Request body must be JSON"
+                missingText:
+                  value:
+                    error: "Missing required field: text"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/CommentNotFound'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Requests remaining (always 0)
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+              description: Unix timestamp when rate limit resets
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /posts/{slug}/comments/{comment_id}:
+    delete:
+      operationId: deleteComment
+      summary: Delete a comment
+      description: >
+        Deletes a comment. Comment authors hard-delete their own comments
+        (removed from database). Admins and post authors soft-delete any
+        comment (marked as deleted, row preserved). Requires authentication.
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SlugParam'
+        - $ref: '#/components/parameters/CommentIdParam'
+      responses:
+        '204':
+          description: Comment deleted successfully (no content)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/CommentNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/comments/{comment_id}/approve:
+    put:
+      operationId: approveComment
+      summary: Approve a comment pending moderation
+      description: >
+        Approves a comment pending moderation. Only accessible to admins.
+        Transitions the comment from pending to published state.
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CommentIdParam'
+      responses:
+        '200':
+          description: Comment approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/CommentNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/comments/{comment_id}:
+    delete:
+      operationId: adminDeleteComment
+      summary: Soft-delete a comment as admin
+      description: >
+        Soft-deletes a comment via moderation action. Only accessible to
+        admins. Marks the comment as deleted without removing the row,
+        preserving reply thread coherence.
+      tags:
+        - Comments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CommentIdParam'
+      responses:
+        '204':
+          description: Comment deleted successfully (no content)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/CommentNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -314,6 +679,14 @@ components:
         type: string
         maxLength: 100
       description: Full or abbreviated commit SHA
+    CommentIdParam:
+      name: comment_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+      description: Comment ID identifying the comment
 
   schemas:
     RevisionSummary:
@@ -508,6 +881,96 @@ components:
       required:
         - error
 
+    CommentRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          description: Comment text content
+      required:
+        - text
+
+    CommentResponse:
+      type: object
+      description: Comment data with moderation and author information
+      properties:
+        id:
+          type: integer
+          description: Comment ID
+        post_id:
+          type: integer
+          description: Post ID this comment belongs to
+        text:
+          type: string
+          description: Comment text content
+        parent_id:
+          type: integer
+          nullable: true
+          description: ID of parent comment if this is a reply, null otherwise
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when comment was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when comment was last updated
+        is_deleted:
+          type: boolean
+          description: True if comment has been deleted (soft or hard)
+        is_pending_moderation:
+          type: boolean
+          description: True if comment awaiting admin review
+        is_post_author:
+          type: boolean
+          description: True if comment author is the post author
+      required:
+        - id
+        - post_id
+        - text
+        - parent_id
+        - created_at
+        - updated_at
+        - is_deleted
+        - is_pending_moderation
+        - is_post_author
+
+    CommentListResponse:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentResponse'
+        total_count:
+          type: integer
+          description: Total number of comments for this post
+        has_more:
+          type: boolean
+          description: Whether more comments exist beyond this page
+      required:
+        - comments
+        - total_count
+        - has_more
+
+    RateLimitResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Rate limit exceeded error message
+        code:
+          type: string
+          enum: [rate_limit_exceeded]
+        retry_after:
+          type: integer
+          description: Seconds to wait before retrying
+      required:
+        - error
+        - code
+        - retry_after
+
   responses:
     Unauthorized:
       description: Missing or invalid JWT token
@@ -533,6 +996,15 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             error: "Post 'my-post' not found"
+
+    CommentNotFound:
+      description: No comment exists with the given ID
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "Comment not found"
 
     NotFound:
       description: Post or revision not found
@@ -560,3 +1032,7 @@ tags:
     description: >-
       Browse post commit history, view previous versions, compare
       diffs, and revert
+  - name: Comments
+    description: >-
+      Post, list, and manage comments. Includes moderation controls,
+      rate limiting, and real-time updates via Server-Sent Events
