@@ -308,6 +308,7 @@ paths:
           schema:
             type: integer
             minimum: 0
+            maximum: 10000
             default: 0
           description: Number of records to skip for pagination
         - name: limit
@@ -417,6 +418,10 @@ paths:
         '429':
           description: Rate limit exceeded
           headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Maximum requests allowed per time window
             X-RateLimit-Remaining:
               schema:
                 type: integer
@@ -549,10 +554,25 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
-          $ref: '#/components/responses/CommentNotFound'
+          description: Post or parent comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                postNotFound:
+                  value:
+                    error: "Post not found"
+                commentNotFound:
+                  value:
+                    error: "Comment not found"
         '429':
           description: Rate limit exceeded
           headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Maximum requests allowed per time window
             X-RateLimit-Remaining:
               schema:
                 type: integer
@@ -590,12 +610,29 @@ paths:
       responses:
         '204':
           description: Comment deleted successfully (no content)
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '#/components/responses/CommentNotFound'
+          description: Post or comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                postNotFound:
+                  value:
+                    error: "Post not found"
+                commentNotFound:
+                  value:
+                    error: "Comment not found"
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -618,7 +655,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CommentResponse'
+                $ref: '#/components/schemas/AdminCommentResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -878,6 +915,9 @@ components:
         error:
           type: string
           description: Human-readable error message
+        required_role:
+          type: string
+          description: Optional role name required for authorization failures
       required:
         - error
 
@@ -954,6 +994,53 @@ components:
         - total_count
         - has_more
 
+    AdminCommentResponse:
+      type: object
+      description: >
+        Admin comment response including author_id (internal identifier).
+        Returned by admin moderation endpoints that need full comment data.
+      properties:
+        id:
+          type: integer
+          description: Comment ID
+        post_id:
+          type: integer
+          description: Post ID this comment belongs to
+        author_id:
+          type: integer
+          description: Author user ID
+        text:
+          type: string
+          description: Comment text content
+        parent_id:
+          type: integer
+          nullable: true
+          description: ID of parent comment if this is a reply, null otherwise
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when comment was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when comment was last updated
+        is_deleted:
+          type: boolean
+          description: True if comment has been deleted (soft or hard)
+        is_pending_moderation:
+          type: boolean
+          description: True if comment awaiting admin review
+      required:
+        - id
+        - post_id
+        - author_id
+        - text
+        - parent_id
+        - created_at
+        - updated_at
+        - is_deleted
+        - is_pending_moderation
+
     RateLimitResponse:
       type: object
       properties:
@@ -985,8 +1072,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: "Not authorized to view revisions"
+          examples:
+            generic:
+              value:
+                error: "Not authorized to view revisions"
+            roleRequired:
+              value:
+                error: "Admin role required"
+                required_role: "admin"
 
     PostNotFound:
       description: No post exists with the given slug

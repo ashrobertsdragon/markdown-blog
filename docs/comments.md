@@ -14,15 +14,15 @@ Clerk-issued JWT Bearer token. Admin endpoints require both authentication and t
 
 ## Authorization Matrix
 
-| Endpoint                                     | Method | Auth     | Role  | Action                                              |
-| :------------------------------------------- | :----- | :------- | :---- | :-------------------------------------------------- |
-| `GET /api/posts/{slug}/comments`             | GET    | Optional | Any   | List published comments; admins see pending/deleted |
-| `GET /api/posts/{slug}/comments/stream`      | GET    | Optional | Any   | Stream new comments as SSE                          |
-| `POST /api/posts/{slug}/comments`            | POST   | Required | Any   | Post top-level comment (rate-limited)               |
-| `POST /api/posts/{slug}/comments/{id}/reply` | POST   | Required | Any   | Post reply to comment (rate-limited)                |
-| `DELETE /api/posts/{slug}/comments/{id}`     | DELETE | Required | Any   | Delete own comments (hard-delete)                   |
-| `PUT /admin/comments/{id}/approve`           | PUT    | Required | admin | Approve pending comment                             |
-| `DELETE /admin/comments/{id}`                | DELETE | Required | admin | Soft-delete any comment                             |
+| Endpoint                                     | Method | Auth     | Role  | Action                                                                     |
+| :------------------------------------------- | :----- | :------- | :---- | :------------------------------------------------------------------------- |
+| `GET /api/posts/{slug}/comments`             | GET    | Optional | Any   | List published comments; admins see pending/deleted                        |
+| `GET /api/posts/{slug}/comments/stream`      | GET    | Optional | Any   | Stream new comments as SSE                                                 |
+| `POST /api/posts/{slug}/comments`            | POST   | Required | Any   | Post top-level comment (rate-limited)                                      |
+| `POST /api/posts/{slug}/comments/{id}/reply` | POST   | Required | Any   | Post reply to comment (rate-limited)                                       |
+| `DELETE /api/posts/{slug}/comments/{id}`     | DELETE | Required | Any   | Delete own comments (hard-delete); post authors and admins soft-delete any |
+| `PUT /admin/comments/{id}/approve`           | PUT    | Required | admin | Approve pending comment                                                    |
+| `DELETE /admin/comments/{id}`                | DELETE | Required | admin | Soft-delete any comment                                                    |
 
 ---
 
@@ -187,7 +187,7 @@ curl -X GET "http://localhost:5000/api/posts/my-post/comments?skip=0&limit=10"
 | Status | Condition                          | Response Body                                  |
 | :----- | :--------------------------------- | :--------------------------------------------- |
 | 400    | `limit` outside 1–100              | `{"error": "limit must be between 1 and 100"}` |
-| 404    | No post exists with the given slug | `{"error": "Post 'my-post' not found"}`        |
+| 404    | No post exists with the given slug | `{"error": "Post not found"}`                  |
 | 500    | Unexpected server error            | `{"error": "<error message>"}`                 |
 
 ---
@@ -271,7 +271,7 @@ function connectCommentStream(slug, lastCommentId = null) {
 | Status | Condition                                | Response Body                                     |
 | :----- | :--------------------------------------- | :------------------------------------------------ |
 | 400    | `last_comment_id` is not a valid integer | `{"error": "last_comment_id must be an integer"}` |
-| 404    | No post exists with the given slug       | `{"error": "Post 'my-post' not found"}`           |
+| 404    | No post exists with the given slug       | `{"error": "Post not found"}`                     |
 | 500    | Unexpected server error                  | `{"error": "<error message>"}`                    |
 
 ---
