@@ -92,7 +92,7 @@ class UnsubscribeToken:
         """
         try:
             expected = cls.generate(user_id=user_id, email=email)
-        except (KeyError, ValueError, TypeError):
+        except (ValueError, TypeError):
             return False
         return hmac.compare_digest(token.lower(), expected.value)
 
