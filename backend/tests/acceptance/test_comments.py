@@ -6,7 +6,6 @@ and spam prevention, ensuring alignment with the Acceptance Criteria in
 """
 
 from typing import Any, Protocol, cast
-from unittest.mock import MagicMock, patch
 
 from flask.testing import FlaskClient
 
@@ -160,11 +159,27 @@ def test_reply_to_comment(client: FlaskClient, published_post, mock_clerk_auth):
     )
     assert missing_parent_resp.status_code == 404
 
+    unauth_resp = _post(
+        client,
+        f"/api/posts/{slug}/comments/{parent_id}/reply",
+        json={"text": "No token."},
+    )
+    assert unauth_resp.status_code == 401
+
+    empty_resp = _post(
+        client,
+        f"/api/posts/{slug}/comments/{parent_id}/reply",
+        headers=_AUTH_HEADER,
+        json={"text": ""},
+    )
+    assert empty_resp.status_code == 400
+
 
 def test_comment_moderation(
     client: FlaskClient,
     published_post,
     mock_clerk_auth,
+    auth_context,
     reader_user: User,
     reader_jwt_payload: dict[str, object],
     admin_user: User,
@@ -189,21 +204,7 @@ def test_comment_moderation(
     assert author_comment_resp.status_code == 201
     author_comment_id = author_comment_resp.json["id"]
 
-    mock_reader_adapter = MagicMock()
-    mock_reader_adapter.verify_token.return_value = reader_jwt_payload
-    mock_reader_repo = MagicMock()
-    mock_reader_repo.find_by_clerk_user_id.return_value = reader_user
-
-    with (
-        patch(
-            "backend.api.middleware.auth_middleware._get_clerk_adapter",
-            return_value=mock_reader_adapter,
-        ),
-        patch(
-            "backend.api.middleware.auth_middleware._get_user_repository",
-            return_value=mock_reader_repo,
-        ),
-    ):
+    with auth_context(reader_user, reader_jwt_payload):
         reader_comment_resp = _post_comment(
             client, slug, "Reader's own comment."
         )
@@ -228,21 +229,7 @@ def test_comment_moderation(
     ids_after_hard = [c["id"] for c in list_after_hard.json["comments"]]
     assert reader_comment_id not in ids_after_hard
 
-    mock_admin_adapter = MagicMock()
-    mock_admin_adapter.verify_token.return_value = admin_jwt_payload
-    mock_admin_repo = MagicMock()
-    mock_admin_repo.find_by_clerk_user_id.return_value = admin_user
-
-    with (
-        patch(
-            "backend.api.middleware.auth_middleware._get_clerk_adapter",
-            return_value=mock_admin_adapter,
-        ),
-        patch(
-            "backend.api.middleware.auth_middleware._get_user_repository",
-            return_value=mock_admin_repo,
-        ),
-    ):
+    with auth_context(admin_user, admin_jwt_payload):
         admin_soft_delete_resp = _delete(
             client,
             f"/api/admin/comments/{author_comment_id}",
@@ -307,6 +294,7 @@ def test_rate_limiting(
     client: FlaskClient,
     published_post,
     mock_clerk_auth,
+    auth_context,
     admin_user: User,
     admin_jwt_payload: dict[str, object],
 ):
@@ -340,21 +328,7 @@ def test_rate_limiting(
     assert "error" in body
     assert "wait" in body["error"].lower() or "many" in body["error"].lower()
 
-    mock_admin_adapter = MagicMock()
-    mock_admin_adapter.verify_token.return_value = admin_jwt_payload
-    mock_admin_repo = MagicMock()
-    mock_admin_repo.find_by_clerk_user_id.return_value = admin_user
-
-    with (
-        patch(
-            "backend.api.middleware.auth_middleware._get_clerk_adapter",
-            return_value=mock_admin_adapter,
-        ),
-        patch(
-            "backend.api.middleware.auth_middleware._get_user_repository",
-            return_value=mock_admin_repo,
-        ),
-    ):
+    with auth_context(admin_user, admin_jwt_payload):
         admin_resp = _post_comment(client, slug, "Admin bypasses rate limit.")
         assert admin_resp.status_code == 201
 
@@ -423,6 +397,7 @@ def test_comment_notifications(
     client: FlaskClient,
     published_post,
     mock_clerk_auth,
+    auth_context,
     reader_user: User,
     reader_jwt_payload: dict[str, object],
 ):
@@ -440,21 +415,7 @@ def test_comment_notifications(
     """
     slug = published_post
 
-    mock_reader_adapter = MagicMock()
-    mock_reader_adapter.verify_token.return_value = reader_jwt_payload
-    mock_reader_repo = MagicMock()
-    mock_reader_repo.find_by_clerk_user_id.return_value = reader_user
-
-    with (
-        patch(
-            "backend.api.middleware.auth_middleware._get_clerk_adapter",
-            return_value=mock_reader_adapter,
-        ),
-        patch(
-            "backend.api.middleware.auth_middleware._get_user_repository",
-            return_value=mock_reader_repo,
-        ),
-    ):
+    with auth_context(reader_user, reader_jwt_payload):
         comment_resp = _post_comment(
             client,
             slug,
@@ -483,6 +444,7 @@ def test_comment_notifications_reply(
     client: FlaskClient,
     published_post,
     mock_clerk_auth,
+    auth_context,
     reader_user: User,
     reader_jwt_payload: dict[str, object],
 ):
@@ -498,21 +460,7 @@ def test_comment_notifications_reply(
     assert parent_resp.status_code == 201
     parent_id = parent_resp.json["id"]
 
-    mock_reader_adapter = MagicMock()
-    mock_reader_adapter.verify_token.return_value = reader_jwt_payload
-    mock_reader_repo = MagicMock()
-    mock_reader_repo.find_by_clerk_user_id.return_value = reader_user
-
-    with (
-        patch(
-            "backend.api.middleware.auth_middleware._get_clerk_adapter",
-            return_value=mock_reader_adapter,
-        ),
-        patch(
-            "backend.api.middleware.auth_middleware._get_user_repository",
-            return_value=mock_reader_repo,
-        ),
-    ):
+    with auth_context(reader_user, reader_jwt_payload):
         reply_resp = _post(
             client,
             f"/api/posts/{slug}/comments/{parent_id}/reply",
@@ -542,6 +490,7 @@ def test_spam_prevention(
     client: FlaskClient,
     published_post,
     mock_clerk_auth,
+    auth_context,
     admin_user: User,
     admin_jwt_payload: dict[str, object],
 ):
@@ -572,21 +521,7 @@ def test_spam_prevention(
         "Pending-moderation comments must not appear in public GET"
     )
 
-    mock_admin_adapter = MagicMock()
-    mock_admin_adapter.verify_token.return_value = admin_jwt_payload
-    mock_admin_repo = MagicMock()
-    mock_admin_repo.find_by_clerk_user_id.return_value = admin_user
-
-    with (
-        patch(
-            "backend.api.middleware.auth_middleware._get_clerk_adapter",
-            return_value=mock_admin_adapter,
-        ),
-        patch(
-            "backend.api.middleware.auth_middleware._get_user_repository",
-            return_value=mock_admin_repo,
-        ),
-    ):
+    with auth_context(admin_user, admin_jwt_payload):
         admin_list = _get(
             client,
             f"/api/posts/{slug}/comments",
@@ -655,6 +590,7 @@ def test_comment_export_and_admin_view(
     client: FlaskClient,
     published_post,
     mock_clerk_auth,
+    auth_context,
     admin_user: User,
     admin_jwt_payload: dict[str, object],
     reader_user: User,
@@ -684,21 +620,7 @@ def test_comment_export_and_admin_view(
     spam_id = spam_resp.json["id"]
     assert spam_resp.json["is_pending_moderation"] is True
 
-    mock_admin_adapter = MagicMock()
-    mock_admin_adapter.verify_token.return_value = admin_jwt_payload
-    mock_admin_repo = MagicMock()
-    mock_admin_repo.find_by_clerk_user_id.return_value = admin_user
-
-    with (
-        patch(
-            "backend.api.middleware.auth_middleware._get_clerk_adapter",
-            return_value=mock_admin_adapter,
-        ),
-        patch(
-            "backend.api.middleware.auth_middleware._get_user_repository",
-            return_value=mock_admin_repo,
-        ),
-    ):
+    with auth_context(admin_user, admin_jwt_payload):
         admin_delete_resp = _delete(
             client,
             f"/api/admin/comments/{normal_id}",
@@ -733,6 +655,7 @@ def test_comment_permissions(
     client: FlaskClient,
     published_post,
     mock_clerk_auth,
+    auth_context,
     reader_user: User,
     reader_jwt_payload: dict[str, object],
 ):
@@ -754,21 +677,7 @@ def test_comment_permissions(
     assert author_comment_resp.status_code == 201
     author_comment_id = author_comment_resp.json["id"]
 
-    mock_reader_adapter = MagicMock()
-    mock_reader_adapter.verify_token.return_value = reader_jwt_payload
-    mock_reader_repo = MagicMock()
-    mock_reader_repo.find_by_clerk_user_id.return_value = reader_user
-
-    with (
-        patch(
-            "backend.api.middleware.auth_middleware._get_clerk_adapter",
-            return_value=mock_reader_adapter,
-        ),
-        patch(
-            "backend.api.middleware.auth_middleware._get_user_repository",
-            return_value=mock_reader_repo,
-        ),
-    ):
+    with auth_context(reader_user, reader_jwt_payload):
         public_list = _get(client, f"/api/posts/{slug}/comments")
         assert public_list.status_code == 200
         visible_ids = [c["id"] for c in public_list.json["comments"]]
@@ -797,3 +706,46 @@ def test_comment_permissions(
     after_delete = _get(client, f"/api/posts/{slug}/comments")
     ids_after = [c["id"] for c in after_delete.json["comments"]]
     assert reader_comment_id not in ids_after
+
+
+def test_rate_limiting_window_reset(
+    client: FlaskClient,
+    published_post,
+    mock_clerk_auth,
+) -> None:
+    """Test rate limit counter resets after the window expires.
+
+    Acceptance Criteria:
+    - Rate limit window expires: counter resets automatically
+    - After reset, user can post comments again up to the limit
+    """
+    from unittest.mock import patch
+
+    from backend.infrastructure.moderation.rate_limit_service import (
+        RateLimitService,
+    )
+
+    slug = published_post
+    short_window_service = RateLimitService(window_seconds=60, max_per_window=5)
+
+    with patch(
+        "backend.api.routes.comments._get_rate_limit_service",
+        return_value=short_window_service,
+    ):
+        for i in range(5):
+            resp = _post_comment(client, slug, f"Pre-reset comment {i + 1}.")
+            assert resp.status_code == 201, (
+                f"Expected 201 for comment {i + 1}, got {resp.status_code}"
+            )
+
+        over_limit_resp = _post_comment(client, slug, "Should be rate limited.")
+        assert over_limit_resp.status_code == 429
+
+        short_window_service.clear()
+
+        post_reset_resp = _post_comment(
+            client, slug, "First comment after window reset."
+        )
+        assert post_reset_resp.status_code == 201, (
+            "Expected 201 after rate limit window reset via clear()"
+        )

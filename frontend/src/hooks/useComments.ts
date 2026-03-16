@@ -65,7 +65,7 @@ export function useFetchComments(
  * rolls back on error.
  */
 export function usePostComment(): UseMutationResult<
-  CommentResponse & { status?: string; message?: string },
+  CommentResponse,
   Error,
   { slug: string; text: string }
 > {

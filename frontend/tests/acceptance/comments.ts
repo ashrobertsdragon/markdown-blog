@@ -200,13 +200,12 @@ test.describe('Comments - Frontend UI', () => {
     const slug = 'test-post'
     await page.goto(`/posts/${slug}`)
 
-    const replyIndicator = page.locator('text=/Reply to @/')
-    if (await replyIndicator.isVisible()) {
-      await replyIndicator.click()
+    const replyIndicator = page.locator('text=/Reply to @/').first()
+    await expect(replyIndicator).toBeVisible()
+    await replyIndicator.click()
 
-      const parentComment = page.locator('[data-comment-id]').first()
-      await expect(parentComment).toBeInViewport()
-    }
+    const parentComment = page.locator('[data-comment-id]').first()
+    await expect(parentComment).toBeInViewport()
   })
 
   test('Spam prevention feedback', async ({ page }) => {

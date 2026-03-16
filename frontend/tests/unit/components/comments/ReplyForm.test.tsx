@@ -54,7 +54,7 @@ const createMockMutation = (
 describe('ReplyForm', () => {
   const mockMutate = vi.fn()
   const parentComment = createMockComment({ id: 42 })
-  const parentMention = '@comment42 '
+  const parentMention = '@user42 '
   const maxReplyLength = 5000 - parentMention.length
 
   beforeEach(() => {

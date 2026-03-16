@@ -145,7 +145,13 @@ export function CommentItem({ comment, postSlug }: CommentItemProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleteCommentMutation.isPending}
+              className="disabled:opacity-50"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

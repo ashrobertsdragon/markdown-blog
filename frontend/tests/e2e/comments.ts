@@ -303,7 +303,7 @@ test.describe('Comments E2E Tests', () => {
       await waitForAuthToLoad(page)
       await expect(page.locator('section[aria-label="Comments"]')).toBeVisible()
 
-      await page.locator('button:has-text("Delete")').first().click()
+      await page.locator('button[aria-label="Delete comment"]').first().click()
 
       const confirmDialog = page.locator('[role="alertdialog"]')
       await expect(confirmDialog).toBeVisible()
@@ -314,6 +314,8 @@ test.describe('Comments E2E Tests', () => {
       )
       await confirmDialog.locator('button:has-text("Delete")').click()
       await deleteResponsePromise
+
+      await expect(confirmDialog).not.toBeVisible()
 
       await expect(
         page.locator('section[aria-label="Comments"]').locator('text=[deleted]')
@@ -336,7 +338,9 @@ test.describe('Comments E2E Tests', () => {
       await page.reload()
       await waitForAuthToLoad(page)
 
-      await page.locator('button:has-text("Delete")').first().click()
+      await expect(page.locator('[role="alertdialog"]')).not.toBeVisible()
+
+      await page.locator('button[aria-label="Delete comment"]').first().click()
 
       const confirmDialog = page.locator('[role="alertdialog"]')
       await expect(confirmDialog).toBeVisible()
@@ -347,6 +351,8 @@ test.describe('Comments E2E Tests', () => {
       )
       await confirmDialog.locator('button:has-text("Delete")').click()
       await deleteResponsePromise
+
+      await expect(confirmDialog).not.toBeVisible()
 
       await mockClerkUnauthenticated(page)
       await page.reload()

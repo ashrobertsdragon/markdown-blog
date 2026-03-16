@@ -72,12 +72,8 @@ export const commentsApi = {
    * @returns Created comment data
    * @throws AxiosError on unauthorized (401), not found (404), or rate limit (429)
    */
-  async postComment(
-    slug: string,
-    text: string,
-    token: string
-  ): Promise<CommentResponse & { status?: string; message?: string }> {
-    const response = await apiClient.post<CommentResponse & { status?: string; message?: string }>(
+  async postComment(slug: string, text: string, token: string): Promise<CommentResponse> {
+    const response = await apiClient.post<CommentResponse>(
       `/posts/${slug}/comments`,
       { text },
       getAuthHeaders(token)

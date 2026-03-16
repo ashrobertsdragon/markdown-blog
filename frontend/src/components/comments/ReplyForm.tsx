@@ -13,17 +13,16 @@ const MAX_LENGTH = 5000
 /**
  * Form for replying to an existing comment.
  *
- * Pre-fills the mention with @username derived from the parent comment's
- * author field, falling back to @user{id} when no username is available.
- * Follows the same validation patterns as CommentForm (character limits,
- * rate limiting, error handling).
+ * Pre-fills the mention as `@user{id}` since the CommentResponse type
+ * carries no author username field. Follows the same validation patterns
+ * as CommentForm (character limits, rate limiting, error handling).
  */
 export function ReplyForm({ parentComment, postSlug, onCancel }: ReplyFormProps) {
   const mutation = useReplyToComment()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [charCount, setCharCount] = useState(0)
 
-  const parentMention = `@comment${parentComment.id} `
+  const parentMention = `@user${parentComment.id} `
 
   const isDisabled =
     charCount === 0 || charCount + parentMention.length > MAX_LENGTH || mutation.isPending

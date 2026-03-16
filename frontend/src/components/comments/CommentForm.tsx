@@ -17,9 +17,9 @@ const MAX_LENGTH = 5000
  * count is tracked separately via onChange to keep the counter reactive.
  *
  * Rate-limit errors (429) surface the API error message directly so users
- * see the "Too many comments" text from the backend. A 202 response means
- * the comment was accepted but is pending moderation — shown as an info
- * message rather than an error.
+ * see the "Too many comments" text from the backend. A 201 response with
+ * `is_pending_moderation: true` means the comment is queued for review —
+ * shown as an info message rather than an error.
  */
 export function CommentForm({ postSlug, onCommentPosted }: CommentFormProps) {
   const { isSignedIn } = useAuth()
@@ -46,7 +46,7 @@ export function CommentForm({ postSlug, onCommentPosted }: CommentFormProps) {
       { slug: postSlug, text },
       {
         onSuccess: data => {
-          const isPending = data?.status === 'pending' || typeof data?.message === 'string'
+          const isPending = data?.is_pending_moderation === true
           if (isPending) {
             setPendingModeration(true)
           }

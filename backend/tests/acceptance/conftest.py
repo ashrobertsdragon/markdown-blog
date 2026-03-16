@@ -7,8 +7,14 @@ the auth middleware to return each user type.
 Also provides a ``published_post`` fixture that inserts a real post row
 into the in-memory SQLite test database so comment endpoints have a
 target to POST against.
+
+The ``auth_context`` fixture supplies a reusable callable context manager
+for switching the active auth user mid-test without duplicating patch
+boilerplate.
 """
 
+from collections.abc import Callable, Generator
+from contextlib import AbstractContextManager, contextmanager
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
@@ -16,6 +22,52 @@ import pytest
 
 from backend.domain.aggregates.user import User
 from backend.domain.value_objects.role import Role
+
+
+@pytest.fixture
+def auth_context() -> Callable[
+    [User, dict[str, object]], AbstractContextManager[None]
+]:
+    """Return a context manager that patches auth middleware for a given user.
+
+    Eliminates the boilerplate of constructing and patching mock Clerk adapter
+    and user repository instances directly inside tests. Callers switch the
+    active auth identity by entering the returned context manager.
+
+    Returns:
+        A callable that accepts a ``User`` and a JWT payload dict and returns
+        a context manager that patches both auth middleware singletons for the
+        duration of the ``with`` block.
+    """
+
+    @contextmanager
+    def _auth_context(
+        user: User, jwt_payload: dict[str, object]
+    ) -> Generator[None]:
+        """Patch auth middleware to authenticate as ``user`` for this block.
+
+        Args:
+            user: The ``User`` aggregate the middleware should return.
+            jwt_payload: The JWT claims dict ``verify_token`` should return.
+        """
+        mock_adapter = MagicMock()
+        mock_adapter.verify_token.return_value = jwt_payload
+        mock_repo = MagicMock()
+        mock_repo.find_by_clerk_user_id.return_value = user
+
+        with (
+            patch(
+                "backend.api.middleware.auth_middleware._get_clerk_adapter",
+                return_value=mock_adapter,
+            ),
+            patch(
+                "backend.api.middleware.auth_middleware._get_user_repository",
+                return_value=mock_repo,
+            ),
+        ):
+            yield
+
+    return _auth_context
 
 
 @pytest.fixture
