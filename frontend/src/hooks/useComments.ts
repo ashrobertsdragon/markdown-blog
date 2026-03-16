@@ -59,10 +59,13 @@ export function useFetchComments(
  * Mutation hook for posting a top-level comment
  *
  * Re-throws 429 errors with a `retryAfter` property so the form can
- * surface a human-readable wait time. Invalidates the comments cache on success.
+ * surface a human-readable wait time. Applies an optimistic update so
+ * the submitted text appears immediately before the server round-trip
+ * completes, then replaces it with the real response on success or
+ * rolls back on error.
  */
 export function usePostComment(): UseMutationResult<
-  CommentResponse,
+  CommentResponse & { status?: string; message?: string },
   Error,
   { slug: string; text: string }
 > {
@@ -79,8 +82,44 @@ export function usePostComment(): UseMutationResult<
         rethrowWithRetryAfter(err)
       }
     },
+    onMutate: async ({ slug, text }) => {
+      await queryClient.cancelQueries({ queryKey: ['comments', slug] })
+      const previousData = queryClient.getQueryData<ListCommentsResponse>([
+        'comments',
+        slug,
+        { skip: 0, limit: 50, asAdmin: false },
+      ])
+      const optimistic: CommentResponse = {
+        id: -Date.now(),
+        post_id: 0,
+        is_post_author: false,
+        text,
+        parent_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_deleted: false,
+        is_pending_moderation: false,
+      }
+      queryClient.setQueryData<ListCommentsResponse>(
+        ['comments', slug, { skip: 0, limit: 50, asAdmin: false }],
+        prev => ({
+          comments: [...(prev?.comments ?? []), optimistic],
+          total_count: (prev?.total_count ?? 0) + 1,
+          has_more: prev?.has_more ?? false,
+        })
+      )
+      return { previousData, slug }
+    },
     onSuccess: (_data, { slug }) => {
       queryClient.invalidateQueries({ queryKey: ['comments', slug] })
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousData !== undefined) {
+        queryClient.setQueryData(
+          ['comments', context.slug, { skip: 0, limit: 50, asAdmin: false }],
+          context.previousData
+        )
+      }
     },
   })
 }

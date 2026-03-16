@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
+  globalSetup: './tests/acceptance/global-setup.ts',
   testDir: './tests',
   testMatch: ['**/e2e/*.ts', '**/acceptance/*.ts'],
   fullyParallel: false,

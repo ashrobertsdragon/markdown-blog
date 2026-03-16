@@ -7,7 +7,7 @@ export interface CommentListProps {
 }
 
 /**
- * Displays a flat list of comments with support for replies and deletion
+ * Displays a flat list of comments with support for replies and deletion.
  *
  * Renders comments in chronological order, with deleted comments shown
  * as placeholders. Reply comments are prefixed with "Reply to @username"
@@ -19,7 +19,7 @@ export function CommentList({ comments, postSlug }: CommentListProps) {
   }
 
   return (
-    <section aria-label="Comments">
+    <section aria-label="Comments" data-testid="comments-list">
       {comments.map(comment => (
         <CommentItem key={comment.id} comment={comment} postSlug={postSlug} />
       ))}

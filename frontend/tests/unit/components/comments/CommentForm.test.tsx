@@ -101,7 +101,7 @@ describe('CommentForm', () => {
   it('submit button is disabled when text is empty', () => {
     renderWithQueryClient(<CommentForm postSlug="test-post" />)
 
-    expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /post comment/i })).toBeDisabled()
   })
 
   /**
@@ -113,7 +113,7 @@ describe('CommentForm', () => {
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'a'.repeat(5001) } })
 
-    expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /post comment/i })).toBeDisabled()
   })
 
   /**
@@ -125,7 +125,7 @@ describe('CommentForm', () => {
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Hello world' } })
 
-    expect(screen.getByRole('button', { name: /submit/i })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /post comment/i })).toBeEnabled()
   })
 
   /**
@@ -159,7 +159,7 @@ describe('CommentForm', () => {
     renderWithQueryClient(<CommentForm postSlug="test-post" />)
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'My comment text' } })
-    await user.click(screen.getByRole('button', { name: /submit/i }))
+    await user.click(screen.getByRole('button', { name: /post comment/i }))
 
     expect(mockMutate).toHaveBeenCalledWith(
       { slug: 'test-post', text: 'My comment text' },
@@ -176,7 +176,7 @@ describe('CommentForm', () => {
     renderWithQueryClient(<CommentForm postSlug="test-post" />)
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'My comment text' } })
-    await user.click(screen.getByRole('button', { name: /submit/i }))
+    await user.click(screen.getByRole('button', { name: /post comment/i }))
 
     const onSuccessCallback = mockMutate.mock.calls[0][1].onSuccess
     act(() => {
@@ -196,7 +196,7 @@ describe('CommentForm', () => {
     renderWithQueryClient(<CommentForm postSlug="test-post" onCommentPosted={onCommentPosted} />)
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'My comment text' } })
-    await user.click(screen.getByRole('button', { name: /submit/i }))
+    await user.click(screen.getByRole('button', { name: /post comment/i }))
 
     const onSuccessCallback = mockMutate.mock.calls[0][1].onSuccess
     act(() => {
@@ -218,7 +218,7 @@ describe('CommentForm', () => {
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Hello' } })
 
-    expect(screen.getByRole('button', { name: /submit/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /post comment/i })).toBeDisabled()
   })
 
   /**
@@ -247,7 +247,9 @@ describe('CommentForm', () => {
    * seeing a generic failure message.
    */
   it('shows rate limit message "Please wait 30 seconds" when error has retryAfter: 30', () => {
-    const rateLimitError = Object.assign(new Error('Rate limit exceeded'), { retryAfter: 30 })
+    const rateLimitError = Object.assign(new Error('Too many comments. Please wait 30 seconds.'), {
+      retryAfter: 30,
+    })
     vi.mocked(usePostComment).mockReturnValue(
       createMockMutation({
         isError: true,

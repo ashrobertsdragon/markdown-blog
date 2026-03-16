@@ -9,7 +9,7 @@ import { mockClerkAuth } from '../fixtures/clerk-mock'
  */
 
 test.describe('Comments - Frontend UI', () => {
-  test.skip('Post comment on published post', async ({ page }) => {
+  test('Post comment on published post', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Comment form appears below published post
@@ -66,7 +66,7 @@ test.describe('Comments - Frontend UI', () => {
     await expect(postedComment).toBeVisible()
   })
 
-  test.skip('Reply to comment with @mention', async ({ page }) => {
+  test('Reply to comment with @mention', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - "Reply" button appears below each comment
@@ -98,7 +98,7 @@ test.describe('Comments - Frontend UI', () => {
     await expect(postedReply).toBeVisible()
   })
 
-  test.skip('Comment moderation controls', async ({ page }) => {
+  test('Comment moderation controls', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Admin views post: delete button on each comment
@@ -126,7 +126,7 @@ test.describe('Comments - Frontend UI', () => {
     await expect(confirmationModal).not.toBeVisible()
   })
 
-  test.skip('Rate limit feedback', async ({ page }) => {
+  test('Rate limit feedback', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Exceeding rate limit shows error: "Too many comments. Please wait X seconds."
@@ -162,7 +162,7 @@ test.describe('Comments - Frontend UI', () => {
     await expect(errorMessage).toBeVisible()
   })
 
-  test.skip('Real-time comment updates', async ({ page }) => {
+  test('Real-time comment updates', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - New comments appear within 2 seconds (polling OR websocket)
@@ -188,7 +188,7 @@ test.describe('Comments - Frontend UI', () => {
     }
   })
 
-  test.skip('Comment thread tracking with @mentions', async ({ page }) => {
+  test('Comment thread tracking with @mentions', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Comment with parent_id visually indented OR prefixed "Reply to @username"
@@ -209,7 +209,7 @@ test.describe('Comments - Frontend UI', () => {
     }
   })
 
-  test.skip('Spam prevention feedback', async ({ page }) => {
+  test('Spam prevention feedback', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Comment fails spam check: queued for moderation (not published)

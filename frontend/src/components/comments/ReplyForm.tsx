@@ -13,8 +13,9 @@ const MAX_LENGTH = 5000
 /**
  * Form for replying to an existing comment.
  *
- * Pre-fills the mention with the parent comment author and follows
- * the same validation patterns as CommentForm (character limits,
+ * Pre-fills the mention with @username derived from the parent comment's
+ * author field, falling back to @user{id} when no username is available.
+ * Follows the same validation patterns as CommentForm (character limits,
  * rate limiting, error handling).
  */
 export function ReplyForm({ parentComment, postSlug, onCancel }: ReplyFormProps) {
@@ -23,6 +24,7 @@ export function ReplyForm({ parentComment, postSlug, onCancel }: ReplyFormProps)
   const [charCount, setCharCount] = useState(0)
 
   const parentMention = `@comment${parentComment.id} `
+
   const isDisabled =
     charCount === 0 || charCount + parentMention.length > MAX_LENGTH || mutation.isPending
 
@@ -72,7 +74,7 @@ export function ReplyForm({ parentComment, postSlug, onCancel }: ReplyFormProps)
           disabled={isDisabled}
           className="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
         >
-          Reply
+          Post Reply
         </button>
         <button
           type="button"

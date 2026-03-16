@@ -18,6 +18,7 @@ from backend.infrastructure.persistence.filesystem_draft_repository import (
     FileSystemDraftRepository,
 )
 from backend.infrastructure.persistence.models import (
+    CommentModel,
     Post,
     PostRevisionModel,
     User,
@@ -49,12 +50,12 @@ def _get_draft_repo() -> FileSystemDraftRepository:
 
 @test_bp.route("/seed", methods=["POST"])
 def seed() -> tuple[Response, int]:
-    """Create test users, posts, and draft files for acceptance tests.
+    """Create test users, posts, comments, and draft files for acceptance tests.
 
     Drops and recreates all tables on every call to guarantee a clean
     state regardless of prior test run outcome. Creates two users
-    (author + admin), DB post records, and matching filesystem draft
-    files with known slugs that post-management tests expect.
+    (author + admin), DB post records, matching filesystem draft files,
+    and seeded comments on test-post for comment acceptance tests.
 
     Returns:
         201 with seeded entity counts on success.
@@ -95,7 +96,7 @@ def seed() -> tuple[Response, int]:
         session.flush()
 
         posts_specs = [
-            ("test-post", "Test Post", "<h1>Initial Content</h1>", False),
+            ("test-post", "Test Post", "<h1>Initial Content</h1>", True),
             ("publish-me", "Publish Me", "<p>Draft content</p>", False),
             ("delete-me", "Delete Me", "<p>To be deleted</p>", False),
             ("draft-1", "Draft 1", "", False),
@@ -159,6 +160,32 @@ def seed() -> tuple[Response, int]:
             for rev in revisions:
                 session.add(rev)
 
+            seed_comment = CommentModel(
+                post_id=test_post.id,
+                author_id=author.id,
+                parent_id=None,
+                text="A seeded comment for acceptance tests",
+                created_at=datetime(2026, 3, 1, 10, 0, 0, tzinfo=UTC),
+                updated_at=datetime(2026, 3, 1, 10, 0, 0, tzinfo=UTC),
+                is_deleted=False,
+                is_pending_moderation=False,
+            )
+            session.add(seed_comment)
+            session.flush()
+            assert seed_comment.id is not None
+
+            seed_reply = CommentModel(
+                post_id=test_post.id,
+                author_id=author.id,
+                parent_id=seed_comment.id,
+                text="@comment1 A seeded reply for acceptance tests",
+                created_at=datetime(2026, 3, 1, 10, 5, 0, tzinfo=UTC),
+                updated_at=datetime(2026, 3, 1, 10, 5, 0, tzinfo=UTC),
+                is_deleted=False,
+                is_pending_moderation=False,
+            )
+            session.add(seed_reply)
+
         session.commit()
         users_count = len(session.exec(select(User)).all())
         posts_count = len(session.exec(select(Post)).all())
@@ -166,7 +193,7 @@ def seed() -> tuple[Response, int]:
 
     draft_repo = _get_draft_repo()
     draft_specs = [
-        ("test-post", "Test Post", "# Initial Content\n\nTest content.", False),
+        ("test-post", "Test Post", "# Initial Content\n\nTest content.", True),
         ("publish-me", "Publish Me", "# Publish Me\n\nDraft content.", False),
         ("delete-me", "Delete Me", "# Delete Me\n\nTo be deleted.", False),
         ("draft-1", "Draft 1", "# Draft 1\n\nDraft content.", False),

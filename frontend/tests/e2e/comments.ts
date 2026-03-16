@@ -289,10 +289,6 @@ test.describe('Comments E2E Tests', () => {
     })
 
     test('4.2: Admin can delete a comment (soft delete)', async ({ page }) => {
-      page.on('dialog', async dialog => {
-        await dialog.accept()
-      })
-
       await page.goto(POST_URL)
       await expect(page.locator('textarea[name="text"]')).toBeVisible()
 
@@ -307,11 +303,16 @@ test.describe('Comments E2E Tests', () => {
       await waitForAuthToLoad(page)
       await expect(page.locator('section[aria-label="Comments"]')).toBeVisible()
 
+      await page.locator('button:has-text("Delete")').first().click()
+
+      const confirmDialog = page.locator('[role="alertdialog"]')
+      await expect(confirmDialog).toBeVisible()
+
       const deleteResponsePromise = page.waitForResponse(
         response =>
           response.url().includes('/comments/') && response.request().method() === 'DELETE'
       )
-      await page.locator('button:has-text("Delete")').first().click()
+      await confirmDialog.locator('button:has-text("Delete")').click()
       await deleteResponsePromise
 
       await expect(
@@ -322,10 +323,6 @@ test.describe('Comments E2E Tests', () => {
     test('4.4: Non-admin users do not see [deleted] placeholder after soft delete', async ({
       page,
     }) => {
-      page.on('dialog', async dialog => {
-        await dialog.accept()
-      })
-
       await page.goto(POST_URL)
       await expect(page.locator('textarea[name="text"]')).toBeVisible()
 
@@ -339,11 +336,16 @@ test.describe('Comments E2E Tests', () => {
       await page.reload()
       await waitForAuthToLoad(page)
 
+      await page.locator('button:has-text("Delete")').first().click()
+
+      const confirmDialog = page.locator('[role="alertdialog"]')
+      await expect(confirmDialog).toBeVisible()
+
       const deleteResponsePromise = page.waitForResponse(
         response =>
           response.url().includes('/comments/') && response.request().method() === 'DELETE'
       )
-      await page.locator('button:has-text("Delete")').first().click()
+      await confirmDialog.locator('button:has-text("Delete")').click()
       await deleteResponsePromise
 
       await mockClerkUnauthenticated(page)
