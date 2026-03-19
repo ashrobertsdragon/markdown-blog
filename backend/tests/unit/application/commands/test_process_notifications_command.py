@@ -57,8 +57,6 @@ def test_accepts_zero_max_retries() -> None:
 
 
 def test_command_is_frozen() -> None:
-    """Frozen dataclass prevents attribute mutation."""
-    cmd = ProcessNotificationsCommand()
+    """ProcessNotificationsCommand is declared as a frozen dataclass."""
 
-    with pytest.raises((AttributeError, TypeError)):
-        setattr(cmd, "batch_limit", 999)
+    assert getattr(ProcessNotificationsCommand, "__dataclass_params__").frozen

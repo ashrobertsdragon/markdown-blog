@@ -125,8 +125,6 @@ def test_rejects_whitespace_only_event_type() -> None:
 
 
 def test_command_is_frozen() -> None:
-    """Frozen dataclass prevents attribute mutation."""
-    cmd = _make()
+    """CreateNotificationCommand is declared as a frozen dataclass."""
 
-    with pytest.raises((AttributeError, TypeError)):
-        setattr(cmd, "recipient_id", 99)
+    assert getattr(CreateNotificationCommand, "__dataclass_params__").frozen
