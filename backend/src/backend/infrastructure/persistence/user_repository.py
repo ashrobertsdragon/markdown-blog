@@ -103,6 +103,17 @@ class UserRepository:
 
         return None
 
+    def get_by_id(self, user_id: int) -> DomainUser | None:
+        """Alias for find_by_id; find user by primary key.
+
+        Args:
+            user_id: Database primary key of the user.
+
+        Returns:
+            DomainUser aggregate if found, None otherwise.
+        """
+        return self.find_by_id(user_id)
+
     def save(self, user: DomainUser) -> DomainUser:
         """Save or update user in database.
 

@@ -25,10 +25,12 @@ class EventType(StrEnum):
     Attributes:
         COMMENT_POSTED: A new top-level comment was posted on a post.
         REPLY_RECEIVED: A reply was posted to an existing comment.
+        MENTION: A user was mentioned in a comment or post.
     """
 
     COMMENT_POSTED = "comment_posted"
     REPLY_RECEIVED = "reply_received"
+    MENTION = "mention"
 
 
 @dataclass(frozen=False)

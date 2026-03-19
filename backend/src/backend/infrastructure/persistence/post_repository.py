@@ -198,6 +198,17 @@ class PostRepository:
 
         return None
 
+    def get_by_id(self, post_id: int) -> DomainPost | None:
+        """Alias for find_by_id; find post by primary key.
+
+        Args:
+            post_id: Database primary key of the post.
+
+        Returns:
+            DomainPost aggregate if found, None otherwise.
+        """
+        return self.find_by_id(post_id)
+
     def delete(self, post_id: int) -> bool:
         """Remove post from database.
 

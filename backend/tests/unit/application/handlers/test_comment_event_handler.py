@@ -7,6 +7,9 @@ Covers notify_comment_posted and notify_reply_received:
 - No-ops when sender_id == parent_author_id (self-reply)
 - Logs and swallows exceptions from the notification handler
 - Never raises even when the underlying handler raises
+- Skips queue when reply notification preference is disabled
+- Skips queue when mention notification preference is disabled
+- Queues when reply notification preference is enabled
 """
 
 import logging
@@ -226,3 +229,95 @@ class TestNotifyReplyReceived:
             for r in caplog.records
             if "Failed to queue reply_received notification" in r.message
         )
+
+
+class TestNotifyCommentPostedWithPreferences:
+    """Tests for notify_comment_posted with preference-aware signatures."""
+
+    def test_skips_queue_when_reply_notification_disabled(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """queue_comment_posted not called when should_notify_reply is False."""
+        comment = _make_comment(comment_id=1, post_id=10, author_id=5)
+        prefs = MagicMock()
+        prefs.should_notify_reply.return_value = False
+        preferences_repo = MagicMock()
+        preferences_repo.get_preferences.return_value = prefs
+
+        notify_comment_posted(
+            comment=comment,
+            post_author_id=99,
+            sender_id=5,
+            handler=mock_handler,
+            preferences_repo=preferences_repo,
+        )
+
+        mock_handler.queue_comment_posted.assert_not_called()
+
+    def test_queues_when_reply_notification_enabled(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """queue_comment_posted is called when should_notify_reply is True."""
+        comment = _make_comment(comment_id=1, post_id=10, author_id=5)
+        prefs = MagicMock()
+        prefs.should_notify_reply.return_value = True
+        preferences_repo = MagicMock()
+        preferences_repo.get_preferences.return_value = prefs
+
+        notify_comment_posted(
+            comment=comment,
+            post_author_id=99,
+            sender_id=5,
+            handler=mock_handler,
+            preferences_repo=preferences_repo,
+        )
+
+        mock_handler.queue_comment_posted.assert_called_once()
+
+
+class TestNotifyReplyReceivedWithPreferences:
+    """Tests for notify_reply_received with preference-aware signatures."""
+
+    def test_skips_queue_when_reply_notification_disabled(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """queue_reply_received not called when should_notify_reply is False."""
+        comment = _make_comment(
+            comment_id=2, post_id=10, author_id=5, parent_id=1
+        )
+        prefs = MagicMock()
+        prefs.should_notify_reply.return_value = False
+        preferences_repo = MagicMock()
+        preferences_repo.get_preferences.return_value = prefs
+
+        notify_reply_received(
+            comment=comment,
+            parent_author_id=77,
+            sender_id=5,
+            handler=mock_handler,
+            preferences_repo=preferences_repo,
+        )
+
+        mock_handler.queue_reply_received.assert_not_called()
+
+    def test_queues_when_reply_notification_enabled(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """queue_reply_received is called when should_notify_reply is True."""
+        comment = _make_comment(
+            comment_id=2, post_id=10, author_id=5, parent_id=1
+        )
+        prefs = MagicMock()
+        prefs.should_notify_reply.return_value = True
+        preferences_repo = MagicMock()
+        preferences_repo.get_preferences.return_value = prefs
+
+        notify_reply_received(
+            comment=comment,
+            parent_author_id=77,
+            sender_id=5,
+            handler=mock_handler,
+            preferences_repo=preferences_repo,
+        )
+
+        mock_handler.queue_reply_received.assert_called_once()

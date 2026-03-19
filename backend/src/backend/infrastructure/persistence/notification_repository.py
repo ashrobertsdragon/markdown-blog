@@ -165,6 +165,21 @@ class NotificationRepository:
 
         raise RuntimeError("Failed to obtain database session")
 
+    def list_for_user(
+        self, user_id: int, skip: int = 0, limit: int = 50
+    ) -> list[Notification]:
+        """Alias for get_history; returns notification history for a recipient.
+
+        Args:
+            user_id: Primary key of the recipient User.
+            skip: Number of notifications to skip for pagination.
+            limit: Maximum number of notifications to return.
+
+        Returns:
+            List of Notification aggregates ordered newest-first.
+        """
+        return self.get_history(user_id, skip=skip, limit=limit)
+
     def mark_for_retry(
         self, notification_id: int, next_retry_at: datetime
     ) -> None:
