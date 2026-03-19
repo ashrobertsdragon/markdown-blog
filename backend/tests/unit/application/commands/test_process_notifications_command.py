@@ -61,4 +61,4 @@ def test_command_is_frozen() -> None:
     cmd = ProcessNotificationsCommand()
 
     with pytest.raises((AttributeError, TypeError)):
-        cmd.batch_limit = 999
+        setattr(cmd, "batch_limit", 999)

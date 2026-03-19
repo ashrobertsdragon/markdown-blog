@@ -9,6 +9,7 @@ Covers:
 """
 
 import pytest
+
 from backend.application.commands.create_notification_command import (
     CreateNotificationCommand,
 )
@@ -128,4 +129,4 @@ def test_command_is_frozen() -> None:
     cmd = _make()
 
     with pytest.raises((AttributeError, TypeError)):
-        cmd.recipient_id = 99
+        setattr(cmd, "recipient_id", 99)
