@@ -23,6 +23,7 @@ dependencies = [
 [project.scripts]
 create-schema = "scripts.create_schema:main"
 dev_flask = "scripts.run_dev_server:main"
+process-notifications = "scripts.process_notifications:main"
 
 [dependency-groups]
 dev = [
@@ -85,4 +86,3 @@ root = ["./src", "."]
 [tool.uv]
 link-mode = "copy"
 required-version = ">=0.9.5"
-
