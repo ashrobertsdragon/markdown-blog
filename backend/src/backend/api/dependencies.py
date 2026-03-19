@@ -14,6 +14,7 @@ from backend.domain.protocols.services import (
 from backend.domain.protocols.services import (
     MarkdownService as MarkdownServiceProtocol,
 )
+from backend.infrastructure.email.email_sender import EmailSender
 from backend.infrastructure.email.resend_email_service import ResendEmailService
 from backend.infrastructure.markdown.markdown_rendering_service import (
     MarkdownRenderingService,
@@ -41,6 +42,7 @@ _github_settings: GitHubSettings | None = None
 _resend_settings: ResendSettings | None = None
 _github_service: GitHubSyncService | MockGitHubSyncService | None = None
 _resend_email_service: ResendEmailService | None = None
+_email_sender: EmailSender | None = None
 
 
 def get_filesystem_settings() -> FileSystemSettings:
@@ -136,3 +138,23 @@ def get_resend_email_service() -> ResendEmailService:
         max_retries=settings.RESEND_MAX_RETRIES,
     )
     return _resend_email_service
+
+
+def get_email_sender() -> EmailSender:
+    """Get EmailSender singleton instance.
+
+    Constructs the sender from ResendSettings on first call and caches it
+    for subsequent calls. The sender is stateless and safe to share across
+    requests.
+    """
+    global _email_sender
+    if _email_sender is not None:
+        return _email_sender
+    settings = get_resend_settings()
+    _email_sender = EmailSender(
+        api_key=settings.RESEND_API_KEY,
+        domain=settings.RESEND_DOMAIN,
+        timeout=settings.RESEND_REQUEST_TIMEOUT,
+        max_retries=settings.RESEND_MAX_RETRIES,
+    )
+    return _email_sender
