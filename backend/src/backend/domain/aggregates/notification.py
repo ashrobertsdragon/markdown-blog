@@ -66,6 +66,7 @@ class Notification:
     created_at: datetime
     sent_at: datetime | None
     error_message: str | None
+    next_retry_at: datetime | None
 
     def __setattr__(self, name: str, value: object) -> None:
         """Prevent modification of created_at after initialisation.
@@ -125,6 +126,7 @@ class Notification:
             created_at=datetime.now(UTC),
             sent_at=None,
             error_message=None,
+            next_retry_at=None,
         )
 
     def mark_sent(self) -> None:
