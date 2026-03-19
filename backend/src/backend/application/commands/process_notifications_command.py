@@ -19,10 +19,13 @@ class ProcessNotificationsCommand:
             run. Must be greater than zero. Defaults to 100.
         max_retries: Maximum delivery attempts before marking a notification
             as permanently failed. Zero means no retries. Defaults to 3.
+        site_base_url: Base URL prepended to post paths in email bodies.
+            Defaults to empty string (relative paths used as fallback).
     """
 
     batch_limit: int = 100
     max_retries: int = 3
+    site_base_url: str = ""
 
     def __post_init__(self) -> None:
         """Validate command parameters.

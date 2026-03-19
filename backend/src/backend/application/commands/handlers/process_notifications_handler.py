@@ -167,6 +167,7 @@ def handle_process_notifications(
         Summary dict with keys 'sent', 'failed', and 'total'.
     """
     notifications = notification_repo.get_pending(command.batch_limit)
+    logger.info("Fetched %d pending notifications", len(notifications))
     sent = 0
     failed = 0
 
@@ -202,7 +203,7 @@ def handle_process_notifications(
             sender_name = getattr(sender, "name", None) or "A blog user"
             post_title = post.title
             comment_text = getattr(comment, "text", "") or ""
-            post_url = f"/posts/{notification.post_id}"
+            post_url = f"{command.site_base_url}/posts/{notification.post_id}"
             unsubscribe_url = _build_unsubscribe_url(
                 notification.recipient_id, recipient_email
             )
@@ -247,5 +248,6 @@ def handle_process_notifications(
                 "Unhandled error processing notification %s",
                 getattr(notification, "id", None),
             )
+            failed += 1
 
     return {"sent": sent, "failed": failed, "total": sent + failed}

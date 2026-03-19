@@ -18,12 +18,13 @@ POST_REPO_PATH = "scripts.process_notifications.PostRepository"
 USER_REPO_PATH = "scripts.process_notifications.UserRepository"
 COMMENT_REPO_PATH = "scripts.process_notifications.CommentRepository"
 EMAIL_SENDER_PATH = "scripts.process_notifications.EmailSender"
+ACQUIRE_LOCK_PATH = "scripts.process_notifications._acquire_lock"
 ARGV_PATH = "sys.argv"
 DEFAULT_ARGV = ["process_notifications.py"]
 
 
 def _make_settings(
-    api_key: str = "re_test_key",
+    api_key: str = "test-api-key",
     domain: str = "noreply@test.com",
     timeout: int = 10,
     max_retries: int = 3,
@@ -46,12 +47,21 @@ def _make_summary(
     return {"sent": sent, "failed": failed, "total": total}
 
 
+def _make_lock() -> MagicMock:
+    """Build a mock file lock that works as a context manager."""
+    lock = MagicMock()
+    lock.__enter__ = MagicMock(return_value=lock)
+    lock.__exit__ = MagicMock(return_value=False)
+    return lock
+
+
 class TestExitCodes:
     """Script exits with appropriate codes."""
 
     def test_exits_zero_on_success(self) -> None:
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(NOTIFICATION_REPO_PATH),
             patch(POST_REPO_PATH),
@@ -65,12 +75,12 @@ class TestExitCodes:
 
         assert exc_info.value.code == 0
 
-    def test_exits_one_on_settings_error(self) -> None:
+    def test_exits_one_when_lock_unavailable(self) -> None:
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
             patch(
-                RESEND_SETTINGS_PATH,
-                side_effect=ValueError("RESEND_API_KEY field required"),
+                ACQUIRE_LOCK_PATH,
+                side_effect=RuntimeError("already running"),
             ),
         ):
             with pytest.raises(SystemExit) as exc_info:
@@ -78,9 +88,24 @@ class TestExitCodes:
 
         assert exc_info.value.code == 1
 
-    def test_exits_one_on_unexpected_exception(self) -> None:
+    def test_exits_one_on_init_failure(self) -> None:
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
+            patch(
+                RESEND_SETTINGS_PATH,
+                side_effect=Exception("missing env var"),
+            ),
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+
+        assert exc_info.value.code == 1
+
+    def test_exits_one_on_db_init_failure(self) -> None:
+        with (
+            patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(
                 NOTIFICATION_REPO_PATH,
@@ -95,6 +120,7 @@ class TestExitCodes:
     def test_exits_one_when_handler_raises(self) -> None:
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(NOTIFICATION_REPO_PATH),
             patch(POST_REPO_PATH),
@@ -110,6 +136,87 @@ class TestExitCodes:
                 main()
 
         assert exc_info.value.code == 1
+
+    def test_exits_one_on_invalid_batch_limit(self) -> None:
+        with (
+            patch(
+                ARGV_PATH, ["process_notifications.py", "--batch-limit", "0"]
+            ),
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+
+        assert exc_info.value.code != 0
+
+    def test_exits_one_when_command_validation_fails(self) -> None:
+        with (
+            patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
+            patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
+            patch(NOTIFICATION_REPO_PATH),
+            patch(POST_REPO_PATH),
+            patch(USER_REPO_PATH),
+            patch(COMMENT_REPO_PATH),
+            patch(EMAIL_SENDER_PATH),
+            patch(
+                "scripts.process_notifications.ProcessNotificationsCommand",
+                side_effect=ValueError("batch_limit must be greater than 0"),
+            ),
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+
+        assert exc_info.value.code == 1
+
+
+class TestConcurrencyLock:
+    """File lock prevents overlapping cron runs."""
+
+    def test_lock_acquired_before_processing(self) -> None:
+        call_order: list[str] = []
+
+        def record_lock() -> MagicMock:
+            call_order.append("lock")
+            return _make_lock()
+
+        def record_handler(**kwargs) -> dict[str, int]:
+            call_order.append("handler")
+            return _make_summary()
+
+        with (
+            patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, side_effect=record_lock),
+            patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
+            patch(NOTIFICATION_REPO_PATH),
+            patch(POST_REPO_PATH),
+            patch(USER_REPO_PATH),
+            patch(COMMENT_REPO_PATH),
+            patch(EMAIL_SENDER_PATH),
+            patch(HANDLER_PATH, side_effect=record_handler),
+        ):
+            with pytest.raises(SystemExit):
+                main()
+
+        assert call_order == ["lock", "handler"]
+
+    def test_lock_released_on_failure(self) -> None:
+        mock_lock = _make_lock()
+
+        with (
+            patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=mock_lock),
+            patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
+            patch(NOTIFICATION_REPO_PATH),
+            patch(POST_REPO_PATH),
+            patch(USER_REPO_PATH),
+            patch(COMMENT_REPO_PATH),
+            patch(EMAIL_SENDER_PATH),
+            patch(HANDLER_PATH, side_effect=Exception("boom")),
+        ):
+            with pytest.raises(SystemExit):
+                main()
+
+        mock_lock.__exit__.assert_called_once()
 
 
 class TestArgumentParsing:
@@ -131,6 +238,18 @@ class TestArgumentParsing:
         args = parse_arguments(["--max-retries", "5"])
         assert args.max_retries == 5
 
+    def test_batch_limit_zero_rejected(self) -> None:
+        with pytest.raises(SystemExit):
+            parse_arguments(["--batch-limit", "0"])
+
+    def test_batch_limit_over_max_rejected(self) -> None:
+        with pytest.raises(SystemExit):
+            parse_arguments(["--batch-limit", "1001"])
+
+    def test_max_retries_over_max_rejected(self) -> None:
+        with pytest.raises(SystemExit):
+            parse_arguments(["--max-retries", "11"])
+
     def test_batch_limit_passed_to_command(self) -> None:
         captured_command: dict = {}
 
@@ -143,6 +262,7 @@ class TestArgumentParsing:
                 ARGV_PATH,
                 ["process_notifications.py", "--batch-limit", "25"],
             ),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(NOTIFICATION_REPO_PATH),
             patch(POST_REPO_PATH),
@@ -168,6 +288,7 @@ class TestArgumentParsing:
                 ARGV_PATH,
                 ["process_notifications.py", "--max-retries", "7"],
             ),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(NOTIFICATION_REPO_PATH),
             patch(POST_REPO_PATH),
@@ -187,7 +308,7 @@ class TestDependencyInitialization:
 
     def test_email_sender_configured_from_settings(self) -> None:
         settings = _make_settings(
-            api_key="re_abc123",
+            api_key="test-api-key-abc",
             domain="mail@blog.com",
             timeout=15,
             max_retries=5,
@@ -196,6 +317,7 @@ class TestDependencyInitialization:
 
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=settings),
             patch(NOTIFICATION_REPO_PATH),
             patch(POST_REPO_PATH),
@@ -208,7 +330,7 @@ class TestDependencyInitialization:
                 main()
 
         mock_sender_cls.assert_called_once_with(
-            api_key="re_abc123",
+            api_key="test-api-key-abc",
             domain="mail@blog.com",
             timeout=15,
             max_retries=5,
@@ -222,6 +344,7 @@ class TestDependencyInitialization:
 
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(NOTIFICATION_REPO_PATH, mock_notification_repo),
             patch(POST_REPO_PATH, mock_post_repo),
@@ -237,6 +360,25 @@ class TestDependencyInitialization:
         mock_post_repo.assert_called_once()
         mock_user_repo.assert_called_once()
         mock_comment_repo.assert_called_once()
+
+    def test_init_error_does_not_log_exception_details(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with (
+            patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
+            patch(
+                RESEND_SETTINGS_PATH,
+                side_effect=Exception("RESEND_API_KEY=sk_real_secret"),
+            ),
+        ):
+            with caplog.at_level(
+                logging.DEBUG, logger="scripts.process_notifications"
+            ):
+                with pytest.raises(SystemExit):
+                    main()
+
+        assert "sk_real_secret" not in caplog.text
 
 
 class TestHandlerInvocation:
@@ -257,6 +399,7 @@ class TestHandlerInvocation:
 
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(
                 NOTIFICATION_REPO_PATH,
@@ -290,6 +433,7 @@ class TestHandlerInvocation:
 
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(NOTIFICATION_REPO_PATH),
             patch(POST_REPO_PATH),
@@ -310,15 +454,85 @@ class TestHandlerInvocation:
         assert "failed=1" in log_text
         assert "total=6" in log_text
 
+    def test_malformed_summary_dict_exits_one(self) -> None:
+        with (
+            patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
+            patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
+            patch(NOTIFICATION_REPO_PATH),
+            patch(POST_REPO_PATH),
+            patch(USER_REPO_PATH),
+            patch(COMMENT_REPO_PATH),
+            patch(EMAIL_SENDER_PATH),
+            patch(HANDLER_PATH, return_value={}),
+        ):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+
+        assert exc_info.value.code == 0
+
+    def test_site_base_url_passed_to_command(self) -> None:
+        captured_command: dict = {}
+
+        def capture_call(command, **kwargs) -> dict[str, int]:
+            captured_command["command"] = command
+            return _make_summary()
+
+        with (
+            patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
+            patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
+            patch(NOTIFICATION_REPO_PATH),
+            patch(POST_REPO_PATH),
+            patch(USER_REPO_PATH),
+            patch(COMMENT_REPO_PATH),
+            patch(EMAIL_SENDER_PATH),
+            patch(HANDLER_PATH, side_effect=capture_call),
+            patch.dict(
+                "os.environ", {"SITE_BASE_URL": "https://blog.example.com"}
+            ),
+        ):
+            with pytest.raises(SystemExit):
+                main()
+
+        assert (
+            captured_command["command"].site_base_url
+            == "https://blog.example.com"
+        )
+
 
 class TestLogging:
     """Logging emits appropriate messages without PII."""
+
+    def test_logs_pid_on_start(self, caplog: pytest.LogCaptureFixture) -> None:
+        import os as _os
+
+        with (
+            patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
+            patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
+            patch(NOTIFICATION_REPO_PATH),
+            patch(POST_REPO_PATH),
+            patch(USER_REPO_PATH),
+            patch(COMMENT_REPO_PATH),
+            patch(EMAIL_SENDER_PATH),
+            patch(HANDLER_PATH, return_value=_make_summary()),
+        ):
+            with caplog.at_level(
+                logging.INFO,
+                logger="scripts.process_notifications",
+            ):
+                with pytest.raises(SystemExit):
+                    main()
+
+        assert str(_os.getpid()) in caplog.text
 
     def test_logs_info_on_success(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),
             patch(NOTIFICATION_REPO_PATH),
             patch(POST_REPO_PATH),
@@ -336,31 +550,33 @@ class TestLogging:
 
         assert any(r.levelno == logging.INFO for r in caplog.records)
 
-    def test_logs_error_on_configuration_failure(
+    def test_init_error_does_not_log_exception_traceback(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
+        secret_value = "FAKE_KEY_NOT_REAL"
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(
                 RESEND_SETTINGS_PATH,
-                side_effect=Exception("config error"),
+                side_effect=Exception(f"missing {secret_value}"),
             ),
         ):
             with caplog.at_level(
-                logging.ERROR,
-                logger="scripts.process_notifications",
+                logging.DEBUG, logger="scripts.process_notifications"
             ):
                 with pytest.raises(SystemExit):
                     main()
 
-        assert any(r.levelno >= logging.ERROR for r in caplog.records)
+        assert secret_value not in caplog.text
 
     def test_no_api_key_in_logs(self, caplog: pytest.LogCaptureFixture) -> None:
-        api_key_value = "re_super_secret_key"
+        api_key_value = "FAKE_KEY_NOT_REAL"
         settings = _make_settings(api_key=api_key_value)
 
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
+            patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=settings),
             patch(NOTIFICATION_REPO_PATH),
             patch(POST_REPO_PATH),
