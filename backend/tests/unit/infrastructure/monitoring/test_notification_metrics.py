@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
+
 from backend.infrastructure.monitoring.notification_metrics import (
     NotificationMetrics,
 )

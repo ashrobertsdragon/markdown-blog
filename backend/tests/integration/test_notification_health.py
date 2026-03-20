@@ -9,14 +9,14 @@ from collections.abc import Generator
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from backend.infrastructure.monitoring.notification_metrics import (
-    NotificationMetrics,
-)
 from sqlmodel import Session, SQLModel, create_engine
 
 from backend.domain.aggregates.notification import (
     EventType,
     NotificationStatus,
+)
+from backend.infrastructure.monitoring.notification_metrics import (
+    NotificationMetrics,
 )
 from backend.infrastructure.persistence.models import (
     CommentModel,
@@ -140,16 +140,16 @@ class TestHealthCheckWithDatabase:
         """Sent count in health summary equals the number of SENT rows."""
         recipient_id, sender_id = _seed_users(session)
         post_id = _seed_post(session, recipient_id)
-        comment_id = _seed_comment(session, post_id, recipient_id)
         now = datetime.now(UTC)
 
         for _ in range(3):
+            cid = _seed_comment(session, post_id, recipient_id)
             _insert_notification(
                 session,
                 recipient_id=recipient_id,
                 sender_id=sender_id,
                 post_id=post_id,
-                comment_id=comment_id,
+                comment_id=cid,
                 status=NotificationStatus.SENT,
                 created_at=now,
             )
@@ -163,16 +163,16 @@ class TestHealthCheckWithDatabase:
         """Failed count in health summary equals the number of FAILED rows."""
         recipient_id, sender_id = _seed_users(session)
         post_id = _seed_post(session, recipient_id)
-        comment_id = _seed_comment(session, post_id, recipient_id)
         now = datetime.now(UTC)
 
         for _ in range(2):
+            cid = _seed_comment(session, post_id, recipient_id)
             _insert_notification(
                 session,
                 recipient_id=recipient_id,
                 sender_id=sender_id,
                 post_id=post_id,
-                comment_id=comment_id,
+                comment_id=cid,
                 status=NotificationStatus.FAILED,
                 created_at=now,
             )
@@ -208,26 +208,27 @@ class TestHealthCheckWithDatabase:
         """Failure rate is computed from actual sent and failed row counts."""
         recipient_id, sender_id = _seed_users(session)
         post_id = _seed_post(session, recipient_id)
-        comment_id = _seed_comment(session, post_id, recipient_id)
         now = datetime.now(UTC)
 
         for _ in range(8):
+            cid = _seed_comment(session, post_id, recipient_id)
             _insert_notification(
                 session,
                 recipient_id=recipient_id,
                 sender_id=sender_id,
                 post_id=post_id,
-                comment_id=comment_id,
+                comment_id=cid,
                 status=NotificationStatus.SENT,
                 created_at=now,
             )
         for _ in range(2):
+            cid = _seed_comment(session, post_id, recipient_id)
             _insert_notification(
                 session,
                 recipient_id=recipient_id,
                 sender_id=sender_id,
                 post_id=post_id,
-                comment_id=comment_id,
+                comment_id=cid,
                 status=NotificationStatus.FAILED,
                 created_at=now,
             )
@@ -285,16 +286,16 @@ class TestEdgeCases:
         """Failure rate is 0.0 when every notification is still PENDING."""
         recipient_id, sender_id = _seed_users(session)
         post_id = _seed_post(session, recipient_id)
-        comment_id = _seed_comment(session, post_id, recipient_id)
         now = datetime.now(UTC)
 
         for _ in range(5):
+            cid = _seed_comment(session, post_id, recipient_id)
             _insert_notification(
                 session,
                 recipient_id=recipient_id,
                 sender_id=sender_id,
                 post_id=post_id,
-                comment_id=comment_id,
+                comment_id=cid,
                 status=NotificationStatus.PENDING,
                 created_at=now,
             )
@@ -308,16 +309,16 @@ class TestEdgeCases:
         """Failure rate is 100.0 when all terminal notifications are FAILED."""
         recipient_id, sender_id = _seed_users(session)
         post_id = _seed_post(session, recipient_id)
-        comment_id = _seed_comment(session, post_id, recipient_id)
         now = datetime.now(UTC)
 
         for _ in range(4):
+            cid = _seed_comment(session, post_id, recipient_id)
             _insert_notification(
                 session,
                 recipient_id=recipient_id,
                 sender_id=sender_id,
                 post_id=post_id,
-                comment_id=comment_id,
+                comment_id=cid,
                 status=NotificationStatus.FAILED,
                 created_at=now,
             )
@@ -331,7 +332,6 @@ class TestEdgeCases:
         """Sent, failed, and pending counts are independent of each other."""
         recipient_id, sender_id = _seed_users(session)
         post_id = _seed_post(session, recipient_id)
-        comment_id = _seed_comment(session, post_id, recipient_id)
         now = datetime.now(UTC)
 
         _insert_notification(
@@ -339,7 +339,7 @@ class TestEdgeCases:
             recipient_id=recipient_id,
             sender_id=sender_id,
             post_id=post_id,
-            comment_id=comment_id,
+            comment_id=_seed_comment(session, post_id, recipient_id),
             status=NotificationStatus.SENT,
             created_at=now,
         )
@@ -348,7 +348,7 @@ class TestEdgeCases:
             recipient_id=recipient_id,
             sender_id=sender_id,
             post_id=post_id,
-            comment_id=comment_id,
+            comment_id=_seed_comment(session, post_id, recipient_id),
             status=NotificationStatus.FAILED,
             created_at=now,
         )
@@ -357,7 +357,7 @@ class TestEdgeCases:
             recipient_id=recipient_id,
             sender_id=sender_id,
             post_id=post_id,
-            comment_id=comment_id,
+            comment_id=_seed_comment(session, post_id, recipient_id),
             status=NotificationStatus.PENDING,
             created_at=now,
         )

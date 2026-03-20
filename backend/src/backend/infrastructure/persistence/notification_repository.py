@@ -263,6 +263,24 @@ class NotificationRepository:
 
         raise RuntimeError("Failed to obtain database session")
 
+    def count_sent(self) -> int:
+        """Return the total count of SENT notifications.
+
+        Returns:
+            Integer count of rows with status=SENT.
+        """
+        statement = select(func.count()).where(
+            NotificationModel.status == NotificationStatus.SENT
+        )
+
+        if self._session:
+            return self._session.exec(statement).one()
+
+        for session in get_db():
+            return session.exec(statement).one()
+
+        raise RuntimeError("Failed to obtain database session")
+
     def count_pending(self) -> int:
         """Return the total count of PENDING notifications.
 
