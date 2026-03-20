@@ -212,6 +212,52 @@ class NotificationRepository:
 
         raise RuntimeError("Failed to obtain database session")
 
+    def list_all_admin(
+        self, skip: int = 0, limit: int = 50
+    ) -> list[Notification]:
+        """Return all notifications ordered newest-first for admin views.
+
+        Args:
+            skip: Number of records to skip (default 0, must be >= 0).
+            limit: Maximum records to return (default 50, capped at 200).
+
+        Returns:
+            List of Notification aggregates ordered newest-first.
+        """
+        limit = min(max(limit, 1), 200)
+        statement = (
+            select(NotificationModel)
+            .order_by(col(NotificationModel.created_at).desc())
+            .offset(skip)
+            .limit(limit)
+        )
+
+        if self._session:
+            models = self._session.exec(statement).all()
+            return [self._to_domain(m) for m in models]
+
+        for session in get_db():
+            models = session.exec(statement).all()
+            return [self._to_domain(m) for m in models]
+
+        raise RuntimeError("Failed to obtain database session")
+
+    def count_all(self) -> int:
+        """Return the total count of all notifications.
+
+        Returns:
+            Integer count of all notification rows.
+        """
+        statement = select(func.count()).select_from(NotificationModel)
+
+        if self._session:
+            return self._session.exec(statement).one()
+
+        for session in get_db():
+            return session.exec(statement).one()
+
+        raise RuntimeError("Failed to obtain database session")
+
     def count_pending(self) -> int:
         """Return the total count of PENDING notifications.
 

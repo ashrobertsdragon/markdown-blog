@@ -20,6 +20,7 @@ from backend.api.routes import (
     auth_bp,
     comments_bp,
     health_bp,
+    notifications_bp,  # noqa: F401 - used in create_app
     posts_bp,
     revisions_bp,
     test_bp,
@@ -77,6 +78,7 @@ def create_app() -> Flask:
     app.register_blueprint(comments_bp, url_prefix="/api/posts")
     app.register_blueprint(revisions_bp, url_prefix="/api/posts")
     app.register_blueprint(admin_comments_bp, url_prefix="/api/admin")
+    app.register_blueprint(notifications_bp, url_prefix="/api")
     app.register_blueprint(test_bp, url_prefix="/api/test")
 
     @app.errorhandler(AuthenticationError)
