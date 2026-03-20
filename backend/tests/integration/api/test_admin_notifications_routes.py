@@ -227,7 +227,6 @@ class TestGetAdminNotifications:
         admin_jwt_payload: dict[str, Any],
         admin_user: User,
         sample_notification: Notification,
-        pending_notification: Notification,
     ) -> None:
         """total field reflects count_all, not just the current page size."""
         mock_notif_repo = MagicMock()

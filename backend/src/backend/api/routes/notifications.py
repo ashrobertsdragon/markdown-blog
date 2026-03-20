@@ -158,6 +158,9 @@ def list_notifications_admin() -> tuple[Response, int]:
 
     Returns:
         Tuple of (JSON response with paginated notifications, 200).
+        Note: ``total`` is fetched in a separate query from the page data
+        and may differ by rows inserted or deleted between the two calls.
+        This is acceptable for an admin monitoring view.
 
     Raises:
         AuthenticationError: Propagated from @require_auth (401).
