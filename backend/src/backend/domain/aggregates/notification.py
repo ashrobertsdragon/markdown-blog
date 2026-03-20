@@ -167,6 +167,11 @@ class Notification:
         Converts enums to their string value and datetimes to ISO 8601
         strings. None fields are preserved as None for explicit serialisation.
 
+        error_message is intentionally excluded — Resend error bodies may
+        contain the recipient email address, and serialising them risks PII
+        leakage in logs, API responses, or alert webhooks. Callers that need
+        delivery diagnostics should query the error_message field directly.
+
         Returns:
             Dictionary containing all Notification fields as primitives.
         """
@@ -181,5 +186,5 @@ class Notification:
             "attempt_count": self.attempt_count,
             "created_at": self.created_at.isoformat(),
             "sent_at": self.sent_at.isoformat() if self.sent_at else None,
-            "error_message": self.error_message,
+            "has_delivery_error": self.error_message is not None,
         }

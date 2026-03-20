@@ -220,7 +220,8 @@ def test_to_dict_serialises_correctly() -> None:
     assert "attempt_count" in result
     assert "created_at" in result
     assert "sent_at" in result
-    assert "error_message" in result
+    assert "has_delivery_error" in result
+    assert "error_message" not in result  # excluded to prevent PII leakage
 
     assert result["status"] == "pending"
     assert isinstance(result["created_at"], str)
@@ -232,3 +233,4 @@ def test_to_dict_serialises_correctly() -> None:
     assert result["post_id"] == 3
     assert result["comment_id"] == 4
     assert result["attempt_count"] == 0
+    assert result["has_delivery_error"] is False
