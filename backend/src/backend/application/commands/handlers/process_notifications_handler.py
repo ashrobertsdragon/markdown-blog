@@ -175,6 +175,7 @@ def handle_process_notifications(
         try:
             if notification.id is None:
                 logger.warning("Skipping notification with no id")
+                failed += 1
                 continue
 
             recipient = user_repo.find_by_id(notification.recipient_id)
@@ -197,6 +198,11 @@ def handle_process_notifications(
                     post is None,
                     comment is None,
                 )
+                notification.mark_failed(
+                    "Missing context: referenced entity not found"
+                )
+                notification_repo.save(notification)
+                failed += 1
                 continue
 
             recipient_email = recipient.email

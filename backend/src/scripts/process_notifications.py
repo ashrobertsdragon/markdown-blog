@@ -3,14 +3,16 @@
 Cron entry point for sending queued email notifications.
 Exit codes: 0=success, 1=error
 Usage: uv run scripts/process_notifications.py
-       [--batch-limit N] [--max-retries N]
+       [--batch-limit N] [--max-queue-retries N] [--timeout N]
 """
 
 import argparse
 import fcntl
 import logging
 import os
+import signal
 import sys
+from collections.abc import Callable
 from typing import IO, NoReturn
 
 from backend.application.commands.handlers import (
@@ -34,7 +36,9 @@ logger = logging.getLogger(__name__)
 
 _LOCK_FILE = "/tmp/process_notifications.lock"
 _MAX_BATCH_LIMIT = 1000
-_MAX_RETRIES = 10
+_MAX_QUEUE_RETRIES = 10
+_MAX_TIMEOUT_SECS = 300
+_DEFAULT_TIMEOUT_SECS = 55
 
 
 def setup_logging() -> None:
@@ -45,7 +49,7 @@ def setup_logging() -> None:
     )
 
 
-def _bounded_int(lo: int, hi: int) -> argparse.FileType:
+def _bounded_int(lo: int, hi: int) -> Callable[[str], int]:
     """Return an argparse type function that validates an integer range."""
 
     def _validate(value: str) -> int:
@@ -56,7 +60,7 @@ def _bounded_int(lo: int, hi: int) -> argparse.FileType:
             )
         return n
 
-    return _validate  # type: ignore[return-value]
+    return _validate
 
 
 def parse_arguments(
@@ -76,12 +80,23 @@ def parse_arguments(
         ),
     )
     parser.add_argument(
-        "--max-retries",
-        type=_bounded_int(0, _MAX_RETRIES),
+        "--max-queue-retries",
+        dest="max_retries",
+        type=_bounded_int(0, _MAX_QUEUE_RETRIES),
         default=3,
         help=(
-            "Maximum delivery attempts per notification"
-            f" (0–{_MAX_RETRIES}, default: 3)"
+            "Maximum queue-level requeue attempts before marking"
+            f" a notification permanently failed"
+            f" (0–{_MAX_QUEUE_RETRIES}, default: 3)"
+        ),
+    )
+    parser.add_argument(
+        "--timeout",
+        type=_bounded_int(1, _MAX_TIMEOUT_SECS),
+        default=_DEFAULT_TIMEOUT_SECS,
+        help=(
+            "Wall-clock time limit in seconds before aborting"
+            f" (1–{_MAX_TIMEOUT_SECS}, default: {_DEFAULT_TIMEOUT_SECS})"
         ),
     )
     return parser.parse_args(args)
@@ -102,6 +117,12 @@ def _acquire_lock() -> IO[str]:
             "Another process_notifications instance is already running"
         )
     return lock_file
+
+
+def _handle_timeout(signum: int, frame: object) -> NoReturn:
+    """Handle SIGALRM by logging and exiting with error."""
+    logger.error("Notification processor exceeded wall-clock limit — aborting")
+    sys.exit(1)
 
 
 def _get_dependencies() -> tuple[
@@ -139,12 +160,16 @@ def main() -> NoReturn:
         sys.exit(1)
 
     with lock_file:
+        signal.signal(signal.SIGALRM, _handle_timeout)
+        signal.alarm(args.timeout)
+
         logger.info(
             "Starting notification processor"
-            " (pid=%d, batch_limit=%d, max_retries=%d)",
+            " (pid=%d, batch_limit=%d, max_retries=%d, timeout=%ds)",
             os.getpid(),
             args.batch_limit,
             args.max_retries,
+            args.timeout,
         )
 
         try:
@@ -182,6 +207,7 @@ def main() -> NoReturn:
                 )
             )
 
+            signal.alarm(0)
             logger.info(
                 "Notification processor completed:"
                 " sent=%d, failed=%d, total=%d",

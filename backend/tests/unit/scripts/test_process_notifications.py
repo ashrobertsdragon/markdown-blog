@@ -235,7 +235,7 @@ class TestArgumentParsing:
         assert args.batch_limit == 50
 
     def test_custom_max_retries(self) -> None:
-        args = parse_arguments(["--max-retries", "5"])
+        args = parse_arguments(["--max-queue-retries", "5"])
         assert args.max_retries == 5
 
     def test_batch_limit_zero_rejected(self) -> None:
@@ -248,7 +248,23 @@ class TestArgumentParsing:
 
     def test_max_retries_over_max_rejected(self) -> None:
         with pytest.raises(SystemExit):
-            parse_arguments(["--max-retries", "11"])
+            parse_arguments(["--max-queue-retries", "11"])
+
+    def test_timeout_default_is_55(self) -> None:
+        args = parse_arguments([])
+        assert args.timeout == 55
+
+    def test_custom_timeout(self) -> None:
+        args = parse_arguments(["--timeout", "30"])
+        assert args.timeout == 30
+
+    def test_timeout_zero_rejected(self) -> None:
+        with pytest.raises(SystemExit):
+            parse_arguments(["--timeout", "0"])
+
+    def test_timeout_over_max_rejected(self) -> None:
+        with pytest.raises(SystemExit):
+            parse_arguments(["--timeout", "301"])
 
     def test_batch_limit_passed_to_command(self) -> None:
         captured_command: dict = {}
@@ -286,7 +302,7 @@ class TestArgumentParsing:
         with (
             patch(
                 ARGV_PATH,
-                ["process_notifications.py", "--max-retries", "7"],
+                ["process_notifications.py", "--max-queue-retries", "7"],
             ),
             patch(ACQUIRE_LOCK_PATH, return_value=_make_lock()),
             patch(RESEND_SETTINGS_PATH, return_value=_make_settings()),

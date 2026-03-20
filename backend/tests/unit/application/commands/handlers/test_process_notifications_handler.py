@@ -399,3 +399,77 @@ def test_mark_for_retry_receives_future_datetime() -> None:
     call_args = notification_repo.mark_for_retry.call_args
     next_retry_at = call_args[0][1]
     assert next_retry_at > before
+
+
+def test_notification_with_no_id_increments_failed() -> None:
+    """A notification with id=None is counted as failed."""
+    notification = _make_notification()
+    notification.id = None
+    cmd = _make_command()
+    notification_repo, post_repo, comment_repo, user_repo = _make_repos(
+        notifications=[notification]
+    )
+    email_sender = MagicMock()
+
+    result = handle_process_notifications(
+        cmd, notification_repo, email_sender, post_repo, comment_repo, user_repo
+    )
+
+    assert result["failed"] == 1
+    assert result["sent"] == 0
+    email_sender.send.assert_not_called()
+
+
+def test_missing_context_marks_notification_failed_in_db() -> None:
+    """Notification with missing referenced entity is marked failed."""
+    notification = _make_notification(notification_id=42)
+    cmd = _make_command()
+    notification_repo, post_repo, comment_repo, user_repo = _make_repos(
+        notifications=[notification]
+    )
+    user_repo.find_by_id.return_value = None
+    email_sender = MagicMock()
+
+    handle_process_notifications(
+        cmd, notification_repo, email_sender, post_repo, comment_repo, user_repo
+    )
+
+    notification.mark_failed.assert_called_once()
+    notification_repo.save.assert_called_once_with(notification)
+    email_sender.send.assert_not_called()
+
+
+def test_missing_context_increments_failed_count() -> None:
+    """Notification skipped for missing context is counted as failed."""
+    notification = _make_notification(notification_id=7)
+    cmd = _make_command()
+    notification_repo, post_repo, comment_repo, user_repo = _make_repos(
+        notifications=[notification]
+    )
+    post_repo.find_by_id.return_value = None
+    email_sender = MagicMock()
+
+    result = handle_process_notifications(
+        cmd, notification_repo, email_sender, post_repo, comment_repo, user_repo
+    )
+
+    assert result["failed"] == 1
+    assert result["sent"] == 0
+
+
+def test_exception_in_loop_increments_failed() -> None:
+    """Unhandled per-notification exception is counted as failed."""
+    notification = _make_notification(notification_id=1)
+    cmd = _make_command()
+    notification_repo, post_repo, comment_repo, user_repo = _make_repos(
+        notifications=[notification]
+    )
+    email_sender = MagicMock()
+    email_sender.send.side_effect = RuntimeError("crash")
+
+    result = handle_process_notifications(
+        cmd, notification_repo, email_sender, post_repo, comment_repo, user_repo
+    )
+
+    assert result["failed"] == 1
+    assert result["sent"] == 0
