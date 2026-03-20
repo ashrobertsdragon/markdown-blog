@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Notification health monitoring and alerting**: Added `NotificationMetrics` class (`backend/infrastructure/monitoring/notification_metrics.py`) to calculate queue health metrics — sent/failed/pending counts, failure rate (%), and stuck notification detection (pending > threshold hours). Added cron-executable health check script (`backend/scripts/check_notification_health.py`) with CLI flags `--failure-threshold` (default 10%, range 0-100) and `--stuck-threshold-hours` (default 1h, range >0). Script exits 0 when healthy, 1 when alert triggered. Logs health summary (sent, failed, pending, failure_rate, stuck_count, timestamp) and alerts on >failure-threshold% failure rate or stuck notifications. 64 unit and integration tests covering threshold calculations, argument parsing, exit codes, logging, and edge cases (empty queue, all failed, all pending).
+
 - Notification preferences API: GET/PUT `/api/user/notification-preferences` (authenticated)
 
 - Admin notification history API: GET `/api/admin/notifications` with skip/limit pagination (admin only)
