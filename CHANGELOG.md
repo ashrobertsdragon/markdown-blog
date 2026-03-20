@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Notification preferences API: GET/PUT `/api/user/notification-preferences` (authenticated)
+
+- Admin notification history API: GET `/api/admin/notifications` with skip/limit pagination (admin only)
+
+- Unsubscribe endpoint: GET `/api/unsubscribe` with SHA-256 token verification (unauthenticated)
+
+- `NotificationRepository.list_all_admin()` and `count_all()` methods
+
+- 36 integration tests covering auth enforcement, input validation, and error paths
+
 - **Notification processor background script**: Added `process_notifications.py` (`backend/src/scripts/process_notifications.py`) as a cron-executable entry point that instantiates all dependencies (`NotificationRepository`, `PostRepository`, `UserRepository`, `CommentRepository`, `EmailSender`) from `ResendSettings`, invokes `handle_process_notifications` with a validated `ProcessNotificationsCommand`, and logs the sent/failed/total summary. Supports `--batch-limit` (default 100) and `--max-retries` (default 3) CLI flags. Exits 0 on success, 1 on any error. Registered as `process-notifications` entry point in `pyproject.toml`. 17 unit tests covering exit codes, argument parsing, dependency wiring, handler invocation, and PII-free logging.
 
 - **Notification and user preferences repositories**: Added `NotificationRepository` (`backend/infrastructure/persistence/notification_repository.py`) with `save`, `get_by_id`, `get_pending` (UTC-safe scheduling filter, hard cap 500), `get_history` (paginated, newest-first), `mark_for_retry` (enforces UTC on `next_retry_at`), `count_pending`, and `count_failed`. Added `UserNotificationPreferencesRepository` (`backend/infrastructure/persistence/user_notification_preferences_repository.py`) with `get_preferences` (auto-creates all-enabled defaults on first access), `update_preferences`, `disable_all` (unsubscribe), and `exists`. Added `NotificationPreferences` domain aggregate (`backend/domain/aggregates/notification_preferences.py`) with `create_defaults` factory and `should_notify_reply`, `should_notify_mention`, `should_notify_post` query methods. Added `UserNotificationPreferencesModel` to persistence models and `next_retry_at` field to `NotificationModel`, with three new indexes (`idx_notification_status_created`, `idx_notification_recipient_created`, `idx_notification_next_retry`) for efficient queue processing. Added `next_retry_at` field to `Notification` aggregate to carry retry schedule state through the domain layer.
