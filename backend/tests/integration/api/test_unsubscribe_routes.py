@@ -5,7 +5,7 @@ Uses Flask test client with mocked infrastructure dependencies.
 Token verification is tested by patching the utility function directly.
 """
 
-import hashlib
+import hmac
 from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -20,7 +20,9 @@ _TEST_SECRET = "test-unsubscribe-secret"
 
 def _make_valid_token(user_id: int) -> str:
     """Generate a valid unsubscribe token matching the test secret."""
-    return hashlib.sha256(f"{user_id}:{_TEST_SECRET}".encode()).hexdigest()
+    return hmac.new(
+        _TEST_SECRET.encode(), f"{user_id}".encode(), "sha256"
+    ).hexdigest()
 
 
 @pytest.fixture
@@ -229,13 +231,13 @@ class TestGetUnsubscribe:
 
         assert response.status_code == 400
 
-    def test_unsubscribe_nonexistent_user_returns_404(
+    def test_unsubscribe_nonexistent_user_returns_400(
         self,
         client: Any,
         target_user: User,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """GET with valid token but unknown user_id returns 404."""
+        """GET with valid token but unknown user_id returns 400."""
         monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
         assert target_user.id is not None
         token = _make_valid_token(target_user.id)
@@ -251,4 +253,4 @@ class TestGetUnsubscribe:
                 f"/api/unsubscribe?user_id={target_user.id}&token={token}",
             )
 
-        assert response.status_code == 404
+        assert response.status_code == 400

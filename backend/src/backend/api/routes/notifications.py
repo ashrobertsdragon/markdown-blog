@@ -1,8 +1,7 @@
 """Notification preferences, admin history, and unsubscribe routes."""
 
-import hashlib
+import hmac
 import os
-from hmac import compare_digest
 
 from flask import Blueprint, Response, g, jsonify, request
 
@@ -51,20 +50,29 @@ def _serialize_preferences(prefs: NotificationPreferences) -> dict[str, object]:
 
 
 def _verify_unsubscribe_token(token: str, user_id: int) -> bool:
-    """Return True if token is the valid SHA-256 hash for user_id.
+    """Return True if token is the valid HMAC-SHA256 digest for user_id.
 
     Uses constant-time comparison to prevent timing attacks.
 
     Args:
-        token: Hex-encoded SHA-256 hash supplied by the caller.
+        token: Hex-encoded HMAC-SHA256 digest supplied by the caller.
         user_id: User primary key the token must have been generated for.
 
     Returns:
-        True when the token matches the expected hash, False otherwise.
+        True when the token matches the expected digest, False otherwise.
+
+    Raises:
+        RuntimeError: If UNSUBSCRIBE_SECRET environment variable is not set.
     """
-    secret = os.environ.get("UNSUBSCRIBE_SECRET", "change-me-in-production")
-    expected = hashlib.sha256(f"{user_id}:{secret}".encode()).hexdigest()
-    return compare_digest(token, expected)
+    secret = os.environ.get("UNSUBSCRIBE_SECRET")
+    if not secret:
+        raise RuntimeError(
+            "UNSUBSCRIBE_SECRET environment variable is required but not set"
+        )
+    expected = hmac.new(
+        secret.encode(), f"{user_id}".encode(), "sha256"
+    ).hexdigest()
+    return hmac.compare_digest(token, expected)
 
 
 @notifications_bp.route("/user/notification-preferences", methods=["GET"])
@@ -109,6 +117,10 @@ def update_user_notification_preferences() -> tuple[Response, int]:
     body = request.get_json(silent=True)
     if body is None:
         return jsonify({"error": "Request body is required"}), 400
+    if not body:
+        return jsonify(
+            {"error": "At least one preference field is required"}
+        ), 400
 
     for key, value in body.items():
         if key not in _KNOWN_PREF_FIELDS:
@@ -191,8 +203,7 @@ def unsubscribe_all() -> tuple[Response, int]:
         Tuple of (JSON success message, 200).
 
     Raises:
-        400: Missing parameters or invalid/tampered token.
-        404: user_id does not exist in the database.
+        400: Missing parameters, invalid/tampered token, or user not found.
     """
     user_id = request.args.get("user_id", type=int)
     token = request.args.get("token", type=str)
@@ -208,7 +219,7 @@ def unsubscribe_all() -> tuple[Response, int]:
     user_repo = _get_user_repository()
     user = user_repo.find_by_id(user_id)
     if user is None:
-        return jsonify({"error": f"User {user_id} not found"}), 404
+        return jsonify({"error": "Invalid unsubscribe request"}), 400
 
     prefs_repo = _get_preferences_repository()
     prefs_repo.disable_all(user_id)

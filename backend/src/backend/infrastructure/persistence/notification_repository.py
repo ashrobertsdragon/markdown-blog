@@ -223,7 +223,12 @@ class NotificationRepository:
 
         Returns:
             List of Notification aggregates ordered newest-first.
+
+        Raises:
+            ValueError: If skip is negative.
         """
+        if skip < 0:
+            raise ValueError("skip must be >= 0")
         limit = min(max(limit, 1), 200)
         statement = (
             select(NotificationModel)
