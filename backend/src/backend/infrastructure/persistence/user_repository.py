@@ -151,6 +151,38 @@ class UserRepository:
         """
         return self.save(user)
 
+    def find_by_email_prefix(self, prefix: str) -> DomainUser | None:
+        """Find the first user whose email starts with prefix.
+
+        Case-insensitive match.
+
+        Performs a case-insensitive prefix match using ILIKE so that
+        @alice resolves to alice@example.com regardless of stored case.
+
+        Args:
+            prefix: The username portion of an email address (before @).
+
+        Returns:
+            DomainUser aggregate for the first matching user, or None.
+        """
+        statement = select(UserModel).where(
+            col(UserModel.email).ilike(f"{prefix}@%")
+        )
+
+        if self._session:
+            user_model = self._session.exec(statement).first()
+            if user_model:
+                return self._to_domain(user_model)
+            return None
+
+        for session in get_db():
+            user_model = session.exec(statement).first()
+            if user_model:
+                return self._to_domain(user_model)
+            return None
+
+        return None
+
     def list_all(self, limit: int = 50, offset: int = 0) -> list[DomainUser]:
         """List all users with pagination.
 

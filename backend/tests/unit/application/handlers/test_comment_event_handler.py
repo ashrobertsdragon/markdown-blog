@@ -20,10 +20,12 @@ import pytest
 
 from backend.application.handlers.comment_event_handler import (
     notify_comment_posted,
+    notify_mention,
     notify_reply_received,
 )
 from backend.domain.aggregates.comment import Comment
 from backend.domain.events.comment_posted import CommentPostedEvent
+from backend.domain.events.mention_event import MentionEvent
 from backend.domain.events.reply_received import ReplyReceivedEvent
 from backend.domain.value_objects.comment_text import CommentText
 
@@ -321,3 +323,135 @@ class TestNotifyReplyReceivedWithPreferences:
         )
 
         mock_handler.queue_reply_received.assert_called_once()
+
+
+class TestNotifyMention:
+    """Tests for notify_mention application handler."""
+
+    def test_queues_notification_when_sender_differs_from_recipient(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """queue_mention is called when sender_id != recipient_id."""
+
+        comment = _make_comment(comment_id=1, post_id=10, author_id=5)
+        notify_mention(
+            comment=comment,
+            sender_id=5,
+            recipient_id=99,
+            handler=mock_handler,
+        )
+        mock_handler.queue_mention.assert_called_once()
+
+    def test_queued_event_has_correct_fields(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """Event passed to queue_mention carries all correct IDs."""
+
+        comment = _make_comment(comment_id=7, post_id=10, author_id=5)
+        notify_mention(
+            comment=comment,
+            sender_id=5,
+            recipient_id=99,
+            handler=mock_handler,
+        )
+        event: MentionEvent = mock_handler.queue_mention.call_args[0][0]
+        assert event.comment_id == 7
+        assert event.post_id == 10
+        assert event.sender_id == 5
+        assert event.recipient_id == 99
+
+    def test_noop_when_sender_equals_recipient(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """No notification is queued when sender_id == recipient_id."""
+
+        comment = _make_comment(comment_id=1, post_id=10, author_id=42)
+        notify_mention(
+            comment=comment,
+            sender_id=42,
+            recipient_id=42,
+            handler=mock_handler,
+        )
+        mock_handler.queue_mention.assert_not_called()
+
+    def test_swallows_handler_exception(self, mock_handler: MagicMock) -> None:
+        """Exceptions from the notification handler are caught, not raised."""
+
+        mock_handler.queue_mention.side_effect = RuntimeError("db down")
+        comment = _make_comment(comment_id=1, post_id=10, author_id=5)
+        notify_mention(
+            comment=comment,
+            sender_id=5,
+            recipient_id=99,
+            handler=mock_handler,
+        )
+
+    def test_logs_handler_exception(
+        self, mock_handler: MagicMock, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Handler exceptions are logged at ERROR level with exc_info."""
+
+        mock_handler.queue_mention.side_effect = RuntimeError("boom")
+        comment = _make_comment(comment_id=1, post_id=10, author_id=5)
+        with caplog.at_level(logging.ERROR):
+            notify_mention(
+                comment=comment,
+                sender_id=5,
+                recipient_id=99,
+                handler=mock_handler,
+            )
+        assert any(
+            "Failed to queue mention notification" in r.message
+            for r in caplog.records
+        )
+        assert any(
+            r.exc_info is not None
+            for r in caplog.records
+            if "Failed to queue mention notification" in r.message
+        )
+
+
+class TestNotifyMentionWithPreferences:
+    """Tests for notify_mention with preference-aware signatures."""
+
+    def test_skips_queue_when_mention_notification_disabled(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """queue_mention not called when should_notify_mention() is False."""
+
+        comment = _make_comment(comment_id=1, post_id=10, author_id=5)
+        prefs = MagicMock()
+        prefs.should_notify_mention.return_value = False
+        preferences_repo = MagicMock()
+        preferences_repo.get_preferences.return_value = prefs
+
+        notify_mention(
+            comment=comment,
+            sender_id=5,
+            recipient_id=99,
+            handler=mock_handler,
+            preferences_repo=preferences_repo,
+        )
+
+        mock_handler.queue_mention.assert_not_called()
+
+    def test_queues_when_mention_notification_enabled(
+        self, mock_handler: MagicMock
+    ) -> None:
+        """queue_mention is called when should_notify_mention() is True."""
+
+        comment = _make_comment(comment_id=1, post_id=10, author_id=5)
+        prefs = MagicMock()
+        prefs.should_notify_mention.return_value = True
+        preferences_repo = MagicMock()
+        preferences_repo.get_preferences.return_value = prefs
+
+        notify_mention(
+            comment=comment,
+            sender_id=5,
+            recipient_id=99,
+            handler=mock_handler,
+            preferences_repo=preferences_repo,
+        )
+
+        mock_handler.queue_mention.assert_called_once()

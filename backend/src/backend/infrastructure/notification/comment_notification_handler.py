@@ -5,11 +5,13 @@ from datetime import UTC, datetime
 from sqlmodel import Session
 
 from backend.domain.events.comment_posted import CommentPostedEvent
+from backend.domain.events.mention_event import MentionEvent
 from backend.domain.events.reply_received import ReplyReceivedEvent
 from backend.infrastructure.persistence.database import get_engine
 from backend.infrastructure.persistence.models import NotificationModel
 
 _EVENT_COMMENT_POSTED = "comment_posted"
+_EVENT_MENTION = "mention"
 _EVENT_REPLY_RECEIVED = "reply_received"
 _STATUS_PENDING = "pending"
 
@@ -65,6 +67,21 @@ class CommentNotificationHandler:
             comment_id=event.comment_id,
         )
 
+    def queue_mention(self, event: MentionEvent) -> None:
+        """Insert a pending notification for a MentionEvent.
+
+        Args:
+            event: The domain event carrying comment_id, post_id,
+                sender_id, and recipient_id of the mentioned user.
+        """
+        self._queue(
+            event_type=_EVENT_MENTION,
+            recipient_id=event.recipient_id,
+            sender_id=event.sender_id,
+            post_id=event.post_id,
+            comment_id=event.comment_id,
+        )
+
     def _queue(
         self,
         event_type: str,
@@ -76,8 +93,8 @@ class CommentNotificationHandler:
         """Queue a notification record in the database.
 
         Args:
-            event_type: Discriminator string — 'comment_posted' or
-                'reply_received'.
+            event_type: Discriminator string — 'comment_posted',
+                'reply_received', or 'mention'.
             recipient_id: User ID of the notification recipient.
             sender_id: User ID who triggered the event.
             post_id: Post ID associated with the event.

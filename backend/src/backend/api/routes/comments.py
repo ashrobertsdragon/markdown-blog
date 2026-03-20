@@ -33,6 +33,7 @@ from backend.application.commands.reply_to_comment_command import (
 )
 from backend.application.handlers.comment_event_handler import (
     notify_comment_posted,
+    notify_mention,
     notify_reply_received,
 )
 from backend.application.queries.get_post_comments_query import (
@@ -43,6 +44,7 @@ from backend.application.queries.handlers import (
 )
 from backend.domain.aggregates.comment import Comment
 from backend.domain.aggregates.post import Post
+from backend.domain.services.mention_service import extract_mentions
 from backend.infrastructure.moderation.rate_limit_service import (
     RateLimitService,
 )
@@ -56,10 +58,16 @@ from backend.infrastructure.persistence.comment_repository import (
     CommentRepository,
 )
 from backend.infrastructure.persistence.post_repository import PostRepository
+from backend.infrastructure.persistence.user_notification_preferences_repository import (  # noqa: E501
+    UserNotificationPreferencesRepository,
+)
+from backend.infrastructure.persistence.user_repository import UserRepository
 from backend.infrastructure.realtime.comment_stream_service import (
     CommentPayload,
     CommentStreamService,
 )
+
+_MAX_MENTIONS_PER_COMMENT = 10
 
 comments_bp = Blueprint("comments", __name__)
 admin_comments_bp = Blueprint("admin_comments", __name__)
@@ -118,6 +126,10 @@ _rate_limit_service: RateLimitService | None = None
 _spam_check_service: SpamCheckService | None = None
 _comment_stream_service: CommentStreamService | None = None
 _comment_notification_handler: CommentNotificationHandler | None = None
+_user_repository: UserRepository | None = None
+_notification_preferences_repository: (
+    UserNotificationPreferencesRepository | None
+) = None
 
 
 def _get_post_repository() -> PostRepository:
@@ -166,6 +178,60 @@ def _get_comment_notification_handler() -> CommentNotificationHandler:
     if _comment_notification_handler is None:
         _comment_notification_handler = CommentNotificationHandler()
     return _comment_notification_handler
+
+
+def _get_user_repository() -> UserRepository:
+    """Lazily initialize UserRepository instance."""
+    global _user_repository
+    if _user_repository is None:
+        _user_repository = UserRepository()
+    return _user_repository
+
+
+def _get_notification_preferences_repository() -> (
+    UserNotificationPreferencesRepository
+):
+    """Lazily initialize UserNotificationPreferencesRepository instance."""
+    global _notification_preferences_repository
+    if _notification_preferences_repository is None:
+        _notification_preferences_repository = (
+            UserNotificationPreferencesRepository()
+        )
+    return _notification_preferences_repository
+
+
+def _dispatch_mention_notifications(comment: Comment, sender_id: int) -> None:
+    """Fire mention notifications for each @username in comment text.
+
+    Resolves each mentioned username to a user via email prefix lookup,
+    then queues a notification respecting the recipient's preferences.
+    Capped at _MAX_MENTIONS_PER_COMMENT to prevent notification flooding.
+    Errors are handled inside notify_mention (fire-and-forget); this
+    function never raises.
+
+    Args:
+        comment: The persisted comment whose text may contain @mentions.
+        sender_id: User ID of the comment author.
+    """
+    mentioned = extract_mentions(str(comment.text))[:_MAX_MENTIONS_PER_COMMENT]
+    if not mentioned:
+        return
+    try:
+        user_repo = _get_user_repository()
+        handler = _get_comment_notification_handler()
+        prefs_repo = _get_notification_preferences_repository()
+        for username in mentioned:
+            mentioned_user = user_repo.find_by_email_prefix(username)
+            if mentioned_user and mentioned_user.id is not None:
+                notify_mention(
+                    comment=comment,
+                    sender_id=sender_id,
+                    recipient_id=mentioned_user.id,
+                    handler=handler,
+                    preferences_repo=prefs_repo,
+                )
+    except Exception:
+        logger.exception("Failed to dispatch mention notifications")
 
 
 @comments_bp.route("/<slug>/comments", methods=["GET"])
@@ -334,6 +400,8 @@ def post_comment(slug: str) -> tuple[Response, int]:
             handler=_get_comment_notification_handler(),
         )
 
+    _dispatch_mention_notifications(comment, comment.author_id)
+
     return jsonify(comment_dict), 201
 
 
@@ -410,6 +478,8 @@ def post_reply(slug: str, comment_id: int) -> tuple[Response, int]:
             sender_id=comment.author_id,
             handler=_get_comment_notification_handler(),
         )
+
+    _dispatch_mention_notifications(comment, comment.author_id)
 
     return jsonify(comment_dict), 201
 

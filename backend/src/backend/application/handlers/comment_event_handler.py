@@ -9,6 +9,7 @@ import logging
 
 from backend.domain.aggregates.comment import Comment
 from backend.domain.events.comment_posted import CommentPostedEvent
+from backend.domain.events.mention_event import MentionEvent
 from backend.domain.events.reply_received import ReplyReceivedEvent
 from backend.infrastructure.notification.comment_notification_handler import (
     CommentNotificationHandler,
@@ -112,3 +113,49 @@ def notify_reply_received(
         handler.queue_reply_received(event)
     except Exception:
         logger.exception("Failed to queue reply_received notification")
+
+
+def notify_mention(
+    comment: Comment,
+    sender_id: int,
+    recipient_id: int,
+    handler: CommentNotificationHandler,
+    preferences_repo: UserNotificationPreferencesRepository | None = None,
+) -> None:
+    """Queue a notification when a user is @mentioned in a comment.
+
+    No notification is queued when the sender and recipient are the same
+    user (self-mention). When preferences_repo is provided, the recipient's
+    mention notification preference is checked before queuing.
+
+    Args:
+        comment: The persisted Comment aggregate containing the mention.
+        sender_id: User ID of the comment author who wrote the mention.
+        recipient_id: User ID of the mentioned user to notify.
+        handler: CommentNotificationHandler used to persist the record.
+        preferences_repo: Optional repository for fetching notification
+            preferences. When provided, skips queuing if the recipient
+            has disabled mention notifications.
+    """
+    if sender_id == recipient_id:
+        return
+
+    if preferences_repo is not None:
+        prefs = preferences_repo.get_preferences(recipient_id)
+        if not prefs.should_notify_mention():
+            return
+
+    try:
+        if comment.id is None:
+            raise ValueError(
+                "comment.id must be set before queuing a notification"
+            )
+        event = MentionEvent(
+            comment_id=comment.id,
+            post_id=comment.post_id,
+            sender_id=sender_id,
+            recipient_id=recipient_id,
+        )
+        handler.queue_mention(event)
+    except Exception:
+        logger.exception("Failed to queue mention notification")
