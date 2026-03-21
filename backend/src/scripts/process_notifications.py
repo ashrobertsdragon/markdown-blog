@@ -23,6 +23,7 @@ from backend.application.commands.process_notifications_command import (
 )
 from backend.config import ResendSettings
 from backend.infrastructure.email.email_sender import EmailSender
+from backend.infrastructure.email.resend_email_service import ResendEmailService
 from backend.infrastructure.persistence.comment_repository import (
     CommentRepository,
 )
@@ -134,17 +135,18 @@ def _get_dependencies() -> tuple[
 ]:
     """Instantiate and return all required dependencies."""
     settings = ResendSettings()
+    service = ResendEmailService(
+        api_key=settings.RESEND_API_KEY,
+        domain=settings.RESEND_DOMAIN,
+        timeout=settings.RESEND_REQUEST_TIMEOUT,
+        max_retries=settings.RESEND_MAX_RETRIES,
+    )
     return (
         NotificationRepository(),
         PostRepository(),
         UserRepository(),
         CommentRepository(),
-        EmailSender(
-            api_key=settings.RESEND_API_KEY,
-            domain=settings.RESEND_DOMAIN,
-            timeout=settings.RESEND_REQUEST_TIMEOUT,
-            max_retries=settings.RESEND_MAX_RETRIES,
-        ),
+        EmailSender(service=service),
     )
 
 

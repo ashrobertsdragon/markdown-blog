@@ -150,11 +150,5 @@ def get_email_sender() -> EmailSender:
     global _email_sender
     if _email_sender is not None:
         return _email_sender
-    settings = get_resend_settings()
-    _email_sender = EmailSender(
-        api_key=settings.RESEND_API_KEY,
-        domain=settings.RESEND_DOMAIN,
-        timeout=settings.RESEND_REQUEST_TIMEOUT,
-        max_retries=settings.RESEND_MAX_RETRIES,
-    )
+    _email_sender = EmailSender(service=get_resend_email_service())
     return _email_sender

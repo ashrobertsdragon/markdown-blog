@@ -330,6 +330,8 @@ class TestDependencyInitialization:
             max_retries=5,
         )
         mock_sender_cls = MagicMock()
+        mock_resend_service_cls = MagicMock()
+        mock_resend_service_instance = mock_resend_service_cls.return_value
 
         with (
             patch(ARGV_PATH, DEFAULT_ARGV),
@@ -339,17 +341,24 @@ class TestDependencyInitialization:
             patch(POST_REPO_PATH),
             patch(USER_REPO_PATH),
             patch(COMMENT_REPO_PATH),
+            patch(
+                "scripts.process_notifications.ResendEmailService",
+                mock_resend_service_cls,
+            ),
             patch(EMAIL_SENDER_PATH, mock_sender_cls),
             patch(HANDLER_PATH, return_value=_make_summary()),
         ):
             with pytest.raises(SystemExit):
                 main()
 
-        mock_sender_cls.assert_called_once_with(
+        mock_resend_service_cls.assert_called_once_with(
             api_key="test-api-key-abc",
             domain="mail@blog.com",
             timeout=15,
             max_retries=5,
+        )
+        mock_sender_cls.assert_called_once_with(
+            service=mock_resend_service_instance
         )
 
     def test_all_repositories_instantiated(self) -> None:

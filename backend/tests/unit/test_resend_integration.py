@@ -291,6 +291,137 @@ class TestResendEmailService:
 
         assert result is None
 
+    def test_send_template_success(self, resend_service) -> None:
+        """A 200 response from send_template must return the email ID string.
+
+        The payload must contain template_id and variables but must NOT
+        contain subject or html — those are managed by the Resend template.
+        """
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"id": "template-email-id"}
+
+        with patch("requests.post", return_value=mock_response) as mock_post:
+            result = resend_service.send_template(
+                to="user@example.com",
+                template_id="reply-notification",
+                variables={"REPLY_AUTHOR": "Alice", "POST_TITLE": "My Post"},
+            )
+
+        assert result == "template-email-id"
+        payload = mock_post.call_args[1]["json"]
+        assert "template_id" in payload
+        assert "variables" in payload
+        assert "subject" not in payload
+        assert "html" not in payload
+
+    def test_send_template_rate_limited_retries(self, resend_service) -> None:
+        """A 429 from send_template must trigger retry and return the ID on success.
+
+        Rate limiting is transient; the service must back off and retry
+        rather than propagating the failure immediately to the caller.
+        """
+        rate_limited = Mock()
+        rate_limited.status_code = 429
+
+        success = Mock()
+        success.status_code = 200
+        success.json.return_value = {"id": "template-email-after-retry"}
+
+        with patch("requests.post", side_effect=[rate_limited, success]):
+            with patch("time.sleep"):
+                result = resend_service.send_template(
+                    to="user@example.com",
+                    template_id="reply-notification",
+                    variables={"REPLY_AUTHOR": "Alice"},
+                )
+
+        assert result == "template-email-after-retry"
+
+    def test_send_template_server_error_retries(self, resend_service) -> None:
+        """A 5xx from send_template must trigger retry and return the ID on success.
+
+        Transient infrastructure errors must not be treated as permanent
+        failures; the retry must surface the eventual success to the caller.
+        """
+        server_error = Mock()
+        server_error.status_code = 503
+
+        success = Mock()
+        success.status_code = 200
+        success.json.return_value = {"id": "template-email-recovered"}
+
+        with patch("requests.post", side_effect=[server_error, success]):
+            with patch("time.sleep"):
+                result = resend_service.send_template(
+                    to="user@example.com",
+                    template_id="reply-notification",
+                    variables={"REPLY_AUTHOR": "Alice"},
+                )
+
+        assert result == "template-email-recovered"
+
+    def test_send_template_client_error_permanent_failure(
+        self, resend_service
+    ) -> None:
+        """A 4xx (non-429) from send_template must return None immediately.
+
+        Client errors such as 422 signal invalid input that a retry cannot
+        fix. The service must not retry and must return None on the first
+        failed attempt.
+        """
+        client_error = Mock()
+        client_error.status_code = 422
+        client_error.json.return_value = {"message": "Invalid template"}
+
+        with patch("requests.post", return_value=client_error) as mock_post:
+            result = resend_service.send_template(
+                to="user@example.com",
+                template_id="reply-notification",
+                variables={"REPLY_AUTHOR": "Alice"},
+            )
+
+        assert result is None
+        assert mock_post.call_count == 1
+
+    def test_send_template_timeout_returns_none(self, resend_service) -> None:
+        """A network timeout during send_template must return None.
+
+        Transport failures are treated as soft errors; the notification queue
+        is responsible for scheduling a retry. The exception must not propagate.
+        """
+        import requests as req
+
+        with patch("requests.post", side_effect=req.Timeout("timed out")):
+            result = resend_service.send_template(
+                to="user@example.com",
+                template_id="reply-notification",
+                variables={"REPLY_AUTHOR": "Alice"},
+            )
+
+        assert result is None
+
+    def test_send_template_response_missing_id_returns_none(
+        self, resend_service
+    ) -> None:
+        """A 200 from send_template without an 'id' in the body must return None.
+
+        The ID is required for delivery tracking on the Notification record.
+        Returning None prevents storing a meaningless empty identifier.
+        """
+        missing_id_response = Mock()
+        missing_id_response.status_code = 200
+        missing_id_response.json.return_value = {}
+
+        with patch("requests.post", return_value=missing_id_response):
+            result = resend_service.send_template(
+                to="user@example.com",
+                template_id="reply-notification",
+                variables={"REPLY_AUTHOR": "Alice"},
+            )
+
+        assert result is None
+
 
 # ---------------------------------------------------------------------------
 # ResendTemplateManager
