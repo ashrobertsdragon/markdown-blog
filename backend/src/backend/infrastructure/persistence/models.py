@@ -2,7 +2,7 @@ import datetime as dt
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import Index, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -85,6 +85,11 @@ class NotificationModel(SQLModel, table=True):
             "recipient_id",
             name="uq_notification_comment_event_recipient",
         ),
+        Index("idx_notification_status_created", "status", "created_at"),
+        Index(
+            "idx_notification_recipient_created", "recipient_id", "created_at"
+        ),
+        Index("idx_notification_next_retry", "next_retry_at"),
     )
 
     id: int | None = Field(default=None, primary_key=True)
@@ -98,6 +103,34 @@ class NotificationModel(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
     sent_at: datetime | None = Field(default=None)
     error_message: str | None = Field(default=None)
+    next_retry_at: datetime | None = Field(default=None)
+
+
+class UserNotificationPreferencesModel(SQLModel, table=True):
+    """User notification preferences model.
+
+    Stores per-user opt-out flags for the three notification categories.
+    Created on first access with all-enabled defaults (opt-out model).
+
+    Attributes:
+        id: Auto-incremented primary key, None before first INSERT.
+        user_id: FK to User who owns these preferences, unique per user.
+        notify_on_comment_replies: Whether to send reply notifications.
+        notify_on_mentions: Whether to send @mention notifications.
+        notify_on_new_posts: Whether to send new-post notifications.
+        created_at: UTC timestamp set when the row is first inserted.
+        updated_at: UTC timestamp updated on any field change.
+    """
+
+    __tablename__ = "user_notification_preferences"
+
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", unique=True, index=True)
+    notify_on_comment_replies: bool = Field(default=True)
+    notify_on_mentions: bool = Field(default=True)
+    notify_on_new_posts: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(dt.UTC))
 
 
 class CommentModel(SQLModel, table=True):

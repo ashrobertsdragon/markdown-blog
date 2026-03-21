@@ -106,6 +106,42 @@ class GitHubSettings(BaseSettings):
     GITHUB_REPO: str = Field(default=..., validation_alias="GITHUB_REPO")
 
 
+class ResendSettings(BaseSettings):
+    """Resend email API settings.
+
+    PARAMETERS:
+        RESEND_API_KEY (str): Resend API secret key (required).
+        RESEND_DOMAIN (str): Sender address used in the From field.
+        TEMPLATE_REPLY_NOTIFICATION (str): Alias for the reply notification
+            template.
+        TEMPLATE_MENTION_NOTIFICATION (str): Alias for the mention
+            notification template.
+        RESEND_REQUEST_TIMEOUT (int): HTTP request timeout in seconds.
+        RESEND_MAX_RETRIES (int): Maximum retry attempts for transient errors.
+    """
+
+    model_config = SettingsConfigDict(case_sensitive=True)
+
+    RESEND_API_KEY: str = Field(default=..., validation_alias="RESEND_API_KEY")
+    RESEND_DOMAIN: str = Field(
+        default="noreply@example.com", validation_alias="RESEND_DOMAIN"
+    )
+    TEMPLATE_REPLY_NOTIFICATION: str = Field(
+        default="reply-notification",
+        validation_alias="TEMPLATE_REPLY_NOTIFICATION_ALIAS",
+    )
+    TEMPLATE_MENTION_NOTIFICATION: str = Field(
+        default="mention-notification",
+        validation_alias="TEMPLATE_MENTION_NOTIFICATION_ALIAS",
+    )
+    RESEND_REQUEST_TIMEOUT: int = Field(
+        default=10, validation_alias="RESEND_REQUEST_TIMEOUT", ge=1, le=60
+    )
+    RESEND_MAX_RETRIES: int = Field(
+        default=3, validation_alias="RESEND_MAX_RETRIES", ge=1, le=10
+    )
+
+
 class Settings(BaseSettings):
     """Application settings combining Clerk authentication configuration.
 

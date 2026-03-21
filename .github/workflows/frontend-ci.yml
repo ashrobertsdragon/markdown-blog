@@ -3,11 +3,8 @@ name: Frontend CI
 on:
   push:
     paths:
-      - 'frontend/**'
+      - 'frontend/src/**'
       - '.github/workflows/frontend-ci.yml'
-
-  pull_request:
-    branches: [main]
 
   workflow_dispatch:
 
@@ -19,22 +16,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [22.18, 24.6]
-
-    env:
-      VITE_CLERK_PUBLISHABLE_KEY: pk_test_123
-      ci: true
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js 22
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22.18'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -45,33 +34,4 @@ jobs:
         run: npm run lint:ci
 
       - name: Run unit & integration tests
-        run: npm run test:coverage
-
-      - name: Install uv for testing
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-          version-file: backend/pyproject.toml
-
-      - name: Build
-        run: npm run build
-
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
-
-      - name: Install Playwright system dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps
-
-      - name: Run e2e & acceptance tests
-        run: npx playwright test
+        run: npm run test

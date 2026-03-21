@@ -691,6 +691,222 @@ paths:
         '500':
           $ref: '#/components/responses/InternalError'
 
+  /user/notification-preferences:
+    get:
+      operationId: getUserNotificationPreferences
+      summary: Get the authenticated user's notification preferences
+      description: >
+        Returns the authenticated user's notification preferences. Auto-creates
+        default preferences (all enabled) on first access. Requires authentication.
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User notification preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferencesResponse'
+              example:
+                preferences:
+                  user_id: 42
+                  notify_on_comment_replies: true
+                  notify_on_mentions: true
+                  notify_on_new_posts: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      operationId: updateUserNotificationPreferences
+      summary: Update the authenticated user's notification preferences
+      description: >
+        Updates notification preferences for the authenticated user. Accepts
+        partial updates — only provided fields are modified. Requires authentication.
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencesRequest'
+            example:
+              notify_on_comment_replies: false
+              notify_on_mentions: true
+      responses:
+        '200':
+          description: Updated notification preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferencesResponse'
+              example:
+                preferences:
+                  user_id: 42
+                  notify_on_comment_replies: false
+                  notify_on_mentions: true
+                  notify_on_new_posts: true
+        '400':
+          description: Missing or invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyBody:
+                  value:
+                    error: "At least one preference field is required"
+                unknownField:
+                  value:
+                    error: "Unknown preference field: notify_on_invalid"
+                nonBool:
+                  value:
+                    error: "Field 'notify_on_mentions' must be a boolean"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /admin/notifications:
+    get:
+      operationId: listNotificationsAdmin
+      summary: List all notifications for admin monitoring
+      description: >
+        Lists all notifications in the system for admin monitoring and debugging.
+        Returns paginated results sorted newest-first. Only accessible to admins.
+        Requires authentication and admin role.
+      tags:
+        - Notifications
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: skip
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000
+            default: 0
+          description: Number of records to skip for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          description: Maximum number of records to return per page
+      responses:
+        '200':
+          description: Paginated list of notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
+              example:
+                notifications:
+                  - id: 1
+                    recipient_id: 42
+                    sender_id: 1
+                    event_type: "comment_posted"
+                    post_id: 10
+                    comment_id: 5
+                    status: "sent"
+                    attempt_count: 1
+                    created_at: "2024-11-15T10:30:00+00:00"
+                    sent_at: "2024-11-15T10:31:00+00:00"
+                    has_delivery_error: false
+                skip: 0
+                limit: 50
+                total: 42
+        '400':
+          description: Invalid pagination parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                negativeSkip:
+                  value:
+                    error: "skip must be non-negative"
+                invalidLimit:
+                  value:
+                    error: "limit must be between 1 and 200"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /unsubscribe:
+    get:
+      operationId: unsubscribeAll
+      summary: Unsubscribe from all notifications via secure token link
+      description: >
+        Unsubscribes a user from all notifications using a secure HMAC token.
+        This endpoint is unauthenticated. The token replaces authentication by
+        proving the caller possesses the shared secret. Typically accessed via
+        email unsubscribe link.
+      tags:
+        - Notifications
+      security: []
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: User ID to unsubscribe
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 64
+            maxLength: 64
+          description: HMAC-SHA256 hex digest for token verification
+      responses:
+        '200':
+          description: Successfully unsubscribed from all notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnsubscribeResponse'
+              example:
+                message: "Successfully unsubscribed from all notifications"
+                user_id: 42
+        '400':
+          description: Missing, invalid, or tampered parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingUserId:
+                  value:
+                    error: "Missing required parameter: user_id"
+                missingToken:
+                  value:
+                    error: "Missing required parameter: token"
+                invalidToken:
+                  value:
+                    error: "Invalid or expired unsubscribe token"
+                userNotFound:
+                  value:
+                    error: "Invalid unsubscribe request"
+        '500':
+          $ref: '#/components/responses/InternalError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1058,6 +1274,158 @@ components:
         - code
         - retry_after
 
+    NotificationPreferences:
+      type: object
+      description: User notification preference settings
+      properties:
+        user_id:
+          type: integer
+          description: User ID
+        notify_on_comment_replies:
+          type: boolean
+          description: Whether to send emails when replies are posted
+        notify_on_mentions:
+          type: boolean
+          description: Whether to send emails for @mentions
+        notify_on_new_posts:
+          type: boolean
+          description: Whether to send emails for new blog posts
+      required:
+        - user_id
+        - notify_on_comment_replies
+        - notify_on_mentions
+        - notify_on_new_posts
+
+    NotificationPreferencesResponse:
+      type: object
+      properties:
+        preferences:
+          $ref: '#/components/schemas/NotificationPreferences'
+      required:
+        - preferences
+
+    NotificationPreferencesRequest:
+      type: object
+      description: >
+        Partial update request for notification preferences. At least one
+        field is required.
+      minProperties: 1
+      properties:
+        notify_on_comment_replies:
+          type: boolean
+          description: Whether to send emails when replies are posted
+        notify_on_mentions:
+          type: boolean
+          description: Whether to send emails for @mentions
+        notify_on_new_posts:
+          type: boolean
+          description: Whether to send emails for new blog posts
+
+    NotificationItem:
+      type: object
+      description: Single notification in the queue
+      properties:
+        id:
+          type: integer
+          description: Notification ID
+        recipient_id:
+          type: integer
+          description: User ID receiving the notification
+        sender_id:
+          type: integer
+          nullable: true
+          description: User ID of the sender/trigger (null for system events)
+        event_type:
+          type: string
+          enum:
+            - comment_posted
+            - reply_received
+            - mention
+          description: Type of event that triggered the notification
+        post_id:
+          type: integer
+          nullable: true
+          description: Post ID related to the notification
+        comment_id:
+          type: integer
+          nullable: true
+          description: Comment ID related to the notification
+        status:
+          type: string
+          enum:
+            - pending
+            - sent
+            - failed
+            - failed_permanently
+          description: Current delivery status
+        attempt_count:
+          type: integer
+          minimum: 0
+          description: Number of delivery attempts
+        created_at:
+          type: string
+          format: date-time
+          description: When the notification was created
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the notification was successfully sent (null if not sent)
+        has_delivery_error:
+          type: boolean
+          description: Whether an error message is recorded (PII excluded from response)
+      required:
+        - id
+        - recipient_id
+        - sender_id
+        - event_type
+        - post_id
+        - comment_id
+        - status
+        - attempt_count
+        - created_at
+        - sent_at
+        - has_delivery_error
+
+    NotificationListResponse:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationItem'
+        skip:
+          type: integer
+          minimum: 0
+          description: Number of records skipped
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          description: Maximum records requested
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of notifications in system
+      required:
+        - notifications
+        - skip
+        - limit
+        - total
+
+    UnsubscribeResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Confirmation message
+        user_id:
+          type: integer
+          description: User ID that was unsubscribed
+      required:
+        - message
+        - user_id
+
   responses:
     Unauthorized:
       description: Missing or invalid JWT token
@@ -1129,3 +1497,7 @@ tags:
     description: >-
       Post, list, and manage comments. Includes moderation controls,
       rate limiting, and real-time updates via Server-Sent Events
+  - name: Notifications
+    description: >-
+      Manage notification preferences, monitor delivery status, and
+      unsubscribe from notifications

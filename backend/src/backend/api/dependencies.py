@@ -4,7 +4,7 @@ import logging
 import os
 from typing import cast
 
-from backend.config import FileSystemSettings, GitHubSettings
+from backend.config import FileSystemSettings, GitHubSettings, ResendSettings
 from backend.domain.protocols.services import (
     DiffService as DiffServiceProtocol,
 )
@@ -14,6 +14,8 @@ from backend.domain.protocols.services import (
 from backend.domain.protocols.services import (
     MarkdownService as MarkdownServiceProtocol,
 )
+from backend.infrastructure.email.email_sender import EmailSender
+from backend.infrastructure.email.resend_email_service import ResendEmailService
 from backend.infrastructure.markdown.markdown_rendering_service import (
     MarkdownRenderingService,
 )
@@ -37,7 +39,10 @@ logger = logging.getLogger(__name__)
 
 _filesystem_settings: FileSystemSettings | None = None
 _github_settings: GitHubSettings | None = None
+_resend_settings: ResendSettings | None = None
 _github_service: GitHubSyncService | MockGitHubSyncService | None = None
+_resend_email_service: ResendEmailService | None = None
+_email_sender: EmailSender | None = None
 
 
 def get_filesystem_settings() -> FileSystemSettings:
@@ -110,3 +115,40 @@ def get_sanitizer() -> HtmlSanitizerProtocol:
 def get_diff_service() -> DiffServiceProtocol:
     """Get DiffService instance with protocol type."""
     return cast(DiffServiceProtocol, DiffService())
+
+
+def get_resend_settings() -> ResendSettings:
+    """Lazily initialize ResendSettings instance."""
+    global _resend_settings
+    if _resend_settings is None:
+        _resend_settings = ResendSettings()
+    return _resend_settings
+
+
+def get_resend_email_service() -> ResendEmailService:
+    """Get ResendEmailService singleton instance."""
+    global _resend_email_service
+    if _resend_email_service is not None:
+        return _resend_email_service
+    settings = get_resend_settings()
+    _resend_email_service = ResendEmailService(
+        api_key=settings.RESEND_API_KEY,
+        domain=settings.RESEND_DOMAIN,
+        timeout=settings.RESEND_REQUEST_TIMEOUT,
+        max_retries=settings.RESEND_MAX_RETRIES,
+    )
+    return _resend_email_service
+
+
+def get_email_sender() -> EmailSender:
+    """Get EmailSender singleton instance.
+
+    Constructs the sender from ResendSettings on first call and caches it
+    for subsequent calls. The sender is stateless and safe to share across
+    requests.
+    """
+    global _email_sender
+    if _email_sender is not None:
+        return _email_sender
+    _email_sender = EmailSender(service=get_resend_email_service())
+    return _email_sender
