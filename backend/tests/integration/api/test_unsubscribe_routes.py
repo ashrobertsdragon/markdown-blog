@@ -2,10 +2,9 @@
 
 Covers GET /api/unsubscribe.
 Uses Flask test client with mocked infrastructure dependencies.
-Token verification is tested by patching the utility function directly.
+Token verification uses UnsubscribeToken.generate with SECRET_KEY.
 """
 
-import hmac
 from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -14,15 +13,15 @@ import pytest
 
 from backend.domain.aggregates.user import User
 from backend.domain.value_objects.role import Role
+from backend.domain.value_objects.unsubscribe_token import UnsubscribeToken
 
-_TEST_SECRET = "test-unsubscribe-secret"
+_TEST_SECRET = "test-secret-key-min-32-characters-long"
+_OTHER_EMAIL = "other@example.com"
 
 
-def _make_valid_token(user_id: int) -> str:
-    """Generate a valid unsubscribe token matching the test secret."""
-    return hmac.new(
-        _TEST_SECRET.encode(), f"{user_id}".encode(), "sha256"
-    ).hexdigest()
+def _make_valid_token(user_id: int, email: str) -> str:
+    """Generate a valid unsubscribe token using UnsubscribeToken."""
+    return UnsubscribeToken.generate(user_id, email).value
 
 
 @pytest.fixture
@@ -47,9 +46,9 @@ class TestGetUnsubscribe:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """GET with valid user_id and token returns 200."""
-        monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
+        monkeypatch.setenv("SECRET_KEY", _TEST_SECRET)
         assert target_user.id is not None
-        token = _make_valid_token(target_user.id)
+        token = _make_valid_token(target_user.id, target_user.email)
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_id.return_value = target_user
@@ -79,9 +78,9 @@ class TestGetUnsubscribe:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """GET returns JSON body with a success message and user_id."""
-        monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
+        monkeypatch.setenv("SECRET_KEY", _TEST_SECRET)
         assert target_user.id is not None
-        token = _make_valid_token(target_user.id)
+        token = _make_valid_token(target_user.id, target_user.email)
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_id.return_value = target_user
@@ -113,9 +112,9 @@ class TestGetUnsubscribe:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """GET calls disable_all on the preferences repository."""
-        monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
+        monkeypatch.setenv("SECRET_KEY", _TEST_SECRET)
         assert target_user.id is not None
-        token = _make_valid_token(target_user.id)
+        token = _make_valid_token(target_user.id, target_user.email)
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_id.return_value = target_user
@@ -144,9 +143,9 @@ class TestGetUnsubscribe:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """GET succeeds without an Authorization header (unauthenticated)."""
-        monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
+        monkeypatch.setenv("SECRET_KEY", _TEST_SECRET)
         assert target_user.id is not None
-        token = _make_valid_token(target_user.id)
+        token = _make_valid_token(target_user.id, target_user.email)
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_id.return_value = target_user
@@ -175,9 +174,9 @@ class TestGetUnsubscribe:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """GET without user_id parameter returns 400."""
-        monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
+        monkeypatch.setenv("SECRET_KEY", _TEST_SECRET)
         assert target_user.id is not None
-        token = _make_valid_token(target_user.id)
+        token = _make_valid_token(target_user.id, target_user.email)
 
         response = client.get(f"/api/unsubscribe?token={token}")
 
@@ -202,14 +201,21 @@ class TestGetUnsubscribe:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """GET with a modified token returns 400."""
-        monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
+        monkeypatch.setenv("SECRET_KEY", _TEST_SECRET)
         assert target_user.id is not None
 
-        response = client.get(
-            f"/api/unsubscribe?user_id={target_user.id}"
-            "&token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            "aaaaaaaaaaaaaaaaaaaaaaaaa",
-        )
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_id.return_value = target_user
+
+        with patch(
+            "backend.api.routes.notifications._get_user_repository",
+            return_value=mock_user_repo,
+        ):
+            response = client.get(
+                f"/api/unsubscribe?user_id={target_user.id}"
+                "&token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "aaaaaaaaaaaaaaaaaaaaaaaaa",
+            )
 
         assert response.status_code == 400
 
@@ -220,14 +226,23 @@ class TestGetUnsubscribe:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """GET with a token generated for a different user_id returns 400."""
-        monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
+        monkeypatch.setenv("SECRET_KEY", _TEST_SECRET)
         assert target_user.id is not None
-        token_for_other_user = _make_valid_token(target_user.id + 1)
-
-        response = client.get(
-            f"/api/unsubscribe?user_id={target_user.id}"
-            f"&token={token_for_other_user}",
+        token_for_other_user = _make_valid_token(
+            target_user.id + 1, _OTHER_EMAIL
         )
+
+        mock_user_repo = MagicMock()
+        mock_user_repo.find_by_id.return_value = target_user
+
+        with patch(
+            "backend.api.routes.notifications._get_user_repository",
+            return_value=mock_user_repo,
+        ):
+            response = client.get(
+                f"/api/unsubscribe?user_id={target_user.id}"
+                f"&token={token_for_other_user}",
+            )
 
         assert response.status_code == 400
 
@@ -237,10 +252,9 @@ class TestGetUnsubscribe:
         target_user: User,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        """GET with valid token but unknown user_id returns 400."""
-        monkeypatch.setenv("UNSUBSCRIBE_SECRET", _TEST_SECRET)
+        """GET with unknown user_id returns 400 before token verification."""
+        monkeypatch.setenv("SECRET_KEY", _TEST_SECRET)
         assert target_user.id is not None
-        token = _make_valid_token(target_user.id)
 
         mock_user_repo = MagicMock()
         mock_user_repo.find_by_id.return_value = None
@@ -250,7 +264,7 @@ class TestGetUnsubscribe:
             return_value=mock_user_repo,
         ):
             response = client.get(
-                f"/api/unsubscribe?user_id={target_user.id}&token={token}",
+                f"/api/unsubscribe?user_id={target_user.id}&token={'a' * 64}",
             )
 
         assert response.status_code == 400

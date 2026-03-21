@@ -792,6 +792,7 @@ paths:
           schema:
             type: integer
             minimum: 0
+            maximum: 10000
             default: 0
           description: Number of records to skip for pagination
         - name: limit
@@ -1308,6 +1309,7 @@ components:
       description: >
         Partial update request for notification preferences. At least one
         field is required.
+      minProperties: 1
       properties:
         notify_on_comment_replies:
           type: boolean

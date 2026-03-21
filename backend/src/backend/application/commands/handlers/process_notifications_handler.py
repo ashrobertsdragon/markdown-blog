@@ -58,7 +58,7 @@ def _build_unsubscribe_url(recipient_id: int, recipient_email: str) -> str:
     """
     try:
         token = UnsubscribeToken.generate(recipient_id, recipient_email)
-        return f"/unsubscribe?token={token.value}"
+        return f"/unsubscribe?user_id={recipient_id}&token={token.value}"
     except (KeyError, ValueError):
         logger.warning(
             "SECRET_KEY not configured; omitting unsubscribe URL for user %d",

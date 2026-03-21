@@ -1,6 +1,7 @@
 """Integration tests asserting notification endpoints are documented in openapi.yaml."""
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -11,10 +12,11 @@ OPENAPI_PATH = (
 )
 
 
-def _load_spec() -> dict:
+def _load_spec() -> dict[str, Any]:
     """Load and parse the OpenAPI YAML spec."""
     with OPENAPI_PATH.open() as f:
-        return yaml.safe_load(f)
+        data: dict[str, Any] = yaml.safe_load(f)
+        return data
 
 
 class TestNotificationPathsExist:
@@ -70,9 +72,11 @@ class TestNotificationPathsExist:
 class TestNotificationSchemasExist:
     """Assert all notification-related component schemas are defined."""
 
-    def _schemas(self) -> dict:
+    def _schemas(self) -> dict[str, Any]:
         spec = _load_spec()
-        return spec.get("components", {}).get("schemas", {})
+        components: dict[str, Any] = spec.get("components", {})
+        schemas: dict[str, Any] = components.get("schemas", {})
+        return schemas
 
     def test_notification_preferences_response_schema_exists(self) -> None:
         """NotificationPreferencesResponse schema must be defined."""
@@ -108,9 +112,10 @@ class TestNotificationSchemasExist:
 class TestNotificationSecurityRequirements:
     """Assert security declarations are correct on each notification endpoint."""
 
-    def _operation(self, path: str, method: str) -> dict:
+    def _operation(self, path: str, method: str) -> dict[str, Any]:
         spec = _load_spec()
-        return spec["paths"][path][method]
+        operation: dict[str, Any] = spec["paths"][path][method]
+        return operation
 
     def test_get_preferences_requires_bearer_auth(self) -> None:
         """GET /user/notification-preferences must require bearerAuth."""
