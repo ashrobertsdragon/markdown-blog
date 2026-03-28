@@ -14,6 +14,7 @@ import PublicPost from '@/pages/PublicPost'
 import RevisionDetailPage from '@/pages/RevisionDetailPage'
 import RevisionDiffPage from '@/pages/RevisionDiffPage'
 import RevisionHistory from '@/pages/RevisionHistory'
+import Unsubscribe from '@/pages/Unsubscribe'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,7 @@ export function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/forbidden" element={<Forbidden />} />
+      <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/posts/:slug" element={<PublicPost />} />
       <Route
         path="/posts/:slug/revisions"

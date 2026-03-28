@@ -29,6 +29,14 @@ const getAuthHeaders = (token: string) => ({
   headers: { Authorization: `Bearer ${token}` },
 })
 
+/**
+ * Response envelope for GET /api/unsubscribe
+ */
+export interface UnsubscribeResponse {
+  message: string
+  user_id: number
+}
+
 export const notificationsApi = {
   /**
    * Fetch the authenticated user's notification preferences
@@ -67,6 +75,24 @@ export const notificationsApi = {
       updates,
       getAuthHeaders(token)
     )
+    return response.data
+  },
+
+  /**
+   * Unsubscribe a user from all notifications using a signed token
+   *
+   * No authentication header required — the token in the query string is the
+   * proof of identity. Called from the public /unsubscribe landing page.
+   *
+   * @param user_id - User primary key from the email link
+   * @param token - 64-character HMAC-SHA256 hex digest from the email link
+   * @returns Unsubscribe confirmation response
+   * @throws AxiosError on 400 (invalid/expired token) or 5xx (server error)
+   */
+  async unsubscribeWithToken(user_id: number, token: string): Promise<UnsubscribeResponse> {
+    const response = await apiClient.get<UnsubscribeResponse>('/unsubscribe', {
+      params: { user_id, token },
+    })
     return response.data
   },
 }
