@@ -39,4 +39,9 @@ export const queryKeys = {
    */
   revisionDiff: (slug: string, sha1: string, sha2: string) =>
     ['revisionDiff', slug, sha1, sha2] as const,
+
+  /**
+   * Query key for the authenticated user's notification preferences
+   */
+  notificationPreferences: () => ['notificationPreferences'] as const,
 }
