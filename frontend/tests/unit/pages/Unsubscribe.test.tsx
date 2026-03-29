@@ -58,7 +58,7 @@ describe('Unsubscribe page', () => {
       variables: STUB_PARAMS,
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: [`/unsubscribe?user_id=1&token=${TOKEN}`],
     })
 
@@ -75,7 +75,7 @@ describe('Unsubscribe page', () => {
       data: { message: 'Successfully unsubscribed from all notifications', user_id: 1 },
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: [`/unsubscribe?user_id=1&token=${TOKEN}`],
     })
 
@@ -95,7 +95,7 @@ describe('Unsubscribe page', () => {
       data: { message: 'Successfully unsubscribed from all notifications', user_id: 1 },
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: [`/unsubscribe?user_id=1&token=${TOKEN}`],
     })
 
@@ -116,7 +116,7 @@ describe('Unsubscribe page', () => {
       error: new Error('Invalid or expired unsubscribe link. Check your email.'),
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: [`/unsubscribe?user_id=1&token=${TOKEN}`],
     })
 
@@ -131,7 +131,7 @@ describe('Unsubscribe page', () => {
       mutate: mockMutate,
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: [`/unsubscribe?token=${TOKEN}`],
     })
 
@@ -146,7 +146,7 @@ describe('Unsubscribe page', () => {
       mutate: mockMutate,
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: ['/unsubscribe?user_id=1'],
     })
 
@@ -161,7 +161,7 @@ describe('Unsubscribe page', () => {
       mutate: mockMutate,
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: ['/unsubscribe?user_id=1&token=tooshort'],
     })
 
@@ -176,7 +176,7 @@ describe('Unsubscribe page', () => {
       mutate: mockMutate,
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: [`/unsubscribe?user_id=abc&token=${TOKEN}`],
     })
 
@@ -194,7 +194,7 @@ describe('Unsubscribe page', () => {
       data: { message: 'Successfully unsubscribed from all notifications', user_id: 1 },
     } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
 
-    render(undefined as unknown as React.ReactElement, {
+    render(<div />, {
       initialEntries: [`/unsubscribe?user_id=1&token=${TOKEN}`],
     })
 
