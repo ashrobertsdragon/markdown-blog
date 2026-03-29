@@ -54,6 +54,7 @@ export default function NotificationPreferences(): React.ReactElement {
   return (
     <div>
       <h1>Notification Preferences</h1>
+      {isLoading && <div>Loading preferences...</div>}
       {successMessage !== null && <div role="alert">{successMessage}</div>}
       {errorMessage !== null && (
         <div role="alert">
@@ -63,24 +64,25 @@ export default function NotificationPreferences(): React.ReactElement {
           </button>
         </div>
       )}
+      {mutation.isPending && <div>Saving...</div>}
       <fieldset>
         <legend>Email Notifications</legend>
         <NotificationToggle
           label="Notify on comment replies"
           checked={preferences?.notify_on_comment_replies ?? false}
-          onToggle={value => handleToggle('notify_on_comment_replies', value)}
+          onChange={value => handleToggle('notify_on_comment_replies', value)}
           disabled={mutation.isPending}
         />
         <NotificationToggle
           label="Notify on mentions"
           checked={preferences?.notify_on_mentions ?? false}
-          onToggle={value => handleToggle('notify_on_mentions', value)}
+          onChange={value => handleToggle('notify_on_mentions', value)}
           disabled={mutation.isPending}
         />
         <NotificationToggle
           label="Notify on new posts"
           checked={preferences?.notify_on_new_posts ?? false}
-          onToggle={value => handleToggle('notify_on_new_posts', value)}
+          onChange={value => handleToggle('notify_on_new_posts', value)}
           disabled={mutation.isPending}
         />
       </fieldset>

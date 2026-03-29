@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useUnsubscribe } from '@/hooks/useUnsubscribe'
 
-const TOKEN_REGEX = /^[a-f0-9]{64}$/
+const TOKEN_REGEX = /^[a-fA-F0-9]{64}$/
 
 /**
  * Validates query params from the unsubscribe email link.
@@ -14,7 +14,7 @@ function validateParams(userIdParam: string | null, tokenParam: string | null): 
   if (!userIdParam) return 'Missing required parameter: user_id'
   if (!tokenParam) return 'Missing required parameter: token'
   if (!/^\d+$/.test(userIdParam)) return 'Invalid user_id: must be numeric'
-  if (!TOKEN_REGEX.test(tokenParam)) return 'Invalid token: must be 64 lowercase hex characters'
+  if (!TOKEN_REGEX.test(tokenParam)) return 'Invalid token: must be 64 hex characters'
   return null
 }
 
@@ -35,27 +35,21 @@ export default function Unsubscribe() {
   const { mutate, isPending, isSuccess, isError, error } = useUnsubscribe()
 
   const [showSuccess, setShowSuccess] = useState(false)
-  const hasFired = useRef(false)
 
   useEffect(() => {
-    if (!validationError && !hasFired.current) {
-      hasFired.current = true
-      mutate({ user_id: parseInt(userIdParam as string, 10), token: tokenParam as string })
-    }
-  }, [mutate, validationError, userIdParam, tokenParam])
+    if (validationError || isPending || isSuccess || isError) return
+
+    mutate({ user_id: parseInt(userIdParam as string, 10), token: tokenParam as string })
+  }, [validationError, mutate, isPending, isSuccess, isError, userIdParam, tokenParam])
 
   useEffect(() => {
     if (isSuccess) {
       setShowSuccess(true)
-    }
-  }, [isSuccess])
-
-  useEffect(() => {
-    if (showSuccess) {
       const timer = setTimeout(() => setShowSuccess(false), 3000)
       return () => clearTimeout(timer)
     }
-  }, [showSuccess])
+    setShowSuccess(false)
+  }, [isSuccess])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">

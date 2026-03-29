@@ -124,36 +124,64 @@ describe('Unsubscribe page', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/invalid or expired unsubscribe link/i)
   })
 
-  it('displays error when user_id param is missing', () => {
+  it('displays error when user_id param is missing and does not call mutate', () => {
+    const mockMutate = vi.fn()
+    vi.mocked(useUnsubscribe).mockReturnValue({
+      ...idleMutation,
+      mutate: mockMutate,
+    } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
+
     render(undefined as unknown as React.ReactElement, {
       initialEntries: [`/unsubscribe?token=${TOKEN}`],
     })
 
     expect(screen.getByRole('alert')).toHaveTextContent(/user_id/i)
+    expect(mockMutate).not.toHaveBeenCalled()
   })
 
-  it('displays error when token param is missing', () => {
+  it('displays error when token param is missing and does not call mutate', () => {
+    const mockMutate = vi.fn()
+    vi.mocked(useUnsubscribe).mockReturnValue({
+      ...idleMutation,
+      mutate: mockMutate,
+    } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
+
     render(undefined as unknown as React.ReactElement, {
       initialEntries: ['/unsubscribe?user_id=1'],
     })
 
     expect(screen.getByRole('alert')).toHaveTextContent(/token/i)
+    expect(mockMutate).not.toHaveBeenCalled()
   })
 
-  it('displays error when token is not 64 hex characters', () => {
+  it('displays error when token is not 64 hex characters and does not call mutate', () => {
+    const mockMutate = vi.fn()
+    vi.mocked(useUnsubscribe).mockReturnValue({
+      ...idleMutation,
+      mutate: mockMutate,
+    } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
+
     render(undefined as unknown as React.ReactElement, {
       initialEntries: ['/unsubscribe?user_id=1&token=tooshort'],
     })
 
     expect(screen.getByRole('alert')).toHaveTextContent(/invalid.*token/i)
+    expect(mockMutate).not.toHaveBeenCalled()
   })
 
-  it('displays error when user_id is not numeric', () => {
+  it('displays error when user_id is not numeric and does not call mutate', () => {
+    const mockMutate = vi.fn()
+    vi.mocked(useUnsubscribe).mockReturnValue({
+      ...idleMutation,
+      mutate: mockMutate,
+    } as unknown as UseMutationResult<UnsubscribeResponse, Error, UnsubscribeParams>)
+
     render(undefined as unknown as React.ReactElement, {
       initialEntries: [`/unsubscribe?user_id=abc&token=${TOKEN}`],
     })
 
     expect(screen.getByRole('alert')).toHaveTextContent(/invalid.*user/i)
+    expect(mockMutate).not.toHaveBeenCalled()
   })
 
   it('shows link to home on success', async () => {

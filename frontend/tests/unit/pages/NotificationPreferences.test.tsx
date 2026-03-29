@@ -25,11 +25,13 @@ vi.mock('@/components/preferences/NotificationToggle', () => ({
   NotificationToggle: ({
     label,
     checked,
-    onToggle,
+    onChange,
+    disabled,
   }: {
     label: string
     checked: boolean
-    onToggle: (value: boolean) => Promise<void>
+    onChange: (value: boolean) => void
+    disabled?: boolean
   }) => (
     <div>
       <label>
@@ -37,8 +39,9 @@ vi.mock('@/components/preferences/NotificationToggle', () => ({
         <input
           type="checkbox"
           checked={checked}
-          onChange={e => onToggle(e.target.checked)}
+          onChange={e => onChange(e.target.checked)}
           aria-label={label}
+          disabled={disabled}
         />
       </label>
     </div>
@@ -173,7 +176,9 @@ describe('NotificationPreferences page', () => {
 
     await userEvent.click(screen.getByLabelText('Notify on comment replies'))
 
-    expect(mockMutateAsync).toHaveBeenCalledWith({ notify_on_comment_replies: false })
+    await waitFor(() =>
+      expect(mockMutateAsync).toHaveBeenCalledWith({ notify_on_comment_replies: false })
+    )
   })
 
   it('calls mutateAsync with correct args when mention toggle changes', async () => {
@@ -182,7 +187,7 @@ describe('NotificationPreferences page', () => {
 
     await userEvent.click(screen.getByLabelText('Notify on mentions'))
 
-    expect(mockMutateAsync).toHaveBeenCalledWith({ notify_on_mentions: true })
+    await waitFor(() => expect(mockMutateAsync).toHaveBeenCalledWith({ notify_on_mentions: true }))
   })
 
   it('calls mutateAsync with correct args when new post toggle changes', async () => {
@@ -191,22 +196,47 @@ describe('NotificationPreferences page', () => {
 
     await userEvent.click(screen.getByLabelText('Notify on new posts'))
 
-    expect(mockMutateAsync).toHaveBeenCalledWith({ notify_on_new_posts: false })
+    await waitFor(() =>
+      expect(mockMutateAsync).toHaveBeenCalledWith({ notify_on_new_posts: false })
+    )
   })
 
   it('shows a success alert after a successful mutation', async () => {
-    mockMutateAsync.mockResolvedValueOnce(undefined)
+    const mockMutation = {
+      ...defaultMutation,
+      mutateAsync: vi.fn(async () => ({
+        user_id: 1,
+        notify_on_comment_replies: true,
+        notify_on_mentions: true,
+        notify_on_new_posts: true,
+      })),
+    }
+    vi.mocked(useUpdateNotificationPreferences).mockReturnValue(
+      mockMutation as ReturnType<typeof useUpdateNotificationPreferences>
+    )
     renderPage()
 
     await userEvent.click(screen.getByLabelText('Notify on mentions'))
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+    expect(screen.getByRole('alert')).toHaveTextContent(/saved/i)
   })
 
   it('auto-dismisses the success alert after 3 seconds', async () => {
     vi.useFakeTimers()
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    mockMutateAsync.mockResolvedValueOnce(undefined)
+    const mockMutation = {
+      ...defaultMutation,
+      mutateAsync: vi.fn(async () => ({
+        user_id: 1,
+        notify_on_comment_replies: true,
+        notify_on_mentions: true,
+        notify_on_new_posts: true,
+      })),
+    }
+    vi.mocked(useUpdateNotificationPreferences).mockReturnValue(
+      mockMutation as ReturnType<typeof useUpdateNotificationPreferences>
+    )
     renderPage()
 
     await user.click(screen.getByLabelText('Notify on mentions'))
@@ -219,7 +249,15 @@ describe('NotificationPreferences page', () => {
   })
 
   it('shows an error alert when the mutation fails', async () => {
-    mockMutateAsync.mockRejectedValueOnce(new Error('Save failed'))
+    const mockMutation = {
+      ...defaultMutation,
+      mutateAsync: vi.fn(async () => {
+        throw new Error('Save failed')
+      }),
+    }
+    vi.mocked(useUpdateNotificationPreferences).mockReturnValue(
+      mockMutation as ReturnType<typeof useUpdateNotificationPreferences>
+    )
     renderPage()
 
     await userEvent.click(screen.getByLabelText('Notify on mentions'))

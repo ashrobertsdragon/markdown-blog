@@ -14,7 +14,7 @@ import {
   notificationsApi,
 } from '@/services/notificationsApi'
 
-const ALLOWED_PREFERENCE_KEYS: ReadonlySet<string> = new Set([
+const ALLOWED_PREFERENCE_KEYS: ReadonlySet<keyof NotificationPreferencesUpdate> = new Set([
   'notify_on_comment_replies',
   'notify_on_mentions',
   'notify_on_new_posts',
@@ -59,7 +59,9 @@ function classifyNotificationsError(err: unknown, context: 'fetch' | 'update'): 
  */
 function sanitizeUpdates(updates: NotificationPreferencesUpdate): NotificationPreferencesUpdate {
   return Object.fromEntries(
-    Object.entries(updates).filter(([key]) => ALLOWED_PREFERENCE_KEYS.has(key))
+    Object.entries(updates).filter(([key]) =>
+      ALLOWED_PREFERENCE_KEYS.has(key as keyof NotificationPreferencesUpdate)
+    )
   ) as NotificationPreferencesUpdate
 }
 
