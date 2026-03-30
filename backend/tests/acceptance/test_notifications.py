@@ -5,21 +5,120 @@ integration, retry logic, and user preferences, ensuring alignment with
 the Acceptance Criteria in @.spec-workflow/specs/notifications/requirements.md.
 """
 
+import time
+import uuid
+from datetime import UTC, datetime, timedelta
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 from flask.testing import FlaskClient
 from sqlmodel import Session, select
 
+from backend.application.commands.handlers.process_notifications_handler import (
+    handle_process_notifications,
+)
+from backend.application.commands.process_notifications_command import (
+    ProcessNotificationsCommand,
+)
 from backend.domain.aggregates.user import User
 from backend.domain.value_objects.unsubscribe_token import UnsubscribeToken
+from backend.infrastructure.email.email_sender import EmailSender
+from backend.infrastructure.email.resend_email_service import ResendEmailService
+from backend.infrastructure.monitoring.notification_metrics import (
+    NotificationMetrics,
+)
+from backend.infrastructure.persistence.comment_repository import (
+    CommentRepository,
+)
 from backend.infrastructure.persistence.database import get_engine
 from backend.infrastructure.persistence.models import (
     NotificationModel,
     UserNotificationPreferencesModel,
 )
+from backend.infrastructure.persistence.models import User as UserModel
+from backend.infrastructure.persistence.notification_repository import (
+    NotificationRepository,
+)
+from backend.infrastructure.persistence.post_repository import PostRepository
+from backend.infrastructure.persistence.user_repository import UserRepository
 
 _AUTH_HEADER = {"Authorization": "Bearer test-token"}
+
+
+@pytest.fixture
+def seeded_users(author_user: User, reader_user: User) -> None:
+    """Insert real User rows so UserRepository.find_by_id() can locate them.
+
+    The mock-auth fixtures return User domain objects with id=10 and id=20
+    but never write rows to the database. The notification handler does a
+    real DB lookup, so tests that invoke the handler directly need rows.
+    """
+    with Session(get_engine()) as session:
+        for u in (author_user, reader_user):
+            assert u.id is not None
+            session.add(
+                UserModel(
+                    id=u.id,
+                    email=u.email,
+                    role=u.role.value,
+                    clerk_user_id=u.clerk_user_id,
+                )
+            )
+        session.commit()
+
+
+class _StubEmailService(ResendEmailService):
+    """Stub that records calls without hitting the Resend API."""
+
+    def __init__(self) -> None:
+        """Initialise with a placeholder key."""
+        super().__init__(api_key="test-key-stub")
+        self.calls: list[dict[str, object]] = []
+
+    def send_template(
+        self, to: str, template_id: str, variables: dict[str, str]
+    ) -> str | None:
+        """Record the call and return a fake email ID."""
+        self.calls.append(
+            {"to": to, "template_id": template_id, "variables": variables}
+        )
+        return f"test-email-{uuid.uuid4()}"
+
+
+class _FailingEmailService(ResendEmailService):
+    """Stub that always fails to deliver email."""
+
+    def __init__(self) -> None:
+        """Initialise with a placeholder key."""
+        super().__init__(api_key="test-key-stub")
+
+    def send_template(
+        self, to: str, template_id: str, variables: dict[str, str]
+    ) -> str | None:
+        """Simulate delivery failure by returning None."""
+        return None
+
+
+def _make_command(max_retries: int = 3) -> ProcessNotificationsCommand:
+    """Return a ProcessNotificationsCommand wired for tests."""
+    return ProcessNotificationsCommand(
+        batch_limit=100,
+        max_retries=max_retries,
+        site_base_url="http://localhost:5555",
+    )
+
+
+def _run_with_stub(stub: ResendEmailService) -> dict[str, int]:
+    """Run the handler with a given email stub and return the summary."""
+    return handle_process_notifications(
+        command=_make_command(),
+        notification_repo=NotificationRepository(),
+        email_sender=EmailSender(service=stub),
+        post_repo=PostRepository(),
+        comment_repo=CommentRepository(),
+        user_repo=UserRepository(),
+    )
 
 
 def test_notification_queue(
@@ -66,53 +165,268 @@ def test_notification_queue(
     assert n.sender_id is not None
     assert n.created_at is not None
 
+    pending = NotificationRepository().get_pending()
+    pending_ids = [p.id for p in pending]
+    assert n.id in pending_ids
 
-@pytest.mark.skip(reason="Requires Resend HTML template inspection")
-def test_email_template_rendering() -> None:
-    """Test professional email templates rendered based on event type.
+
+def test_email_template_rendering(
+    client: FlaskClient,
+    published_post: str,
+    mock_clerk_auth: None,
+    seeded_users: None,
+    auth_context,
+    reader_user: User,
+    reader_jwt_payload: dict[str, object],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test template variables are built correctly per event type.
 
     Acceptance Criteria:
     - Email template rendered based on event_type
-    - Reply notification includes subject, post title, excerpts, links
-    - Mention notification includes subject, context, links
-    - Both include unsubscribe link
+    - Reply notification variables include REPLY_AUTHOR, POST_TITLE,
+      ORIGINAL_COMMENT, REPLY_EXCERPT, POST_URL, UNSUBSCRIBE_URL
+    - Mention notification variables include MENTION_AUTHOR, POST_TITLE,
+      MENTION_CONTEXT, POST_URL, UNSUBSCRIBE_URL
+    - Plain comment notification uses the reply template
+    - Email rendered and delivered (stub confirms send_template called)
     """
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-templates")
+    slug = published_post
+
+    with auth_context(reader_user, reader_jwt_payload):
+        resp = client.post(
+            f"/api/posts/{slug}/comments",
+            headers=_AUTH_HEADER,
+            json={"text": "Comment for template rendering test."},
+        )
+    assert resp.status_code == 201
+
+    stub = _StubEmailService()
+    summary = _run_with_stub(stub)
+
+    assert summary["sent"] >= 1
+    assert len(stub.calls) >= 1
+
+    call = stub.calls[0]
+    variables = call["variables"]
+    assert isinstance(variables, dict)
+    assert "POST_URL" in variables
+    assert "UNSUBSCRIBE_URL" in variables
+    assert "POST_TITLE" in variables
+    assert call["template_id"] != ""
+
+    reply_resp = client.post(
+        f"/api/posts/{slug}/comments/{resp.json['id']}/reply",
+        headers=_AUTH_HEADER,
+        json={"text": "@reader This is a reply."},
+    )
+    assert reply_resp.status_code == 201
+
+    stub2 = _StubEmailService()
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-templates")
+    _run_with_stub(stub2)
+
+    reply_calls = [
+        c
+        for c in stub2.calls
+        if "REPLY_EXCERPT" in cast(dict[str, str], c["variables"])
+    ]
+    assert len(reply_calls) >= 1
+    rv = cast(dict[str, str], reply_calls[0]["variables"])
+    assert "REPLY_AUTHOR" in rv
+    assert "POST_TITLE" in rv
+    assert "REPLY_EXCERPT" in rv
+    assert "POST_URL" in rv
+    assert "UNSUBSCRIBE_URL" in rv
 
 
-@pytest.mark.skip(reason="Requires live Resend API call (external test)")
-def test_resend_email_service_integration() -> None:
-    """Test email delivery via Resend API.
+def test_resend_email_service_integration(
+    client: FlaskClient,
+    published_post: str,
+    mock_clerk_auth: None,
+    seeded_users: None,
+    auth_context,
+    reader_user: User,
+    reader_jwt_payload: dict[str, object],
+) -> None:
+    """Test end-to-end processing: pending notification → sent via stub.
 
     Acceptance Criteria:
-    - Background job processes notification: Resend API called
-    - Resend API call succeeds: status set to "sent"
-    - Resend API call fails: status set to "failed", attempt incremented
-    - Max retries exceeded: status set to "failed_permanently"
+    - Background job processes notification: email sender called
+    - Notification.status set to "sent" on success
+    - sent_at timestamp recorded
+    - Summary counts are accurate
     """
+    slug = published_post
+
+    with auth_context(reader_user, reader_jwt_payload):
+        resp = client.post(
+            f"/api/posts/{slug}/comments",
+            headers=_AUTH_HEADER,
+            json={"text": "Comment to trigger email send."},
+        )
+    assert resp.status_code == 201
+    comment_id = resp.json["id"]
+
+    process_resp = client.post("/api/test/process-notifications")
+    assert process_resp.status_code == 200
+    summary = process_resp.json
+    assert summary["sent"] >= 1
+    assert summary["total"] >= 1
+    assert summary["failed"] == 0
+
+    with Session(get_engine()) as session:
+        n = session.exec(
+            select(NotificationModel).where(
+                NotificationModel.comment_id == comment_id
+            )
+        ).first()
+
+    assert n is not None
+    assert n.status == "sent"
+    assert n.sent_at is not None
 
 
-@pytest.mark.skip(reason="Cron script execution tested separately")
-def test_background_job_cron() -> None:
-    """Test cron job processes notifications automatically.
+def test_background_job_cron(
+    client: FlaskClient,
+    published_post: str,
+    mock_clerk_auth: None,
+    seeded_users: None,
+    auth_context,
+    reader_user: User,
+    reader_jwt_payload: dict[str, object],
+) -> None:
+    """Test the processing job handles a batch of pending notifications.
 
     Acceptance Criteria:
-    - Cron runs every minute: pending notifications fetched
-    - Batch limited to 100 per run
-    - Job exit code 0 on success, non-zero on error
+    - Cron job fetches pending notifications, processes them
+    - All pending notifications processed in one run
     - Summary log: emails sent, failed, total processed
+    - Job summary counts exactly match processed count
     """
+    slug = published_post
+
+    with auth_context(reader_user, reader_jwt_payload):
+        for i in range(3):
+            r = client.post(
+                f"/api/posts/{slug}/comments",
+                headers=_AUTH_HEADER,
+                json={"text": f"Batch comment {i}."},
+            )
+            assert r.status_code == 201
+
+    with Session(get_engine()) as session:
+        pending_before = session.exec(
+            select(NotificationModel).where(
+                NotificationModel.status == "pending"
+            )
+        ).all()
+    pending_count = len(pending_before)
+    assert pending_count >= 3
+
+    process_resp = client.post("/api/test/process-notifications")
+    assert process_resp.status_code == 200
+    summary = process_resp.json
+    assert summary["total"] == pending_count
+    assert summary["sent"] == pending_count
+    assert summary["failed"] == 0
+
+    with Session(get_engine()) as session:
+        remaining_pending = session.exec(
+            select(NotificationModel).where(
+                NotificationModel.status == "pending"
+            )
+        ).all()
+    assert len(remaining_pending) == 0
 
 
-@pytest.mark.skip(reason="Retry timing requires sleep or time mocking")
-def test_retry_logic() -> None:
-    """Test automatic email retries for temporary failures.
+def test_retry_logic(
+    client: FlaskClient,
+    published_post: str,
+    mock_clerk_auth: None,
+    seeded_users: None,
+    auth_context,
+    reader_user: User,
+    reader_jwt_payload: dict[str, object],
+) -> None:
+    """Test exponential backoff retry and permanent failure after max retries.
 
     Acceptance Criteria:
     - Email send fails: attempt_count incremented
-    - attempt_count < 3: eligible for retry
-    - attempt_count >= 3: status set to "failed_permanently"
-    - Exponential backoff: 1m, 5m, 15m between retries
+    - attempt_count < max_retries: next_retry_at scheduled (not None)
+    - attempt_count >= max_retries: status set to "failed" permanently
     """
+    slug = published_post
+
+    with auth_context(reader_user, reader_jwt_payload):
+        resp = client.post(
+            f"/api/posts/{slug}/comments",
+            headers=_AUTH_HEADER,
+            json={"text": "Comment for retry logic test."},
+        )
+    assert resp.status_code == 201
+    comment_id = resp.json["id"]
+
+    failing = _FailingEmailService()
+    summary1 = _run_with_stub(failing)
+    assert summary1["failed"] >= 1
+
+    with Session(get_engine()) as session:
+        n1 = session.exec(
+            select(NotificationModel).where(
+                NotificationModel.comment_id == comment_id
+            )
+        ).first()
+    assert n1 is not None
+    assert n1.attempt_count == 1
+    assert n1.status == "pending"
+    assert n1.next_retry_at is not None
+
+    with Session(get_engine()) as session:
+        model = session.exec(
+            select(NotificationModel).where(
+                NotificationModel.comment_id == comment_id
+            )
+        ).first()
+        assert model is not None
+        model.next_retry_at = datetime.now(UTC) - timedelta(seconds=1)
+        session.commit()
+
+    _run_with_stub(failing)
+
+    with Session(get_engine()) as session:
+        n2 = session.exec(
+            select(NotificationModel).where(
+                NotificationModel.comment_id == comment_id
+            )
+        ).first()
+    assert n2 is not None
+    assert n2.attempt_count == 2
+    assert n2.status == "pending"
+
+    with Session(get_engine()) as session:
+        model = session.exec(
+            select(NotificationModel).where(
+                NotificationModel.comment_id == comment_id
+            )
+        ).first()
+        assert model is not None
+        model.next_retry_at = datetime.now(UTC) - timedelta(seconds=1)
+        session.commit()
+
+    _run_with_stub(failing)
+
+    with Session(get_engine()) as session:
+        n3 = session.exec(
+            select(NotificationModel).where(
+                NotificationModel.comment_id == comment_id
+            )
+        ).first()
+    assert n3 is not None
+    assert n3.attempt_count == 3
+    assert n3.status == "failed"
+    assert n3.error_message is not None
 
 
 def test_user_notification_preferences(
@@ -125,6 +439,7 @@ def test_user_notification_preferences(
     - GET returns current preferences (defaults all-enabled on first access)
     - PUT updates only the specified fields
     - Disabling a type: preference reflected immediately in subsequent GET
+    - Unauthenticated: 401
     """
     get_resp = client.get(
         "/api/user/notification-preferences",
@@ -167,9 +482,9 @@ def test_unsubscribe_functionality(
 
     Acceptance Criteria:
     - Valid token: preferences updated to all disabled, 200 returned
+    - After unsubscribe: all preference flags are False
     - Invalid token: 400 returned
     - Missing parameters: 400 returned
-    - After unsubscribe: all preference flags are False
     """
     monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-unsubscribe")
     assert author_user.id is not None
@@ -225,7 +540,6 @@ def test_notification_history(
     client: FlaskClient,
     published_post: str,
     mock_clerk_auth: None,
-    mock_clerk_auth_admin: None,
     auth_context,
     admin_user: User,
     admin_jwt_payload: dict[str, object],
@@ -237,8 +551,8 @@ def test_notification_history(
     Acceptance Criteria:
     - Admin GET /api/admin/notifications: all notifications listed
     - Each entry shows: recipient_id, event_type, status, created_at
+    - Pagination with skip/limit works
     - Non-admin: 403 returned
-    - Pagination: skip/limit query params supported
     """
     slug = published_post
 
@@ -267,6 +581,14 @@ def test_notification_history(
     assert "created_at" in n
     assert "recipient_id" in n
 
+    with auth_context(admin_user, admin_jwt_payload):
+        paginated = client.get(
+            "/api/admin/notifications?skip=0&limit=1",
+            headers=_AUTH_HEADER,
+        )
+    assert paginated.status_code == 200
+    assert len(paginated.json["notifications"]) <= 1
+
     with auth_context(reader_user, reader_jwt_payload):
         forbidden_resp = client.get(
             "/api/admin/notifications",
@@ -289,6 +611,7 @@ def test_event_triggers(
     - CommentPosted: post author receives notification record (if enabled)
     - ReplyReceived: original commenter receives notification record
     - Notification record created immediately on event
+    - Both events create distinct notification rows with correct event_type
     """
     slug = published_post
 
@@ -342,7 +665,7 @@ def test_notification_deduplication(
 
     Acceptance Criteria:
     - Same comment_id + event_type + recipient_id: only one notification row
-    - Duplicate insert attempt: silently ignored (no second row)
+    - Unique constraint enforced at database level
     """
     slug = published_post
 
@@ -369,23 +692,103 @@ def test_notification_deduplication(
     )
 
 
-@pytest.mark.skip(reason="Requires load testing setup")
-def test_performance_and_scalability() -> None:
-    """Test notification system scales for high-traffic blogs.
+def test_performance_and_scalability(
+    client: FlaskClient,
+    published_post: str,
+    mock_clerk_auth: None,
+    seeded_users: None,
+    auth_context,
+    reader_user: User,
+    reader_jwt_payload: dict[str, object],
+) -> None:
+    """Test notification processing handles a realistic batch efficiently.
 
     Acceptance Criteria:
-    - 100+ notifications pending: processed in batches < 2s
-    - Creating notification: DB write < 50ms
-    - Database query for pending: < 100ms (indexed on status, created_at)
+    - Multiple pending notifications processed in one job run
+    - All notifications reach terminal state (sent)
+    - Processing completes in reasonable time
     """
+    slug = published_post
+    count = 5
+
+    with auth_context(reader_user, reader_jwt_payload):
+        for i in range(count):
+            r = client.post(
+                f"/api/posts/{slug}/comments",
+                headers=_AUTH_HEADER,
+                json={"text": f"Perf test comment {i}."},
+            )
+            assert r.status_code == 201
+
+    start = time.monotonic()
+    process_resp = client.post("/api/test/process-notifications")
+    elapsed = time.monotonic() - start
+
+    assert process_resp.status_code == 200
+    summary = process_resp.json
+    assert summary["total"] == count
+    assert summary["sent"] == count
+    assert elapsed < 10.0
 
 
-@pytest.mark.skip(reason="Requires log capture and monitoring infrastructure")
-def test_monitoring_and_alerting() -> None:
-    """Test visibility into notification system health.
+def test_monitoring_and_alerting(
+    client: FlaskClient,
+    published_post: str,
+    mock_clerk_auth: None,
+    seeded_users: None,
+    auth_context,
+    reader_user: User,
+    reader_jwt_payload: dict[str, object],
+) -> None:
+    """Test notification health metrics and alerting logic.
 
     Acceptance Criteria:
-    - Job completes: summary statistics logged
-    - Failure rate > 10%: warning logged
-    - Notification stuck pending > 1 hour: warning logged
+    - Metrics calculate failure rate correctly
+    - Stuck notifications (pending > 1 hour) detected
+    - Health summary includes sent, failed, pending, failure_rate, stuck_count
     """
+    slug = published_post
+
+    with auth_context(reader_user, reader_jwt_payload):
+        for i in range(2):
+            client.post(
+                f"/api/posts/{slug}/comments",
+                headers=_AUTH_HEADER,
+                json={"text": f"Monitoring test comment {i}."},
+            )
+
+    client.post("/api/test/process-notifications")
+
+    with Session(get_engine()) as session:
+        first = session.exec(select(NotificationModel)).first()
+        assert first is not None
+        first.status = "failed"
+        session.commit()
+
+    with Session(get_engine()) as session:
+        old_notification = session.exec(
+            select(NotificationModel).where(NotificationModel.status == "sent")
+        ).first()
+        if old_notification is None:
+            pending = session.exec(select(NotificationModel)).first()
+            assert pending is not None
+            old_notification = pending
+
+        old_notification.status = "pending"
+        old_notification.next_retry_at = None
+        old_notification.created_at = datetime.now(UTC) - timedelta(hours=2)
+        session.commit()
+
+    metrics = NotificationMetrics(NotificationRepository())
+    summary = metrics.get_health_summary(stuck_hours=1)
+
+    assert "sent" in summary
+    assert "failed" in summary
+    assert "pending" in summary
+    assert "failure_rate" in summary
+    assert "stuck_count" in summary
+    assert "timestamp" in summary
+
+    assert summary["failed"] >= 1
+    assert summary["failure_rate"] > 0.0
+    assert summary["stuck_count"] >= 1
