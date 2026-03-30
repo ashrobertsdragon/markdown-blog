@@ -25,28 +25,28 @@ export async function getAuthToken(page: Page): Promise<string | null> {
     return authCookie.value
   }
 
-  const sessionStorage = await page.evaluate(() => {
-    return sessionStorage.getItem('auth_token')
+  const sessionStorageToken = await page.evaluate((): string | null => {
+    return window.sessionStorage.getItem('auth_token')
   })
 
-  if (sessionStorage) {
-    return sessionStorage
+  if (sessionStorageToken) {
+    return sessionStorageToken
   }
 
-  const localStorage = await page.evaluate(() => {
-    return localStorage.getItem('auth_token')
+  const localStorageToken = await page.evaluate((): string | null => {
+    return window.localStorage.getItem('auth_token')
   })
 
-  return localStorage
+  return localStorageToken
 }
 
 export async function verifyAuthHeaderInRequest(page: Page, apiPath: string): Promise<void> {
   let authHeaderFound = false
 
-  page.on('response', response => {
+  page.on('response', async response => {
     if (response.url().includes(apiPath)) {
       const request = response.request()
-      const authHeader = request.headerValue('authorization')
+      const authHeader = await request.headerValue('authorization')
       if (authHeader?.startsWith('Bearer ')) {
         authHeaderFound = true
       }
@@ -109,7 +109,7 @@ export async function waitForAuthToLoad(page: Page): Promise<void> {
   )
 }
 
-export async function verifyBearerTokenFormat(token: string | null): void {
+export async function verifyBearerTokenFormat(token: string | null): Promise<void> {
   expect(token).toBeTruthy()
   expect(token).toMatch(/^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/)
 }

@@ -9,6 +9,7 @@ import Home from '@/pages/Home'
 import Login from '@/pages/Login'
 import MyPosts from '@/pages/MyPosts'
 import NotFound from '@/pages/NotFound'
+import NotificationPreferences from '@/pages/NotificationPreferences'
 import PostEditor from '@/pages/PostEditor'
 import PublicPost from '@/pages/PublicPost'
 import RevisionDetailPage from '@/pages/RevisionDetailPage'
@@ -71,6 +72,16 @@ export function AppRoutes() {
         element={
           <ProtectedRoute requireRole="authenticated">
             <RevisionDiffPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Authenticated routes */}
+      <Route
+        path="/settings/notifications"
+        element={
+          <ProtectedRoute requireRole="authenticated">
+            <NotificationPreferences />
           </ProtectedRoute>
         }
       />

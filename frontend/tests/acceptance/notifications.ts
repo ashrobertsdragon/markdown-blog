@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForAuthToLoad } from '../e2e/fixtures/helpers'
 import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 /**
@@ -8,46 +9,61 @@ import { mockClerkAuth } from '../fixtures/clerk-mock'
  * and notification UI as specified in notifications/requirements.md.
  */
 
+const VALID_TOKEN = 'a'.repeat(64)
+
 test.describe('Notifications - Frontend UI', () => {
-  test.skip('User notification preferences settings', async ({ page }) => {
+  test('User notification preferences settings', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - User visits notification settings: sees toggles for notification types
-     * - Toggles available:
-     *   * "Notify me on comment replies"
-     *   * "Notify me on mentions"
-     *   * "Notify me on new posts" (future feature)
+     * - Toggles available for reply, mention, new post notifications
      * - User disables notification type: corresponding emails NOT sent
      * - Preference updates: changes effective immediately
      */
-    await mockClerkAuth(page, { role: 'authenticated' })
-    await page.goto('/settings/notifications')
+    const defaultPrefs = {
+      preferences: {
+        user_id: 1,
+        notify_on_comment_replies: true,
+        notify_on_mentions: true,
+        notify_on_new_posts: true,
+      },
+    }
 
-    const replyToggle = page.locator('input[type="checkbox"][name*="reply"]')
-    await expect(replyToggle).toBeVisible()
-
-    const mentionToggle = page.locator('input[type="checkbox"][name*="mention"]')
-    await expect(mentionToggle).toBeVisible()
-
-    await page.route('**/users/*/preferences', async route => {
-      if (route.request().method() === 'PUT') {
+    await page.route('**/api/user/notification-preferences', async route => {
+      if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ message: 'Preferences updated' }),
+          body: JSON.stringify(defaultPrefs),
+        })
+      } else if (route.request().method() === 'PUT') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            preferences: { ...defaultPrefs.preferences, notify_on_comment_replies: false },
+          }),
         })
       } else {
         await route.continue()
       }
     })
 
-    await replyToggle.click()
+    await mockClerkAuth(page, { role: 'authenticated' })
+    await page.goto('/settings/notifications')
+    await waitForAuthToLoad(page)
 
-    const successMessage = page.locator('text=/preferences updated/i')
-    await expect(successMessage).toBeVisible()
+    const checkboxes = page.locator('input[type="checkbox"]')
+    await expect(checkboxes.first()).toBeVisible()
+    await expect(checkboxes).toHaveCount(3)
+
+    await checkboxes.first().click()
+
+    const successMessage = page.locator('[role="alert"]')
+    await expect(successMessage).toContainText(/Preferences saved/i)
   })
 
-  test.skip('Unsubscribe from emails via link', async ({ page }) => {
+  test('Unsubscribe from emails via link', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - User clicks unsubscribe link: token verified
@@ -55,52 +71,34 @@ test.describe('Notifications - Frontend UI', () => {
      * - User sees success message: "You've been unsubscribed"
      * - Token invalid or expired: error message displayed
      */
-    const token = 'valid_unsubscribe_token_123'
-
-    await page.route('**/unsubscribe', async route => {
+    await page.route('**/api/unsubscribe**', async route => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          message: "You've been unsubscribed from all notifications",
+          message: 'Successfully unsubscribed from all notifications',
+          user_id: 1,
         }),
       })
     })
 
-    await page.goto(`/unsubscribe?token=${token}`)
+    await page.goto(`/unsubscribe?user_id=1&token=${VALID_TOKEN}`)
 
-    const successMessage = page.locator('text=/unsubscribed/i')
-    await expect(successMessage).toBeVisible()
+    const successMessage = page.locator('[role="alert"]')
+    await expect(successMessage).toContainText(/unsubscribed/i)
   })
 
-  test.skip('Invalid unsubscribe token handling', async ({ page }) => {
+  test('Invalid unsubscribe token handling', async ({ page }) => {
     /**
      * Acceptance Criteria:
      * - Invalid token: error message displayed
      * - Expired token: error message displayed
      * - User can navigate to settings to manage preferences manually
      */
-    const invalidToken = 'invalid_token'
+    await page.goto('/unsubscribe?user_id=1&token=invalid_token')
 
-    await page.route('**/unsubscribe', async route => {
-      await route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          error: 'Invalid or expired unsubscribe token',
-        }),
-      })
-    })
-
-    await page.goto(`/unsubscribe?token=${invalidToken}`)
-
-    const errorMessage = page.locator('text=/invalid.*token/i')
-    await expect(errorMessage).toBeVisible()
-
-    const settingsLink = page.locator('a:has-text("notification settings")')
-    if (await settingsLink.isVisible()) {
-      await expect(settingsLink).toBeVisible()
-    }
+    const errorMessage = page.locator('[role="alert"]')
+    await expect(errorMessage).toContainText(/invalid.*token/i)
   })
 
   test.skip('Notification badge for new notifications', async ({ page }) => {
