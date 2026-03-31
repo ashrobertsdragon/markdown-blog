@@ -47,7 +47,7 @@ def _pref_allowed(session: Session, recipient_id: int, event_type: str) -> bool:
         return True
 
     match event_type:
-        case "mention":
+        case _ if event_type == _EVENT_MENTION:
             return prefs.notify_on_mentions
         case _:
             return prefs.notify_on_comment_replies

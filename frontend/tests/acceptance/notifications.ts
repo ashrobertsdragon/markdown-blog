@@ -36,18 +36,23 @@ test.describe('Notifications - Frontend UI', () => {
     await waitForAuthToLoad(page)
 
     const replyCheckbox = page.getByLabel('Notify on comment replies')
-    await expect(replyCheckbox).toBeVisible({ timeout: 10000 })
+    await expect(replyCheckbox).toBeVisible({ timeout: 20000 })
     await expect(replyCheckbox).toBeChecked()
     await expect(page.locator('input[type="checkbox"]')).toHaveCount(3)
 
+    const putPromise = page.waitForResponse(
+      res => res.url().includes('/notification-preferences') && res.request().method() === 'PUT',
+      { timeout: 15000 }
+    )
     await replyCheckbox.uncheck()
+    await putPromise
     await expect(page.locator('[role="alert"]')).toContainText(/Preferences saved/i, {
-      timeout: 10000,
+      timeout: 5000,
     })
 
     await page.reload()
     await waitForAuthToLoad(page)
-    await expect(page.getByLabel('Notify on comment replies')).not.toBeChecked({ timeout: 10000 })
+    await expect(page.getByLabel('Notify on comment replies')).not.toBeChecked({ timeout: 20000 })
     await expect(page.getByLabel('Notify on mentions')).toBeChecked()
     await expect(page.getByLabel('Notify on new posts')).toBeChecked()
   })
@@ -63,8 +68,14 @@ test.describe('Notifications - Frontend UI', () => {
     expect(tokenRes.ok()).toBeTruthy()
     const { user_id, token } = await tokenRes.json()
 
+    const unsubPromise = page.waitForResponse(
+      res => res.url().includes('/api/unsubscribe') && res.request().method() === 'GET',
+      { timeout: 20000 }
+    )
     await page.goto(`/unsubscribe?user_id=${user_id}&token=${token}`)
-    await expect(page.locator('[role="alert"]')).toContainText(/unsubscribed/i, { timeout: 10000 })
+    const unsubRes = await unsubPromise
+    expect(unsubRes.status()).toBe(200)
+    await expect(page.locator('[role="alert"]')).toContainText(/unsubscribed/i, { timeout: 5000 })
   })
 
   test('Invalid unsubscribe token handling', async ({ page }) => {

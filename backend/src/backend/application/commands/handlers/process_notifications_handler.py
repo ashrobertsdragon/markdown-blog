@@ -208,7 +208,8 @@ def handle_process_notifications(
             recipient_email = recipient.email
             sender_name = getattr(sender, "name", None) or "A blog user"
             post_title = post.title
-            comment_text = str(getattr(comment, "text", "")) or ""
+            _raw_text = getattr(comment, "text", None)
+            comment_text = str(_raw_text) if _raw_text is not None else ""
             post_url = f"{command.site_base_url}/posts/{notification.post_id}"
             unsubscribe_url = _build_unsubscribe_url(
                 notification.recipient_id, recipient_email
