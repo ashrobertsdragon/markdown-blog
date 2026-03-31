@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **CI test failures (PR #37)**: Fixed four test failures in the notifications branch before merge. (1) Acceptance preferences test in Chromium: replaced `replyCheckbox.uncheck()` with `replyCheckbox.click()` — the controlled React checkbox reverts to checked during mutation pending state, causing Playwright's `uncheck()` state-verification to throw. (2) Acceptance unsubscribe test in Firefox/WebKit: removed `page.waitForResponse()` listener which timed out at 20s in non-Chromium browsers; replaced with direct DOM assertion with 30s timeout. (3) E2E unsubscribe test returning HTTP 500: replaced SELECT→INSERT pattern in `_disable_all_with_session` with an atomic `INSERT ... ON CONFLICT DO UPDATE` upsert, eliminating the race condition that caused `IntegrityError`/`InterfaceError` under concurrent requests (React StrictMode double-invocation). (4) Acceptance comments flaky test: added `waitForResponse` capture before submitting the comment form and asserted text visibility immediately after the POST response, before React Query's refetch could clear the optimistic update.
+
 ### Added
 
 - **Notification testing improvements**: Added `resend_email_id` field to `NotificationModel`, `Notification` aggregate, repository, and handler — stored on successful send and surfaced via the admin history endpoint. Updated `mark_sent()` to accept and persist the Resend email ID. Added preference-gated queuing to `CommentNotificationHandler._queue()` — no record created when recipient has opted out. Added `GET /api/test/user-preferences` test endpoint. Added `SECRET_KEY` to playwright webserver env for HMAC token generation. Rewrote frontend acceptance tests to use real backend with no `page.route()` mocking; removed 2 skipped future-feature tests. Fixed e2e test using fake Bearer token to use the auth-free test endpoint instead.

@@ -44,7 +44,7 @@ test.describe('Notifications - Frontend UI', () => {
       res => res.url().includes('/notification-preferences') && res.request().method() === 'PUT',
       { timeout: 15000 }
     )
-    await replyCheckbox.uncheck()
+    await replyCheckbox.click()
     await putPromise
     await expect(page.locator('[role="alert"]')).toContainText(/Preferences saved/i, {
       timeout: 5000,
@@ -68,14 +68,8 @@ test.describe('Notifications - Frontend UI', () => {
     expect(tokenRes.ok()).toBeTruthy()
     const { user_id, token } = await tokenRes.json()
 
-    const unsubPromise = page.waitForResponse(
-      res => res.url().includes('/api/unsubscribe') && res.request().method() === 'GET',
-      { timeout: 20000 }
-    )
     await page.goto(`/unsubscribe?user_id=${user_id}&token=${token}`)
-    const unsubRes = await unsubPromise
-    expect(unsubRes.status()).toBe(200)
-    await expect(page.locator('[role="alert"]')).toContainText(/unsubscribed/i, { timeout: 5000 })
+    await expect(page.locator('[role="alert"]')).toContainText(/unsubscribed/i, { timeout: 30000 })
   })
 
   test('Invalid unsubscribe token handling', async ({ page }) => {

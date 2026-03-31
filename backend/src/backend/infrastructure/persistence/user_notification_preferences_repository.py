@@ -184,30 +184,31 @@ class UserNotificationPreferencesRepository:
     def _disable_all_with_session(self, session: Session, user_id: int) -> None:
         """Internal disable-all method with explicit session.
 
+        Uses an atomic upsert to avoid race conditions when two concurrent
+        requests both find no existing row and try to INSERT simultaneously
+        (e.g. React StrictMode double-invocation).
+
         Args:
             session: SQLModel Session to use.
             user_id: Primary key of the User.
         """
-        statement = select(UserNotificationPreferencesModel).where(
-            UserNotificationPreferencesModel.user_id == user_id
+        from sqlalchemy import text
+
+        now = datetime.now(UTC)
+        session.connection().execute(
+            text(
+                "INSERT INTO user_notification_preferences "
+                "(user_id, notify_on_comment_replies, notify_on_mentions, "
+                "notify_on_new_posts, created_at, updated_at) "
+                "VALUES (:user_id, 0, 0, 0, :now, :now) "
+                "ON CONFLICT(user_id) DO UPDATE SET "
+                "notify_on_comment_replies = 0, "
+                "notify_on_mentions = 0, "
+                "notify_on_new_posts = 0, "
+                "updated_at = :now"
+            ),
+            {"user_id": user_id, "now": now},
         )
-        model = session.exec(statement).first()
-
-        if model is None:
-            model = UserNotificationPreferencesModel(
-                user_id=user_id,
-                notify_on_comment_replies=False,
-                notify_on_mentions=False,
-                notify_on_new_posts=False,
-            )
-            session.add(model)
-            session.commit()
-            return
-
-        model.notify_on_comment_replies = False
-        model.notify_on_mentions = False
-        model.notify_on_new_posts = False
-        model.updated_at = datetime.now(UTC)
         session.commit()
 
     def _to_domain(

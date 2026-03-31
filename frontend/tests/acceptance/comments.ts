@@ -60,10 +60,14 @@ test.describe('Comments - Frontend UI', () => {
     await commentForm.fill('This is a test comment')
 
     const submitButton = page.locator('button:has-text("Post Comment")')
+    const postResponsePromise = page.waitForResponse(
+      res => res.url().includes('/comments') && res.request().method() === 'POST'
+    )
     await submitButton.click()
+    await postResponsePromise
 
     const postedComment = page.locator('text=/This is a test comment/')
-    await expect(postedComment).toBeVisible()
+    await expect(postedComment).toBeVisible({ timeout: 2000 })
   })
 
   test('Reply to comment with @mention', async ({ page }) => {
