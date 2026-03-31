@@ -172,24 +172,16 @@ test.describe('Notifications E2E', () => {
       await page.goto(`/unsubscribe?user_id=${user_id}&token=${token}`)
       await expect(page.locator('text=/unsubscribed/i')).toBeVisible({ timeout: 10000 })
 
-      await mockClerkAuth(page, {
-        role: 'authenticated',
-        userId: 'user_test_author',
-        email: 'author@example.com',
-      })
+      const prefsResponse = await page.request.get(
+        `${BACKEND}/api/test/user-preferences?clerk_user_id=user_test_author`
+      )
+      expect(prefsResponse.ok()).toBeTruthy()
 
-      const prefsResponse = await page.request.get(`${BACKEND}/api/user/notification-preferences`, {
-        headers: { Authorization: 'Bearer test-token' },
-      })
-
-      const prefsBody = (await prefsResponse.json()) as {
-        preferences: {
-          notify_on_comment_replies: boolean
-          notify_on_mentions: boolean
-          notify_on_new_posts: boolean
-        }
+      const prefs = (await prefsResponse.json()) as {
+        notify_on_comment_replies: boolean
+        notify_on_mentions: boolean
+        notify_on_new_posts: boolean
       }
-      const prefs = prefsBody.preferences
 
       expect(prefs.notify_on_comment_replies).toBe(false)
       expect(prefs.notify_on_mentions).toBe(false)

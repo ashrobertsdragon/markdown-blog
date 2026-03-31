@@ -230,7 +230,7 @@ def handle_process_notifications(
             )
 
             if isinstance(email_id, str):
-                notification.mark_sent()
+                notification.mark_sent(email_id)
                 notification_repo.save(notification)
                 sent += 1
             else:

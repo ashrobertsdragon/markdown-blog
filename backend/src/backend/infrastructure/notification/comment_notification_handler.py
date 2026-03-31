@@ -1,14 +1,20 @@
 """Infrastructure handler for queuing comment-related notifications."""
 
+import logging
 from datetime import UTC, datetime
 
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from backend.domain.events.comment_posted import CommentPostedEvent
 from backend.domain.events.mention_event import MentionEvent
 from backend.domain.events.reply_received import ReplyReceivedEvent
 from backend.infrastructure.persistence.database import get_engine
-from backend.infrastructure.persistence.models import NotificationModel
+from backend.infrastructure.persistence.models import (
+    NotificationModel,
+    UserNotificationPreferencesModel,
+)
+
+logger = logging.getLogger(__name__)
 
 _EVENT_COMMENT_POSTED = "comment_posted"
 _EVENT_MENTION = "mention"
@@ -16,12 +22,44 @@ _EVENT_REPLY_RECEIVED = "reply_received"
 _STATUS_PENDING = "pending"
 
 
+def _pref_allowed(session: Session, recipient_id: int, event_type: str) -> bool:
+    """Return True if the recipient has not opted out of this event type.
+
+    Defaults to True when no preference row exists (opt-out model).
+
+    Args:
+        session: Active SQLModel session.
+        recipient_id: User ID of the notification recipient.
+        event_type: Discriminator string — 'comment_posted',
+            'reply_received', or 'mention'.
+
+    Returns:
+        False only when a preference row explicitly disables the
+        corresponding notification type.
+    """
+    prefs = session.exec(
+        select(UserNotificationPreferencesModel).where(
+            UserNotificationPreferencesModel.user_id == recipient_id
+        )
+    ).first()
+
+    if prefs is None:
+        return True
+
+    match event_type:
+        case "mention":
+            return prefs.notify_on_mentions
+        case _:
+            return prefs.notify_on_comment_replies
+
+
 class CommentNotificationHandler:
     """Persists notification records when comment domain events fire.
 
     Writes a NotificationModel row to the notifications table for each
     event, leaving status='pending' so a background worker can deliver
-    the notification asynchronously via email.
+    the notification asynchronously via email. Skips queuing when the
+    recipient has opted out of the relevant notification type.
 
     Attributes:
         _session: Optional injected SQLModel Session for testing. When
@@ -90,7 +128,11 @@ class CommentNotificationHandler:
         post_id: int,
         comment_id: int,
     ) -> None:
-        """Queue a notification record in the database.
+        """Queue a notification record if the recipient allows this event.
+
+        Checks the recipient's notification preferences before inserting.
+        When the recipient has opted out of the relevant notification type,
+        the record is silently dropped rather than queued.
 
         Args:
             event_type: Discriminator string — 'comment_posted',
@@ -112,11 +154,26 @@ class CommentNotificationHandler:
             sent_at=None,
             error_message=None,
         )
+
         if self._session is not None:
+            if not _pref_allowed(self._session, recipient_id, event_type):
+                logger.debug(
+                    "Skipping %s notification for user %d: opted out",
+                    event_type,
+                    recipient_id,
+                )
+                return
             self._session.add(model)
             self._session.commit()
             return
 
         with Session(get_engine()) as session:
+            if not _pref_allowed(session, recipient_id, event_type):
+                logger.debug(
+                    "Skipping %s notification for user %d: opted out",
+                    event_type,
+                    recipient_id,
+                )
+                return
             session.add(model)
             session.commit()

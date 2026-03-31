@@ -350,6 +350,7 @@ class NotificationRepository:
         existing.sent_at = notification.sent_at
         existing.error_message = notification.error_message
         existing.next_retry_at = notification.next_retry_at
+        existing.resend_email_id = notification.resend_email_id
 
         session.commit()
         session.refresh(existing)
@@ -413,6 +414,7 @@ class NotificationRepository:
             sent_at=sent_at,
             error_message=model.error_message,
             next_retry_at=next_retry_at,
+            resend_email_id=model.resend_email_id,
         )
 
     def _to_model(self, notification: Notification) -> NotificationModel:
@@ -437,4 +439,5 @@ class NotificationRepository:
             sent_at=notification.sent_at,
             error_message=notification.error_message,
             next_retry_at=notification.next_retry_at,
+            resend_email_id=notification.resend_email_id,
         )

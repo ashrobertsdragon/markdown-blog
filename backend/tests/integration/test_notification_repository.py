@@ -299,7 +299,7 @@ class TestSave:
         original_post_id = saved.post_id
         original_comment_id = saved.comment_id
 
-        saved.mark_sent()
+        saved.mark_sent("resend-test-id")
         updated = notification_repository.save(saved)
 
         assert updated.created_at == original_created_at
@@ -330,6 +330,7 @@ class TestSave:
             sent_at=None,
             error_message=None,
             next_retry_at=None,
+            resend_email_id=None,
         )
 
         with pytest.raises(ValueError):
@@ -1045,7 +1046,7 @@ class TestCountPending:
             comment_id=sent_comment.id,
         )
         saved_sent = notification_repository.save(sent_notification)
-        saved_sent.mark_sent()
+        saved_sent.mark_sent("resend-test-id")
         notification_repository.save(saved_sent)
 
         count = notification_repository.count_pending()
@@ -1094,7 +1095,7 @@ class TestCountPending:
             comment_id=sent_comment.id,
         )
         saved_sent = notification_repository.save(sent_notif)
-        saved_sent.mark_sent()
+        saved_sent.mark_sent("resend-test-id")
         notification_repository.save(saved_sent)
 
         failed_comment = CommentModel(
@@ -1260,7 +1261,7 @@ class TestCountFailed:
             comment_id=sent_comment.id,
         )
         saved_sent = notification_repository.save(sent_notif)
-        saved_sent.mark_sent()
+        saved_sent.mark_sent("resend-test-id")
         notification_repository.save(saved_sent)
 
         count = notification_repository.count_failed()

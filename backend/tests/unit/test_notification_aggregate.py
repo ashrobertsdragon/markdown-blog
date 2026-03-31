@@ -126,12 +126,13 @@ def test_mark_sent_transitions_status() -> None:
         comment_id=1,
     )
     before = datetime.now(dt.UTC)
-    notification.mark_sent()
+    notification.mark_sent("resend-test-id-abc123")
     after = datetime.now(dt.UTC)
 
     assert notification.status == NotificationStatus.SENT
     assert notification.sent_at is not None
     assert before <= notification.sent_at <= after
+    assert notification.resend_email_id == "resend-test-id-abc123"
 
 
 def test_mark_failed_transitions_status() -> None:

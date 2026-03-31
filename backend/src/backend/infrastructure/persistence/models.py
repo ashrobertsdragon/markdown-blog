@@ -104,6 +104,7 @@ class NotificationModel(SQLModel, table=True):
     sent_at: datetime | None = Field(default=None)
     error_message: str | None = Field(default=None)
     next_retry_at: datetime | None = Field(default=None)
+    resend_email_id: str | None = Field(default=None)
 
 
 class UserNotificationPreferencesModel(SQLModel, table=True):

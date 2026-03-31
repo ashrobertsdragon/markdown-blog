@@ -418,6 +418,65 @@ def generate_unsubscribe_token() -> tuple[Response, int]:
     return jsonify({"user_id": user_id, "token": token.value}), 200
 
 
+@test_bp.route("/user-preferences", methods=["GET"])
+def get_user_preferences() -> tuple[Response, int]:
+    """Return notification preferences for a test user without authentication.
+
+    Looks up the user by clerk_user_id query parameter. Returns default values
+    (all true) if no preference row exists yet.
+
+    Query parameters:
+        clerk_user_id: Clerk identifier of the user to look up.
+
+    Returns:
+        200 with {notify_on_comment_replies, notify_on_mentions,
+        notify_on_new_posts} on success.
+        400 if clerk_user_id is missing.
+        404 if not running in TESTING mode or user not found.
+    """
+    guard = _guard()
+    if guard is not None:
+        return guard
+
+    clerk_user_id = request.args.get("clerk_user_id")
+    if not clerk_user_id:
+        return jsonify(
+            {"error": "clerk_user_id query parameter is required"}
+        ), 400
+
+    engine = get_engine()
+    with Session(engine) as session:
+        user = session.exec(
+            select(User).where(User.clerk_user_id == clerk_user_id)
+        ).first()
+        if user is None:
+            return jsonify({"error": f"User '{clerk_user_id}' not found"}), 404
+
+        assert user.id is not None
+        prefs = session.exec(
+            select(UserNotificationPreferencesModel).where(
+                UserNotificationPreferencesModel.user_id == user.id
+            )
+        ).first()
+
+        if prefs is None:
+            return jsonify(
+                {
+                    "notify_on_comment_replies": True,
+                    "notify_on_mentions": True,
+                    "notify_on_new_posts": True,
+                }
+            ), 200
+
+        return jsonify(
+            {
+                "notify_on_comment_replies": prefs.notify_on_comment_replies,
+                "notify_on_mentions": prefs.notify_on_mentions,
+                "notify_on_new_posts": prefs.notify_on_new_posts,
+            }
+        ), 200
+
+
 @test_bp.route("/user-preferences", methods=["PUT"])
 def set_user_preferences() -> tuple[Response, int]:
     """Directly update notification preferences for a test user.
