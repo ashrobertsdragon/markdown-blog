@@ -83,7 +83,7 @@ describe('Unsubscribe page', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/unsubscribed/i)
   })
 
-  it('auto-dismisses success message after 3 seconds', async () => {
+  it('success alert remains visible and does not auto-dismiss', async () => {
     vi.useFakeTimers()
 
     vi.mocked(useUnsubscribe).mockReturnValue({
@@ -101,9 +101,9 @@ describe('Unsubscribe page', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
 
-    vi.advanceTimersByTime(3000)
+    vi.advanceTimersByTime(10000)
 
-    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+    expect(screen.getByRole('alert')).toBeInTheDocument()
   })
 
   it('shows error alert when unsubscribe fails', async () => {

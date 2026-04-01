@@ -79,7 +79,7 @@ def sample_notification() -> Notification:
         comment_id=42,
     )
     notif.id = 1
-    notif.mark_sent()
+    notif.mark_sent("resend-test-id")
     return notif
 
 

@@ -1,14 +1,27 @@
 import { expect, test } from '@playwright/test'
 import { mockClerkAuth } from '../fixtures/clerk-mock'
 
+const BACKEND = 'http://localhost:5555'
+
 /**
  * Acceptance tests for Comments spec - Frontend UI.
  *
- * These tests verify flat comment system, replies, moderation UI,
- * and real-time updates as specified in comments/requirements.md.
+ * Tests exercise the real backend (FLASK_ENV=TESTING, SQLite in-memory).
+ * Only Clerk network traffic is mocked. Test data is seeded via /api/test/seed.
  */
 
+test.describe.configure({ mode: 'serial' })
+
 test.describe('Comments - Frontend UI', () => {
+  test.beforeAll(async ({ request }) => {
+    const res = await request.post(`${BACKEND}/api/test/seed`)
+    expect(res.ok()).toBeTruthy()
+  })
+
+  test.afterAll(async ({ request }) => {
+    await request.delete(`${BACKEND}/api/test/reset`)
+  })
+
   test('Post comment on published post', async ({ page }) => {
     /**
      * Acceptance Criteria:
@@ -21,38 +34,7 @@ test.describe('Comments - Frontend UI', () => {
      */
     await mockClerkAuth(page, { role: 'authenticated' })
 
-    const slug = 'test-post'
-    await page.route(`**/posts/${slug}/public`, async route => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          slug,
-          title: 'Test Post',
-          html_content: '<h1>Test</h1>',
-          published: true,
-        }),
-      })
-    })
-
-    await page.route('**/comments', async route => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id: 1,
-            text: 'Test comment',
-            author: 'test@example.com',
-            created_at: new Date().toISOString(),
-          }),
-        })
-      } else {
-        await route.continue()
-      }
-    })
-
-    await page.goto(`/posts/${slug}`)
+    await page.goto('/posts/test-post')
 
     const commentForm = page.locator('textarea[placeholder*="comment" i]')
     await expect(commentForm).toBeVisible()
@@ -60,10 +42,16 @@ test.describe('Comments - Frontend UI', () => {
     await commentForm.fill('This is a test comment')
 
     const submitButton = page.locator('button:has-text("Post Comment")')
+    await expect(submitButton).toBeEnabled()
+    const postResponsePromise = page.waitForResponse(
+      res => res.url().includes('/comments') && res.request().method() === 'POST'
+    )
     await submitButton.click()
+    await postResponsePromise
 
-    const postedComment = page.locator('text=/This is a test comment/')
-    await expect(postedComment).toBeVisible()
+    await expect(page.locator('section[aria-label="Comments"]')).toContainText(
+      'This is a test comment'
+    )
   })
 
   test('Reply to comment with @mention', async ({ page }) => {
@@ -133,29 +121,29 @@ test.describe('Comments - Frontend UI', () => {
      * - Rate limit enforced: 5 comments per 1 minute per user
      * - Error message displays remaining wait time
      */
-    await mockClerkAuth(page, { role: 'authenticated' })
-
-    const slug = 'test-post'
-    await page.goto(`/posts/${slug}`)
-
-    await page.route('**/comments', async route => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 429,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            error: 'Too many comments. Please wait 45 seconds.',
-          }),
-        })
-      } else {
-        await route.continue()
-      }
+    await mockClerkAuth(page, {
+      role: 'authenticated',
+      userId: 'user_test_rate_limiter',
+      email: 'ratelimit@example.com',
     })
 
-    const commentForm = page.locator('textarea[placeholder*="comment" i]')
-    await commentForm.fill('Rate limit test')
+    await page.goto('/posts/test-post')
 
+    const commentForm = page.locator('textarea[placeholder*="comment" i]')
     const submitButton = page.locator('button:has-text("Post Comment")')
+
+    for (let i = 1; i <= 5; i++) {
+      await commentForm.fill(`Rate limit test comment ${i}`)
+      await expect(submitButton).toBeEnabled()
+      const responsePromise = page.waitForResponse(
+        res => res.url().includes('/comments') && res.request().method() === 'POST'
+      )
+      await submitButton.click()
+      await responsePromise
+    }
+
+    await commentForm.fill('This should be rate limited')
+    await expect(submitButton).toBeEnabled()
     await submitButton.click()
 
     const errorMessage = page.locator('text=/Too many comments/')
@@ -214,39 +202,24 @@ test.describe('Comments - Frontend UI', () => {
      * - Comment fails spam check: queued for moderation (not published)
      * - User sees message: "Your comment is pending moderation"
      * - Flagged comments appear in admin "Pending Moderation" section
+     *
+     * The spam check scores 50+ points for 3+ URLs, which triggers pending
+     * moderation on the real backend (SpamCheckService: url_density check).
      */
     await mockClerkAuth(page, { role: 'authenticated' })
 
-    const slug = 'test-post'
-    await page.goto(`/posts/${slug}`)
-
-    await page.route('**/comments', async route => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id: 999,
-            post_id: 1,
-            text: 'http://spam.com http://more-spam.com',
-            parent_id: null,
-            is_post_author: false,
-            is_pending_moderation: true,
-            is_deleted: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }),
-        })
-      } else {
-        await route.continue()
-      }
-    })
+    await page.goto('/posts/test-post')
 
     const commentForm = page.locator('textarea[placeholder*="comment" i]')
-    await commentForm.fill('http://spam.com http://more-spam.com')
+    await commentForm.fill('http://spam.com http://more-spam.com http://extra-spam.com')
 
     const submitButton = page.locator('button:has-text("Post Comment")')
+    await expect(submitButton).toBeEnabled()
+    const responsePromise = page.waitForResponse(
+      res => res.url().includes('/comments') && res.request().method() === 'POST'
+    )
     await submitButton.click()
+    await responsePromise
 
     const moderationMessage = page.locator('text=/pending moderation/')
     await expect(moderationMessage).toBeVisible()

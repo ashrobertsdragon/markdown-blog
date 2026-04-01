@@ -1,0 +1,30 @@
+## Summary of Changes
+
+This PR completes the notification system's testing infrastructure and core logic integration. It transitions from mocked/skipped tests to a fully functional suite of backend acceptance tests and Playwright E2E tests. Key enhancements include preference-gated notification queuing, tracking of Resend email IDs, and the introduction of test-only helper endpoints to facilitate end-to-end verification without hitting external APIs.
+
+## Key Features & Fixes
+
+### Features
+- **Preference-Gated Queuing**: Updated `CommentNotificationHandler` to check user preferences before creating a notification record. If a user has opted out, no database record is created.
+- **Resend ID Tracking**: Added `resend_email_id` to the `Notification` aggregate and database model. This ID is now captured upon successful delivery and surfaced in the admin history.
+- **Test-Only API Helpers**: Added several internal endpoints (guarded by `FLASK_ENV=TESTING`) to:
+    - Query notification records by post slug.
+    - Synchronously trigger the background notification processing job using an email service stub.
+    - Generate valid HMAC unsubscribe tokens for test users.
+    - Directly manipulate user preferences without UI interaction.
+- **Notification Settings Route**: Wired the `/settings/notifications` route in the frontend with appropriate authentication guards.
+
+### Testing Improvements
+- **Playwright E2E Suite**: Added `frontend/tests/e2e/notifications.ts` covering 13 test cases across comment triggers, unsubscribe flows, and preference management.
+- **Backend Acceptance Tests**: Implemented logic for 6 major test groups in `backend/tests/acceptance/test_notifications.py`, including event triggers, retry logic, and monitoring metrics.
+- **Realistic Frontend Acceptance**: Refactored `tests/acceptance/notifications.ts` to use the real backend and seeded data instead of `page.route()` mocking.
+- **Tooling Fixes**: Fixed TypeScript errors in E2E fixtures (variable shadowing, missing `await`, and incorrect return types).
+
+## Breaking Changes
+- **Internal API Change**: The `mark_sent()` method in the `Notification` domain aggregate now requires a `resend_email_id: str` argument.
+- **Database Schema**: Added `resend_email_id` column to the `notificationmodel` table.
+
+## Verification Results
+- All Playwright E2E tests passing.
+- Backend acceptance tests for notification queuing and preferences passing.
+- Manual verification of the unsubscribe landing page with valid/invalid tokens.

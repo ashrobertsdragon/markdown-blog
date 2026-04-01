@@ -69,6 +69,7 @@ class Notification:
     sent_at: datetime | None
     error_message: str | None
     next_retry_at: datetime | None
+    resend_email_id: str | None
 
     def __setattr__(self, name: str, value: object) -> None:
         """Prevent modification of created_at after initialisation.
@@ -129,16 +130,19 @@ class Notification:
             sent_at=None,
             error_message=None,
             next_retry_at=None,
+            resend_email_id=None,
         )
 
-    def mark_sent(self) -> None:
-        """Transition status to SENT and record delivery timestamp.
+    def mark_sent(self, resend_email_id: str) -> None:
+        """Transition status to SENT and record delivery timestamp and email ID.
 
-        Sets status to SENT and populates sent_at with the current UTC time.
-        Called by the delivery handler after a successful email send.
+        Args:
+            resend_email_id: The Resend API email ID returned on successful
+                delivery.
         """
         self.status = NotificationStatus.SENT
         self.sent_at = datetime.now(UTC)
+        self.resend_email_id = resend_email_id
 
     def mark_failed(self, error_message: str) -> None:
         """Transition status to FAILED and record the error.

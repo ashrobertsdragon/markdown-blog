@@ -99,5 +99,5 @@ def _to_history_item(
         created_at=created_at_str,
         sent_at=sent_at_str,
         error_message=notification.error_message,
-        resend_email_id=None,
+        resend_email_id=notification.resend_email_id,
     )
