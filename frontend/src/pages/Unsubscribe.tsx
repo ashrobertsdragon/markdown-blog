@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -34,22 +34,11 @@ export default function Unsubscribe() {
 
   const { mutate, isPending, isSuccess, isError, error } = useUnsubscribe()
 
-  const [showSuccess, setShowSuccess] = useState(false)
-
   useEffect(() => {
     if (validationError || isPending || isSuccess || isError) return
 
     mutate({ user_id: parseInt(userIdParam as string, 10), token: tokenParam as string })
   }, [validationError, mutate, isPending, isSuccess, isError, userIdParam, tokenParam])
-
-  useEffect(() => {
-    if (isSuccess) {
-      setShowSuccess(true)
-      const timer = setTimeout(() => setShowSuccess(false), 3000)
-      return () => clearTimeout(timer)
-    }
-    setShowSuccess(false)
-  }, [isSuccess])
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
@@ -70,7 +59,7 @@ export default function Unsubscribe() {
           </Alert>
         )}
 
-        {!validationError && showSuccess && (
+        {!validationError && isSuccess && (
           <Alert>
             <AlertDescription>
               You've been unsubscribed from all email notifications.{' '}
