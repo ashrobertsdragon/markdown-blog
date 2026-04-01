@@ -194,7 +194,7 @@ class UserNotificationPreferencesRepository:
         """
         from sqlalchemy import text
 
-        now = datetime.now(UTC)
+        now = datetime.now(UTC).isoformat()
         session.connection().execute(
             text(
                 "INSERT INTO user_notification_preferences "
