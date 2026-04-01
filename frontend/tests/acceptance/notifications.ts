@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../e2e/fixtures/helpers'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
+import { mockClerkAuth, mockClerkUnauthenticated } from '../fixtures/clerk-mock'
 
 const BACKEND = 'http://localhost:5555'
 
@@ -64,6 +64,7 @@ test.describe('Notifications - Frontend UI', () => {
      * - Backend verifies token and disables all notification preferences
      * - Success message: "You've been unsubscribed"
      */
+    await mockClerkUnauthenticated(page)
     const tokenRes = await request.get(`${BACKEND}/api/test/unsubscribe-token?user_id=1`)
     expect(tokenRes.ok()).toBeTruthy()
     const { user_id, token } = await tokenRes.json()
@@ -78,6 +79,7 @@ test.describe('Notifications - Frontend UI', () => {
      * - Token failing client-side format check: immediate error, no API call
      * - Error message explains the token is invalid
      */
+    await mockClerkUnauthenticated(page)
     await page.goto('/unsubscribe?user_id=1&token=invalid_token')
     await expect(page.locator('[role="alert"]')).toContainText(/invalid.*token/i)
   })
