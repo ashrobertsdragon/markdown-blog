@@ -93,26 +93,26 @@ def unpublish_post_handler(
                 f"Failed to update draft file for '{command.slug}': {e} - "
                 "post is unpublished, draft file state may be stale"
             )
-
-        try:
-            logger.debug(f"Committing to GitHub: drafts/{post.slug}.md")
-            commit_message = f"Unpublish post: {draft.title}"
-            commit_sha = github_service.commit_file(
-                path=f"drafts/{post.slug}.md",
-                content=draft.to_markdown(),
-                message=commit_message,
-            )
-            if commit_sha is None:
-                logger.warning(
-                    f"Failed to commit to GitHub for '{command.slug}' - "
-                    "post is unpublished, GitHub out of sync"
+        else:
+            try:
+                logger.debug(f"Committing to GitHub: drafts/{post.slug}.md")
+                commit_message = f"Unpublish post: {draft.title}"
+                commit_sha = github_service.commit_file(
+                    path=f"drafts/{post.slug}.md",
+                    content=draft.to_markdown(),
+                    message=commit_message,
                 )
-            else:
-                logger.debug(f"Committed to GitHub with SHA: {commit_sha}")
-        except Exception as e:
-            logger.warning(
-                f"GitHub commit exception for '{command.slug}': {e} - "
-                "continuing"
-            )
+                if commit_sha is None:
+                    logger.warning(
+                        f"Failed to commit to GitHub for '{command.slug}' - "
+                        "post is unpublished, GitHub out of sync"
+                    )
+                else:
+                    logger.debug(f"Committed to GitHub with SHA: {commit_sha}")
+            except Exception as e:
+                logger.warning(
+                    f"GitHub commit exception for '{command.slug}': {e} - "
+                    "continuing"
+                )
 
     return post

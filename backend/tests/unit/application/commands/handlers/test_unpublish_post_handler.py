@@ -448,7 +448,7 @@ def test_unpublish_continues_when_draft_file_write_fails(
     raises OSError, the handler should:
     1. Log a warning about the filesystem failure
     2. Continue execution (not raise exception)
-    3. Still attempt GitHub commit (best-effort)
+    3. Skip the GitHub commit (only commits when draft save succeeds)
 
     The post is already unpublished in the database, so the operation is
     considered successful despite draft file failure.
@@ -477,7 +477,7 @@ def test_unpublish_continues_when_draft_file_write_fails(
         "draft" in warning_message.lower() or "file" in warning_message.lower()
     )
 
-    mock_github_service.commit_file.assert_called_once()
+    mock_github_service.commit_file.assert_not_called()
 
 
 @patch("backend.application.commands.handlers.unpublish_post_handler.logger")
@@ -613,9 +613,9 @@ def test_unpublish_logs_warnings_on_partial_failure(
     """Verify handler logs WARNING on partial failures.
 
     This test ensures proper warning logging when best-effort operations
-    fail. The handler should log WARNING level messages when:
-    - Draft file write fails (OSError)
-    - GitHub commit fails (returns None)
+    fail. When draft file write fails (OSError), the handler should:
+    - Log exactly one WARNING about the draft/file failure
+    - Skip the GitHub commit entirely (only runs after successful draft save)
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
     mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
@@ -634,12 +634,9 @@ def test_unpublish_logs_warnings_on_partial_failure(
         github_service=mock_github_service,
     )
 
-    assert mock_logger.warning.call_count == 2
-    warning_messages = [
-        call[0][0] for call in mock_logger.warning.call_args_list
-    ]
-    assert any(
-        "draft" in msg.lower() or "file" in msg.lower()
-        for msg in warning_messages
+    assert mock_logger.warning.call_count == 1
+    warning_message = mock_logger.warning.call_args[0][0]
+    assert (
+        "draft" in warning_message.lower() or "file" in warning_message.lower()
     )
-    assert any("github" in msg.lower() for msg in warning_messages)
+    mock_github_service.commit_file.assert_not_called()

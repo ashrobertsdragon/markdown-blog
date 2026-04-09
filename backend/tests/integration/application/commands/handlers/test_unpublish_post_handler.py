@@ -329,6 +329,60 @@ class TestUnpublishPostHandlerAlreadyUnpublished:
         post_repo.save.assert_not_called()
 
 
+class TestUnpublishPostHandlerAuthorization:
+    """Tests for ownership and role-based authorization checks."""
+
+    def test_non_owner_non_admin_raises_value_error(
+        self,
+        post_repo: Mock,
+        draft_repo: Mock,
+        github_service: Mock,
+    ) -> None:
+        """Verify handler raises ValueError when a non-owner, non-admin requests unpublish.
+
+        A user with role "author" who does not own the post must be rejected
+        before any mutation occurs. The error signals a 403-class caller error
+        rather than a data integrity problem.
+        """
+        post_repo.find_by_slug.return_value = _make_published_post(author_id=2)
+        command = UnpublishPostCommand(
+            slug="my-post", author_id=1, user_role="author"
+        )
+
+        with pytest.raises(ValueError):
+            unpublish_post_handler(
+                command=command,
+                post_repo=post_repo,
+                draft_repo=draft_repo,
+                github_service=github_service,
+            )
+
+    def test_admin_can_unpublish_another_authors_post(
+        self,
+        post_repo: Mock,
+        draft_repo: Mock,
+        github_service: Mock,
+    ) -> None:
+        """Verify an admin can unpublish a post they do not own.
+
+        Admins must have the ability to moderate any post regardless of
+        authorship. The returned post must reflect the unpublished state.
+        """
+        post_repo.find_by_slug.return_value = _make_published_post(author_id=2)
+        command = UnpublishPostCommand(
+            slug="my-post", author_id=1, user_role="admin"
+        )
+
+        result = unpublish_post_handler(
+            command=command,
+            post_repo=post_repo,
+            draft_repo=draft_repo,
+            github_service=github_service,
+        )
+
+        assert result.published is False
+
+
 class TestUnpublishPostHandlerBestEffortSync:
     """Tests for best-effort draft and GitHub sync failure handling."""
 
@@ -451,6 +505,36 @@ class TestUnpublishPostHandlerBestEffortSync:
             for m in warning_messages
         )
 
+    def test_github_not_called_when_draft_save_fails(
+        self,
+        command: UnpublishPostCommand,
+        post_repo: Mock,
+        github_service: Mock,
+    ) -> None:
+        """Verify github_service.commit_file() is never called when draft_repo.save() raises.
+
+        If saving the draft file fails, committing potentially stale or
+        partially-written content to GitHub is unsafe. The handler must
+        abort the GitHub step rather than propagating inconsistent data
+        to the version control backup.
+        """
+        failing_draft_repo = Mock()
+        draft = Mock()
+        draft.title = "My Post"
+        draft.published = True
+        draft.to_markdown.return_value = "---\ntitle: My Post\n---\n"
+        failing_draft_repo.find_by_slug.return_value = draft
+        failing_draft_repo.save.side_effect = OSError("disk full")
+
+        unpublish_post_handler(
+            command=command,
+            post_repo=post_repo,
+            draft_repo=failing_draft_repo,
+            github_service=github_service,
+        )
+
+        github_service.commit_file.assert_not_called()
+
     def test_both_sync_failures_handler_still_returns_post(
         self,
         command: UnpublishPostCommand,
@@ -559,3 +643,27 @@ class TestUnpublishPostHandlerSyncIntegration:
         )
 
         github_service.commit_file.assert_not_called()
+
+    def test_db_save_failure_propagates(
+        self,
+        command: UnpublishPostCommand,
+        post_repo: Mock,
+        draft_repo: Mock,
+        github_service: Mock,
+    ) -> None:
+        """Verify handler re-raises exceptions from post_repo.save().
+
+        Database persistence is atomic: if save() raises, the caller must
+        see the exception so the HTTP layer can return a 500 rather than
+        silently reporting success while the post remains published in the
+        database.
+        """
+        post_repo.save.side_effect = Exception("db error")
+
+        with pytest.raises(Exception, match="db error"):
+            unpublish_post_handler(
+                command=command,
+                post_repo=post_repo,
+                draft_repo=draft_repo,
+                github_service=github_service,
+            )
