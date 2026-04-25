@@ -1,10 +1,34 @@
 """Shared test fixtures."""
 
+import datetime
+import sqlite3
+
 import pytest
 
-from backend.config import DevDBSettings, TestDBSettings
-from backend.infrastructure.persistence.database import dispose_engine
+from backend.config import (
+    DevDBSettings,
+    TestDBSettings,
+    _db_settings,
+    get_db_url,
+)
+from backend.infrastructure.persistence.database import (
+    dispose_engine,
+    get_engine,
+)
+from backend.infrastructure.persistence.models import SQLModel
 from backend.main import create_app
+
+
+@pytest.fixture(autouse=True)
+def register_adapters() -> None:
+    sqlite3.register_adapter(datetime.datetime, lambda v: v.isoformat())
+    sqlite3.register_adapter(datetime.date, lambda v: v.isoformat())
+    sqlite3.register_converter(
+        "datetime", lambda v: datetime.datetime.fromisoformat(v.decode())
+    )
+    sqlite3.register_converter(
+        "date", lambda v: datetime.date.fromisoformat(v.decode())
+    )
 
 
 def pytest_addoption(parser):
@@ -136,9 +160,6 @@ def client(test_settings, test_build_dir, monkeypatch, tmp_path):
 
     app = create_app()
 
-    from backend.infrastructure.persistence.database import get_engine
-    from backend.infrastructure.persistence.models import SQLModel
-
     engine = get_engine()
     SQLModel.metadata.create_all(engine)
 
@@ -149,7 +170,6 @@ def client(test_settings, test_build_dir, monkeypatch, tmp_path):
 def dispose_engine_after_test():
     """Ensure engine is disposed after every test to free resources."""
     yield
-    from backend.config import _db_settings, get_db_url
 
     _db_settings.cache_clear()
     get_db_url.cache_clear()
@@ -158,4 +178,7 @@ def dispose_engine_after_test():
 
 def pytest_sessionfinish(session, exitstatus):
     """Clean up resources after all tests in the session have run."""
+
+    _db_settings.cache_clear()
+    get_db_url.cache_clear()
     dispose_engine()

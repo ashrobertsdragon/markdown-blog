@@ -39,6 +39,7 @@ export default defineConfig({
         GITHUB_REPO: 'test-repo',
         CLERK_PUBLISHABLE_KEY: 'pk_test_123',
         CLERK_SECRET_KEY: 'sk_test_123',
+        SECRET_KEY: 'test-secret-key-for-e2e',
         LOCAL_DB_NAME: 'test',
         LOCAL_DB_USER: 'test',
         LOCAL_DB_PASSWORD: 'test',
