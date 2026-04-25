@@ -57,6 +57,7 @@ def create_app() -> Flask:
         static_url_path="/static",
         template_folder=str(build_dir),
     )
+    app.config["APP_START_TIME"] = time.time()
 
     if not build_dir.exists():
         if flask_env == FlaskEnv.PRODUCTION:
