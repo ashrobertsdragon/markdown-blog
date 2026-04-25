@@ -31,7 +31,7 @@ def _repo(comment: Comment | None = None) -> Mock:
     repo = Mock(spec=CommentRepository)
     repo.find_by_id.return_value = comment
     repo.hard_delete.return_value = True
-    repo.soft_delete.return_value = True
+    repo.save.return_value = comment
     return repo
 
 
@@ -44,19 +44,20 @@ def test_author_hard_deletes_own_comment() -> None:
     result = handle_delete_comment(cmd, repo)
 
     repo.hard_delete.assert_called_once_with(1)
-    repo.soft_delete.assert_not_called()
+    repo.save.assert_not_called()
     assert result is True
 
 
-def test_admin_soft_deletes_any_comment() -> None:
-    """Admin deleting a comment triggers soft_delete regardless of owner."""
+def test_admin_marks_deleted_and_saves() -> None:
+    """Admin deletion calls mark_as_deleted on the aggregate then save."""
     comment = _comment(comment_id=1, author_id=99)
     repo = _repo(comment)
     cmd = DeleteCommentCommand(comment_id=1, author_id=10, user_role="admin")
 
     result = handle_delete_comment(cmd, repo)
 
-    repo.soft_delete.assert_called_once_with(1)
+    repo.save.assert_called_once()
+    assert repo.save.call_args[0][0].is_deleted is True
     repo.hard_delete.assert_not_called()
     assert result is True
 
