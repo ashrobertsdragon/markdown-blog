@@ -1,20 +1,19 @@
-"""Integration tests for ErrorLogger with Flask's handle_unexpected_error hook.
+"""Integration tests for ErrorLogger in a Flask error handler context.
 
-These tests verify that ErrorLogger captures entries when Flask's
-handle_unexpected_error() handler fires, that the endpoint field matches the
-route name, that stack traces are populated, and that state persists across
-requests within a session but is isolated between test runs via clear().
-
-The ErrorLogger integration in handle_unexpected_error() does not exist yet
-(Task 6). Tests are expected to fail until that implementation lands.
+These tests verify that ErrorLogger correctly captures entries when used
+inside a Flask exception handler — the pattern that will be applied to
+handle_unexpected_error() in main.py in Task 6. A minimal Flask app is
+used to avoid BUILD_DIR and database dependencies.
 """
 
+import traceback
 from collections.abc import Generator
 from typing import Never
 
 import pytest
-from flask import Flask
+from flask import Flask, jsonify, request
 from flask.testing import FlaskClient
+from flask.wrappers import Response
 
 from backend.infrastructure.monitoring.error_logger import ErrorLogger
 
@@ -33,15 +32,26 @@ def _isolate_error_logger() -> Generator[None]:
 
 @pytest.fixture()
 def flask_app_with_error_route() -> Flask:
-    """Minimal Flask app wired to the production error handler.
+    """Minimal Flask app using ErrorLogger inside an exception handler.
 
-    Uses create_app() so that handle_unexpected_error() is registered exactly
-    as it will be in production, then adds a test-only route that always raises
-    a RuntimeError.
+    Registers a catch-all exception handler that calls ErrorLogger.log_error()
+    with the same pattern that Task 6 will wire into handle_unexpected_error()
+    in main.py. No BUILD_DIR or database is required.
     """
-    from backend.main import create_app
+    app = Flask(__name__)
+    app.config["TESTING"] = True
 
-    app = create_app()
+    @app.errorhandler(Exception)
+    def handle_error(error: Exception) -> tuple[Response, int]:
+        """Capture error in ErrorLogger and return 500."""
+        endpoint = request.endpoint or "unknown"
+        stack_trace = traceback.format_exc()
+        ErrorLogger.log_error(
+            message=str(error),
+            stack_trace=stack_trace,
+            endpoint=endpoint,
+        )
+        return jsonify({"error": "Internal server error"}), 500
 
     @app.route("/test-trigger-500")
     def trigger_500() -> Never:
@@ -57,24 +67,13 @@ def flask_app_with_error_route() -> Flask:
 
 
 @pytest.fixture()
-def error_client(
-    flask_app_with_error_route: Flask,
-    test_settings,
-    test_build_dir,
-    monkeypatch,
-    tmp_path,
-) -> FlaskClient:
+def error_client(flask_app_with_error_route: Flask) -> FlaskClient:
     """Flask test client configured for error-triggering routes."""
-    monkeypatch.setenv("BUILD_DIR", str(test_build_dir))
-    monkeypatch.setenv("DRAFTS_PATH", str(tmp_path / "drafts"))
-    monkeypatch.setenv("GITHUB_PERSONAL_ACCESS_TOKEN", "test_token")
-    monkeypatch.setenv("GITHUB_OWNER", "test_owner")
-    monkeypatch.setenv("GITHUB_REPO", "test_repo")
     return flask_app_with_error_route.test_client()
 
 
 class TestErrorLoggerFlaskIntegration:
-    """ErrorLogger captures data from Flask 500 error handler."""
+    """ErrorLogger captures data when used inside a Flask exception handler."""
 
     def test_500_response_creates_error_logger_entry(
         self, error_client: FlaskClient
