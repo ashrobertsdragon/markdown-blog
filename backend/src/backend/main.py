@@ -6,10 +6,11 @@ including SPA routing, CORS handling, and blueprint registration.
 
 import logging
 import time
+import traceback
 from pathlib import Path
 from urllib.parse import unquote
 
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, abort, jsonify, request, send_from_directory
 from flask.wrappers import Response
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
@@ -32,6 +33,7 @@ from backend.exceptions import (
     AuthorizationError,
     RateLimitExceededError,
 )
+from backend.infrastructure.monitoring.error_logger import ErrorLogger
 from scripts.create_schema import create_schema
 
 logger = logging.getLogger(__name__)
@@ -164,6 +166,14 @@ def create_app() -> Flask:
         if isinstance(error, HTTPException):
             return error.get_response()
 
+        stack_trace = traceback.format_exc()
+        endpoint = request.endpoint or request.path
+        ErrorLogger.log_error(
+            message=str(error),
+            stack_trace=stack_trace,
+            endpoint=endpoint,
+        )
+
         logger.exception(
             "Unexpected error occurred",
             exc_info=error,
@@ -173,6 +183,23 @@ def create_app() -> Flask:
             },
         )
         return jsonify({"error": "Internal server error"}), 500
+
+    @app.errorhandler(404)
+    def handle_not_found(_error: HTTPException) -> tuple[Response, int]:
+        """Handle 404 Not Found errors, logging them to ErrorLogger.
+
+        Args:
+            _error: The caught HTTPException instance for the 404 error.
+
+        Returns:
+            JSON response with error message and 404 status code.
+        """
+        ErrorLogger.log_error(
+            message=f"Not Found: {request.path}",
+            stack_trace=str(_error.description) if _error.description else "",
+            endpoint=request.endpoint or request.path,
+        )
+        return jsonify({"error": "Not found"}), 404
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
@@ -198,7 +225,7 @@ def create_app() -> Flask:
             return jsonify({"error": "Invalid path"}), 400
 
         if path.startswith("api/"):
-            return jsonify({"error": "Not found"}), 404
+            abort(404)
 
         path = path or "index.html"
         file_path = build_dir / path
