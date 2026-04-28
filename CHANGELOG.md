@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Admin routes blueprint (Task 7)**: Created `/api/admin/*` Flask blueprint with 4 endpoints wired to Commands and Queries. (1) `POST /api/admin/posts/<id>/unpublish` → `UnpublishPostCommand`; (2) `GET /api/admin/users/<id>/activity` → `GetUserActivityQuery`; (3) `GET /api/admin/system/health` → `GetSystemHealthQuery`; (4) `GET /api/admin/system/errors` → `ErrorLogger.get_recent_errors()`. All endpoints require `@require_auth` and `@require_role('admin')` decorators. Blueprint uses lazy initialization for repositories and handler wrappers, following the pattern established in `posts.py` and `comments.py`. Added 12 integration tests covering authorization enforcement (403/401), happy paths, 404 error handling, and validation errors. All 1737 tests pass with 96.18% coverage.
+
 ### Fixed
 
 - **CI test failures (PR #37)**: Fixed four test failures in the notifications branch before merge. (1) Acceptance preferences test in Chromium: replaced `replyCheckbox.uncheck()` with `replyCheckbox.click()` — the controlled React checkbox reverts to checked during mutation pending state, causing Playwright's `uncheck()` state-verification to throw. (2) Acceptance unsubscribe test in Firefox/WebKit: removed `page.waitForResponse()` listener which timed out at 20s in non-Chromium browsers; replaced with direct DOM assertion with 30s timeout. (3) E2E unsubscribe test returning HTTP 500: replaced SELECT→INSERT pattern in `_disable_all_with_session` with an atomic `INSERT ... ON CONFLICT DO UPDATE` upsert, eliminating the race condition that caused `IntegrityError`/`InterfaceError` under concurrent requests (React StrictMode double-invocation). (4) Acceptance comments flaky test: added `waitForResponse` capture before submitting the comment form and asserted text visibility immediately after the POST response, before React Query's refetch could clear the optimistic update.
