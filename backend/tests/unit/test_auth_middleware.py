@@ -695,8 +695,8 @@ def test_require_role_composes_with_require_auth_401_before_403(
     )
 
     @app.route("/test")
-    @require_role("admin")
     @require_auth
+    @require_role("admin")
     def test_endpoint() -> str:
         return "should_not_reach"
 
@@ -745,8 +745,8 @@ def test_g_current_user_available_after_both_decorators(
     mock_user_repository.find_by_clerk_user_id.return_value = admin_user
 
     @app.route("/test")
-    @require_role("admin")
     @require_auth
+    @require_role("admin")
     def test_endpoint() -> str:
         assert hasattr(g, "current_user")
         assert g.current_user.clerk_user_id == "user_2admin999"

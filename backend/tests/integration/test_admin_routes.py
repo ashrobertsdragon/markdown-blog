@@ -265,9 +265,6 @@ def test_unpublish_post_success(
     mock_user_repo = MagicMock()
     mock_user_repo.find_by_clerk_user_id.return_value = admin_user
 
-    mock_post_repo = MagicMock()
-    mock_post_repo.find_by_id.return_value = published_post
-
     mock_handler = MagicMock()
     mock_handler.handle.return_value = published_post
 
@@ -409,9 +406,6 @@ def test_get_error_logs_success(
 
     mock_user_repo = MagicMock()
     mock_user_repo.find_by_clerk_user_id.return_value = admin_user
-
-    mock_handler = MagicMock()
-    mock_handler.handle.return_value = []
 
     with (
         patch(
