@@ -20,6 +20,7 @@ from backend.application.queries.get_user_activity_query import UserActivity
 from backend.domain.aggregates.post import Post
 from backend.domain.aggregates.user import User
 from backend.domain.value_objects.role import Role
+from backend.exceptions import NotFoundError
 from backend.infrastructure.monitoring.error_logger import (
     ErrorEntry,
     ErrorLogger,
@@ -650,12 +651,10 @@ def test_unpublish_handler_not_found_error_returns_404(
     admin_jwt_payload: dict[str, Any],
     published_post: Post,
 ) -> None:
-    """ValueError containing 'not found' from handler maps to 404."""
+    """NotFoundError from handler maps to 404."""
     mock_clerk, mock_user_repo = _auth_patches(admin_jwt_payload, admin_user)
-    mock_post_repo = MagicMock()
-    mock_post_repo.find_by_id.return_value = published_post
     mock_handler = MagicMock()
-    mock_handler.handle.side_effect = ValueError("Post not found in filesystem")
+    mock_handler.handle.side_effect = NotFoundError("Post not found")
 
     with (
         patch(
@@ -665,10 +664,6 @@ def test_unpublish_handler_not_found_error_returns_404(
         patch(
             "backend.api.middleware.auth_middleware._get_user_repository",
             return_value=mock_user_repo,
-        ),
-        patch(
-            "backend.api.routes.admin._get_post_repository",
-            return_value=mock_post_repo,
         ),
         patch(
             "backend.api.routes.admin._get_unpublish_post_handler",
@@ -785,7 +780,7 @@ def test_user_activity_not_found_returns_404(
     """GET /api/admin/users/99999/activity returns 404 for unknown user."""
     mock_clerk, mock_user_repo = _auth_patches(admin_jwt_payload, admin_user)
     mock_handler = MagicMock()
-    mock_handler.handle.side_effect = ValueError("User not found")
+    mock_handler.handle.side_effect = NotFoundError("User not found")
 
     with (
         patch(

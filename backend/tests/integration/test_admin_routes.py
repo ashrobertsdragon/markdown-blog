@@ -18,6 +18,7 @@ from backend.domain.aggregates.post import Post
 from backend.domain.aggregates.user import User
 from backend.domain.value_objects.comment_text import CommentText
 from backend.domain.value_objects.role import Role
+from backend.exceptions import NotFoundError
 
 
 @pytest.fixture
@@ -268,9 +269,6 @@ def test_unpublish_post_success(
     mock_handler = MagicMock()
     mock_handler.handle.return_value = published_post
 
-    mock_post_repo = MagicMock()
-    mock_post_repo.find_by_id.return_value = published_post
-
     with (
         patch(
             "backend.api.middleware.auth_middleware._get_clerk_adapter",
@@ -279,10 +277,6 @@ def test_unpublish_post_success(
         patch(
             "backend.api.middleware.auth_middleware._get_user_repository",
             return_value=mock_user_repo,
-        ),
-        patch(
-            "backend.api.routes.admin._get_post_repository",
-            return_value=mock_post_repo,
         ),
         patch(
             "backend.api.routes.admin._get_unpublish_post_handler",
@@ -445,7 +439,7 @@ def test_unpublish_post_not_found(
     mock_user_repo.find_by_clerk_user_id.return_value = admin_user
 
     mock_handler = MagicMock()
-    mock_handler.handle.side_effect = ValueError("Post not found")
+    mock_handler.handle.side_effect = NotFoundError("Post not found")
 
     with (
         patch(
@@ -481,7 +475,7 @@ def test_get_user_activity_not_found(
     mock_user_repo.find_by_clerk_user_id.return_value = admin_user
 
     mock_handler = MagicMock()
-    mock_handler.handle.side_effect = ValueError("User not found")
+    mock_handler.handle.side_effect = NotFoundError("User not found")
 
     with (
         patch(
@@ -525,9 +519,6 @@ def test_unpublish_already_unpublished(
     mock_handler = MagicMock()
     mock_handler.handle.side_effect = ValueError("Post already unpublished")
 
-    mock_post_repo = MagicMock()
-    mock_post_repo.find_by_id.return_value = unpublished_post
-
     with (
         patch(
             "backend.api.middleware.auth_middleware._get_clerk_adapter",
@@ -536,10 +527,6 @@ def test_unpublish_already_unpublished(
         patch(
             "backend.api.middleware.auth_middleware._get_user_repository",
             return_value=mock_user_repo,
-        ),
-        patch(
-            "backend.api.routes.admin._get_post_repository",
-            return_value=mock_post_repo,
         ),
         patch(
             "backend.api.routes.admin._get_unpublish_post_handler",

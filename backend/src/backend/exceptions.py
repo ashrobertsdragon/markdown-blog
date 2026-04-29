@@ -40,6 +40,30 @@ Notes:
 """
 
 
+class NotFoundError(ValueError):
+    """Raised when a requested resource does not exist. Maps to HTTP 404.
+
+    This exception is a subclass of ValueError for backward compatibility
+    with code that catches ValueError. Prefer catching NotFoundError
+    explicitly for precise error handling.
+
+    Attributes:
+        message: User-facing error description
+
+    Example:
+        >>> raise NotFoundError("Post with id 42 not found")
+    """
+
+    def __init__(self, message: str) -> None:
+        """Initialize not-found error.
+
+        Args:
+            message: User-facing error description
+        """
+        self.message = message
+        super().__init__(message)
+
+
 class AuthenticationError(Exception):
     """Raised when JWT validation fails or user credentials are invalid.
 

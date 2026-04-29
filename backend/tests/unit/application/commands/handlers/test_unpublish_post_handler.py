@@ -30,6 +30,7 @@ from backend.application.commands.unpublish_post_command import (
     UnpublishPostCommand,
 )
 from backend.domain.aggregates.post import Post
+from backend.exceptions import NotFoundError
 from backend.infrastructure.persistence.filesystem_draft_repository import (
     DraftFile,
 )
@@ -94,13 +95,11 @@ def test_unpublish_updates_database_published_flag(
     3. Save updated post to database
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     result = unpublish_post_handler(
         command=command,
@@ -130,13 +129,11 @@ def test_unpublish_preserves_html_content(
     """
     original_html = published_post_aggregate_fixture.html_content
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     result = unpublish_post_handler(
         command=command,
@@ -164,13 +161,11 @@ def test_unpublish_preserves_published_at_timestamp(
     """
     original_published_at = published_post_aggregate_fixture.published_at
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     result = unpublish_post_handler(
         command=command,
@@ -197,13 +192,11 @@ def test_unpublish_saves_to_database(
     on the aggregate, ensuring unpublished state is persisted.
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     result = unpublish_post_handler(
         command=command,
@@ -233,13 +226,11 @@ def test_unpublish_updates_draft_front_matter(
     2. Save updated draft with published=False
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     unpublish_post_handler(
         command=command,
@@ -269,13 +260,11 @@ def test_unpublish_commits_to_github(
     include the updated front matter with unpublished status.
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     unpublish_post_handler(
         command=command,
@@ -296,19 +285,17 @@ def test_unpublish_fails_when_post_not_found(
     mock_post_repo: Mock,
     mock_github_service: Mock,
 ) -> None:
-    """Verify handler raises ValueError when post doesn't exist in database.
+    """Verify handler raises NotFoundError when post doesn't exist in database.
 
-    This test ensures error handling for missing posts. If find_by_slug
-    returns None, the handler should raise ValueError with a clear message
-    indicating the post was not found. No other services should be called.
+    This test ensures error handling for missing posts. If find_by_id
+    returns None, the handler should raise NotFoundError. No other
+    services should be called.
     """
-    mock_post_repo.find_by_slug.return_value = None
+    mock_post_repo.find_by_id.return_value = None
 
-    command = UnpublishPostCommand(
-        slug="nonexistent", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=99, author_id=1, user_role="author")
 
-    with pytest.raises(ValueError, match="Post.*not found"):
+    with pytest.raises(NotFoundError, match="Post.*not found"):
         unpublish_post_handler(
             command=command,
             draft_repo=mock_draft_repo,
@@ -316,7 +303,7 @@ def test_unpublish_fails_when_post_not_found(
             github_service=mock_github_service,
         )
 
-    mock_post_repo.find_by_slug.assert_called_once_with("nonexistent")
+    mock_post_repo.find_by_id.assert_called_once_with(99)
     mock_post_repo.save.assert_not_called()
 
 
@@ -334,11 +321,9 @@ def test_unpublish_fails_when_already_unpublished(
     unpublished_post = Post.create_draft(
         slug="already-unpublished", title="Unpublished Post", author_id=1
     )
-    mock_post_repo.find_by_slug.return_value = unpublished_post
+    mock_post_repo.find_by_id.return_value = unpublished_post
 
-    command = UnpublishPostCommand(
-        slug="already-unpublished", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=2, author_id=1, user_role="author")
 
     with pytest.raises(ValueError, match="not published|already unpublished"):
         unpublish_post_handler(
@@ -366,14 +351,12 @@ def test_unpublish_fails_on_database_save_failure(
     state.
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.side_effect = IntegrityError(
         "Database error", None, Exception("Database constraint violation")
     )
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     with pytest.raises(IntegrityError):
         unpublish_post_handler(
@@ -408,12 +391,10 @@ def test_unpublish_continues_when_draft_file_not_found(
     considered successful despite missing draft file.
     """
     mock_draft_repo.find_by_slug.return_value = None
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     result = unpublish_post_handler(
         command=command,
@@ -454,14 +435,12 @@ def test_unpublish_continues_when_draft_file_write_fails(
     considered successful despite draft file failure.
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_draft_repo.save.side_effect = OSError("Disk full")
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     result = unpublish_post_handler(
         command=command,
@@ -501,13 +480,11 @@ def test_unpublish_continues_when_github_commit_fails(
     considered successful despite GitHub failure.
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = None
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     result = unpublish_post_handler(
         command=command,
@@ -542,13 +519,11 @@ def test_unpublish_logs_info_on_success(
     - "unpublished" or similar on completion
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     unpublish_post_handler(
         command=command,
@@ -579,13 +554,11 @@ def test_unpublish_logs_debug_steps(
     - Draft file update step
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_github_service.commit_file.return_value = "abc123"
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     unpublish_post_handler(
         command=command,
@@ -618,14 +591,12 @@ def test_unpublish_logs_warnings_on_partial_failure(
     - Skip the GitHub commit entirely (only runs after successful draft save)
     """
     mock_draft_repo.find_by_slug.return_value = published_draft_file_fixture
-    mock_post_repo.find_by_slug.return_value = published_post_aggregate_fixture
+    mock_post_repo.find_by_id.return_value = published_post_aggregate_fixture
     mock_post_repo.save.return_value = published_post_aggregate_fixture
     mock_draft_repo.save.side_effect = OSError("Disk full")
     mock_github_service.commit_file.return_value = None
 
-    command = UnpublishPostCommand(
-        slug="test-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="author")
 
     unpublish_post_handler(
         command=command,

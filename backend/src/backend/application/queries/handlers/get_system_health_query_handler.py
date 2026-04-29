@@ -57,7 +57,7 @@ def _probe_database(engine: Engine) -> str:
     """
     try:
         with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
+            conn.execute(text("SELECT 1")).fetchone()
         return "healthy"
     except Exception:
         logger.warning("Database health probe failed", exc_info=True)

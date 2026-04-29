@@ -80,7 +80,7 @@ def post_repo() -> Mock:
     """Mock PostRepository with a published post ready for retrieval."""
     mock = Mock()
     published_post = _make_published_post()
-    mock.find_by_slug.return_value = published_post
+    mock.find_by_id.return_value = published_post
     mock.save.side_effect = lambda p: p
     return mock
 
@@ -112,7 +112,7 @@ def github_service() -> Mock:
 def command() -> UnpublishPostCommand:
     """Standard unpublish command issued by an admin user."""
     return UnpublishPostCommand(
-        slug="my-post",
+        post_id=10,
         author_id=1,
         user_role="admin",
     )
@@ -158,7 +158,7 @@ class TestUnpublishPostHandlerHappyPath:
         """
         original_post = _make_published_post()
         original_updated_at = original_post.updated_at
-        post_repo.find_by_slug.return_value = original_post
+        post_repo.find_by_id.return_value = original_post
 
         result = unpublish_post_handler(
             command=command,
@@ -239,7 +239,7 @@ class TestUnpublishPostHandlerNotFound:
         exist. The error message must contain "not found" so API middleware
         can map it to an appropriate HTTP 404 response.
         """
-        post_repo.find_by_slug.return_value = None
+        post_repo.find_by_id.return_value = None
 
         with pytest.raises(ValueError, match="not found"):
             unpublish_post_handler(
@@ -261,7 +261,7 @@ class TestUnpublishPostHandlerNotFound:
         If find_by_slug returns None the handler must fail fast before
         touching the database or filesystem.
         """
-        post_repo.find_by_slug.return_value = None
+        post_repo.find_by_id.return_value = None
 
         with pytest.raises(ValueError):
             unpublish_post_handler(
@@ -292,7 +292,7 @@ class TestUnpublishPostHandlerAlreadyUnpublished:
         indicate the post is not currently published so API callers can
         return a meaningful error to users.
         """
-        post_repo.find_by_slug.return_value = _make_unpublished_post()
+        post_repo.find_by_id.return_value = _make_unpublished_post()
 
         with pytest.raises(
             ValueError, match="not currently published|already unpublished"
@@ -316,7 +316,7 @@ class TestUnpublishPostHandlerAlreadyUnpublished:
         The handler must short-circuit before any mutation step when the
         precondition check fails.
         """
-        post_repo.find_by_slug.return_value = _make_unpublished_post()
+        post_repo.find_by_id.return_value = _make_unpublished_post()
 
         with pytest.raises(ValueError):
             unpublish_post_handler(
@@ -344,9 +344,9 @@ class TestUnpublishPostHandlerAuthorization:
         before any mutation occurs. The error signals a 403-class caller error
         rather than a data integrity problem.
         """
-        post_repo.find_by_slug.return_value = _make_published_post(author_id=2)
+        post_repo.find_by_id.return_value = _make_published_post(author_id=2)
         command = UnpublishPostCommand(
-            slug="my-post", author_id=1, user_role="author"
+            post_id=10, author_id=1, user_role="author"
         )
 
         with pytest.raises(ValueError):
@@ -368,9 +368,9 @@ class TestUnpublishPostHandlerAuthorization:
         Admins must have the ability to moderate any post regardless of
         authorship. The returned post must reflect the unpublished state.
         """
-        post_repo.find_by_slug.return_value = _make_published_post(author_id=2)
+        post_repo.find_by_id.return_value = _make_published_post(author_id=2)
         command = UnpublishPostCommand(
-            slug="my-post", author_id=1, user_role="admin"
+            post_id=10, author_id=1, user_role="admin"
         )
 
         result = unpublish_post_handler(

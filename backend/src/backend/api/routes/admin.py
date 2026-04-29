@@ -26,6 +26,7 @@ from ...application.queries.handlers.get_user_activity_query_handler import (
 )
 from ...config import FileSystemSettings
 from ...domain.aggregates.post import Post
+from ...exceptions import NotFoundError
 from ...infrastructure.monitoring.error_logger import ErrorLogger
 from ...infrastructure.persistence.comment_repository import CommentRepository
 from ...infrastructure.persistence.database import get_engine
@@ -147,22 +148,17 @@ def _get_system_health_handler() -> GetSystemHealthHandler:
 def unpublish_post(post_id: int) -> tuple[Response, int]:
     """Unpublish a post (admin only)."""
     try:
-        post = _get_post_repository().find_by_id(post_id)
-        if post is None:
-            return jsonify({"error": "Post not found"}), 404
-
         command = UnpublishPostCommand(
-            slug=post.slug.value,
+            post_id=post_id,
             author_id=g.current_user.id,
             user_role=g.current_user.role.value,
         )
         handler = _get_unpublish_post_handler()
         handler.handle(command)
         return jsonify({"message": "Post unpublished"}), 200
+    except NotFoundError as e:
+        return jsonify({"error": str(e)}), 404
     except ValueError as e:
-        error_msg = str(e).lower()
-        if "not found" in error_msg:
-            return jsonify({"error": "Post not found"}), 404
         return jsonify({"error": str(e)}), 400
 
 
@@ -184,16 +180,19 @@ def get_user_activity(user_id: int) -> tuple[Response, int]:
                     else None,
                     "posts_count": activity.posts_count,
                     "comments_count": activity.comments_count,
-                    "recent_posts": [],
-                    "recent_comments": [],
+                    "recent_posts": [
+                        p.to_dict() for p in activity.recent_posts
+                    ],
+                    "recent_comments": [
+                        c.to_dict() for c in activity.recent_comments
+                    ],
                 }
             ),
             200,
         )
+    except NotFoundError as e:
+        return jsonify({"error": str(e)}), 404
     except ValueError as e:
-        error_msg = str(e).lower()
-        if "not found" in error_msg:
-            return jsonify({"error": "User not found"}), 404
         return jsonify({"error": str(e)}), 400
 
 

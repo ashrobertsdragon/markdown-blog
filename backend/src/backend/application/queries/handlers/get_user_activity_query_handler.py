@@ -7,6 +7,7 @@ from backend.application.queries.get_user_activity_query import (
     GetUserActivityQuery,
     UserActivity,
 )
+from backend.exceptions import NotFoundError
 
 if TYPE_CHECKING:
     from backend.infrastructure.persistence.comment_repository import (
@@ -50,7 +51,7 @@ def get_user_activity_query_handler(
     logger.debug("Loading user %d for activity query", query.user_id)
     user = user_repo.find_by_id(query.user_id)
     if user is None:
-        raise ValueError(f"User {query.user_id} not found")
+        raise NotFoundError(f"User {query.user_id} not found")
 
     logger.debug("Fetching post activity for user %d", query.user_id)
     recent_posts = post_repo.find_by_author(query.user_id, limit=5)
