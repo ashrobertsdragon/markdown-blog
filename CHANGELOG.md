@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin blueprint registration (Task 8)**: Registered `admin_bp` Flask blueprint in `create_app()` factory at `main.py:84`, making all admin endpoints accessible at `/api/admin/*`. The blueprint includes 4 endpoints: (1) `POST /api/admin/posts/<id>/unpublish` for unpublishing posts; (2) `GET /api/admin/users/<id>/activity` for user activity summaries; (3) `GET /api/admin/system/health` for system health metrics; (4) `GET /api/admin/system/errors` for recent application error logs. All endpoints enforce admin-only access via `@require_auth` and `@require_role('admin')` decorators. Added 28 integration tests in `tests/integration/test_admin_routes_registration.py` covering blueprint registration, authentication/authorization enforcement, endpoint accessibility, and error handling. All 1766 tests pass with 96.30% coverage.
+
 - **Admin routes blueprint (Task 7)**: Created `/api/admin/*` Flask blueprint with 4 endpoints wired to Commands and Queries. (1) `POST /api/admin/posts/<id>/unpublish` → `UnpublishPostCommand`; (2) `GET /api/admin/users/<id>/activity` → `GetUserActivityQuery`; (3) `GET /api/admin/system/health` → `GetSystemHealthQuery`; (4) `GET /api/admin/system/errors` → `ErrorLogger.get_recent_errors()`. All endpoints require `@require_auth` and `@require_role('admin')` decorators. Blueprint uses lazy initialization for repositories and handler wrappers, following the pattern established in `posts.py` and `comments.py`. Added 12 integration tests covering authorization enforcement (403/401), happy paths, 404 error handling, and validation errors. All 1737 tests pass with 96.18% coverage.
 
 ### Fixed
