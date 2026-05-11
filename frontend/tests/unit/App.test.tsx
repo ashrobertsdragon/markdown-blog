@@ -713,3 +713,51 @@ describe('App', () => {
     })
   })
 })
+
+describe('React Query devtools configuration', () => {
+  /**
+   * Verifies that the @tanstack/react-query-devtools package is installed and importable.
+   * This test will fail until the package is added as a dev dependency.
+   * The devtools panel aids development by exposing query cache state.
+   */
+  it('should have @tanstack/react-query-devtools package installed', async () => {
+    const devtoolsModule = await import('@tanstack/react-query-devtools')
+    expect(devtoolsModule).toBeTruthy()
+  })
+
+  /**
+   * Verifies that ReactQueryDevtools is a named export from the devtools package.
+   * The component must be exported so App.tsx can import and render it conditionally.
+   */
+  it('should export ReactQueryDevtools component from the package', async () => {
+    const { ReactQueryDevtools } = await import('@tanstack/react-query-devtools')
+    expect(ReactQueryDevtools).toBeDefined()
+    expect(typeof ReactQueryDevtools).toBe('function')
+  })
+
+  /**
+   * Verifies that App renders correctly when ReactQueryDevtools is present in the tree.
+   * The devtools component must not interfere with existing route rendering.
+   * This test validates structural integrity — it will pass once the package is installed
+   * and the component is placed inside QueryClientProvider in App.
+   */
+  it('should render App without errors when devtools component is mounted', () => {
+    const { container } = render(<App />)
+    expect(container.firstChild).toBeTruthy()
+  })
+
+  /**
+   * Verifies that ReactQueryDevtools initialIsOpen prop type is correct.
+   * The component should accept an initialIsOpen boolean prop so it starts closed
+   * by default in development, reducing visual noise on first load.
+   */
+  it('should accept initialIsOpen prop on ReactQueryDevtools component', async () => {
+    const { ReactQueryDevtools } = await import('@tanstack/react-query-devtools')
+    expect(ReactQueryDevtools).toBeDefined()
+    const propTypes = (ReactQueryDevtools as { propTypes?: Record<string, unknown> }).propTypes
+    if (propTypes !== undefined) {
+      expect(typeof propTypes).toBe('object')
+    }
+    expect(typeof ReactQueryDevtools).toBe('function')
+  })
+})

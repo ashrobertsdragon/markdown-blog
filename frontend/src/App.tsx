@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
@@ -143,6 +144,13 @@ export function AppRoutes() {
  * Uses React Router's BrowserRouter for client-side navigation without hash symbols.
  * Configured for deployment at root domain (no basename).
  *
+ * Server state is managed via React Query (QueryClientProvider) with these defaults:
+ * - staleTime: 5 minutes — cached data stays fresh for 5 minutes
+ * - gcTime: 10 minutes — unused cache entries are garbage collected after 10 minutes
+ * - retry: 3 — failed requests are retried up to 3 times
+ * - refetchOnWindowFocus: false — no automatic refetch on tab/window focus
+ * React Query devtools are mounted in development mode only (tree-shaken from production builds).
+ *
  * Routes:
  * - "/" - Home page displaying system health status
  * - "/login" - Login page for authentication
@@ -165,6 +173,7 @@ export default function App() {
           <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   )
 }
