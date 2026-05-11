@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from backend.application.commands.unpublish_post_command import (
     UnpublishPostCommand,
 )
+from backend.exceptions import NotFoundError
 
 if TYPE_CHECKING:
     from backend.domain.aggregates.post import Post
@@ -46,73 +47,82 @@ def unpublish_post_handler(
     Raises:
         ValueError: If post not found, user unauthorized, or already unpublished
     """
-    logger.debug(f"Loading Post from database: {command.slug}")
-    post = post_repo.find_by_slug(command.slug)
+    logger.debug("Loading Post from database: id=%d", command.post_id)
+    post = post_repo.find_by_id(command.post_id)
     if post is None:
-        raise ValueError(f"Post with slug '{command.slug}' not found")
+        raise NotFoundError(f"Post with id {command.post_id} not found")
+
+    slug = post.slug.value
 
     if post.author_id != command.author_id and command.user_role != "admin":
         logger.warning(
-            f"User {command.author_id} attempted to unpublish post "
-            f"'{command.slug}' owned by user {post.author_id}"
+            "User %d attempted to unpublish post '%s' owned by user %d",
+            command.author_id,
+            slug,
+            post.author_id,
         )
         raise ValueError("Cannot unpublish another author's post")
 
     if not post.published:
         raise ValueError(
-            f"Post '{command.slug}' is not published (already unpublished)"
+            f"Post '{slug}' is not published (already unpublished)"
         )
 
-    logger.info(f"Unpublishing post: {command.slug}")
+    logger.info("Unpublishing post: %s", slug)
     post.unpublish()
 
-    logger.debug(f"Saving unpublished post to database: {command.slug}")
+    logger.debug("Saving unpublished post to database: %s", slug)
     try:
         post = post_repo.save(post)
-        logger.info(f"Post '{command.slug}' unpublished in database")
+        logger.info("Post '%s' unpublished in database", slug)
     except Exception as e:
-        logger.error(f"Failed to save post to database: {command.slug}: {e}")
+        logger.error("Failed to save post to database: %s: %s", slug, e)
         raise
 
-    logger.debug(f"Loading draft file: {command.slug}")
-    draft = draft_repo.find_by_slug(command.slug)
+    logger.debug("Loading draft file: %s", slug)
+    draft = draft_repo.find_by_slug(slug)
 
     if draft is None:
         logger.warning(
-            f"Draft file not found for '{command.slug}' - "
-            "post is unpublished in database, skipping file update"
+            "Draft file not found for '%s' - "
+            "post is unpublished in database, skipping file update",
+            slug,
         )
     else:
         try:
-            logger.debug(f"Updating draft front matter: {command.slug}")
+            logger.debug("Updating draft front matter: %s", slug)
             draft.published = False
             draft_repo.save(draft)
-            logger.debug(f"Updated draft front matter for {command.slug}")
+            logger.debug("Updated draft front matter for %s", slug)
         except OSError as e:
             logger.warning(
-                f"Failed to update draft file for '{command.slug}': {e} - "
-                "post is unpublished, draft file state may be stale"
+                "Failed to update draft file for '%s': %s - "
+                "post is unpublished, draft file state may be stale",
+                slug,
+                e,
             )
-
-        try:
-            logger.debug(f"Committing to GitHub: drafts/{post.slug}.md")
-            commit_message = f"Unpublish post: {draft.title}"
-            commit_sha = github_service.commit_file(
-                path=f"drafts/{post.slug}.md",
-                content=draft.to_markdown(),
-                message=commit_message,
-            )
-            if commit_sha is None:
-                logger.warning(
-                    f"Failed to commit to GitHub for '{command.slug}' - "
-                    "post is unpublished, GitHub out of sync"
+        else:
+            try:
+                logger.debug("Committing to GitHub: drafts/%s.md", slug)
+                commit_message = f"Unpublish post: {draft.title}"
+                commit_sha = github_service.commit_file(
+                    path=f"drafts/{slug}.md",
+                    content=draft.to_markdown(),
+                    message=commit_message,
                 )
-            else:
-                logger.debug(f"Committed to GitHub with SHA: {commit_sha}")
-        except Exception as e:
-            logger.warning(
-                f"GitHub commit exception for '{command.slug}': {e} - "
-                "continuing"
-            )
+                if commit_sha is None:
+                    logger.warning(
+                        "Failed to commit to GitHub for '%s' - "
+                        "post is unpublished, GitHub out of sync",
+                        slug,
+                    )
+                else:
+                    logger.debug("Committed to GitHub with SHA: %s", commit_sha)
+            except Exception as e:
+                logger.warning(
+                    "GitHub commit exception for '%s': %s - continuing",
+                    slug,
+                    e,
+                )
 
     return post

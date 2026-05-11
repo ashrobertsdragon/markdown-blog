@@ -948,6 +948,9 @@ def test_unpublish_post_returns_200(
     unpublished.id = 1
     mock_handler.handle.return_value = unpublished
 
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_slug.return_value = unpublished
+
     with (
         patch(
             "backend.api.middleware.auth_middleware._get_clerk_adapter",
@@ -956,6 +959,10 @@ def test_unpublish_post_returns_200(
         patch(
             "backend.api.middleware.auth_middleware._get_user_repository",
             return_value=mock_user_repo,
+        ),
+        patch(
+            "backend.api.routes.posts._get_post_repository",
+            return_value=mock_post_repo,
         ),
         patch(
             "backend.api.routes.posts._get_unpublish_post_handler",
@@ -988,7 +995,11 @@ def test_unpublish_post_as_admin_succeeds(
     unpublished = Post.create_draft(
         slug="other-post", title="Other Post", author_id=99
     )
+    unpublished.id = 2
     mock_handler.handle.return_value = unpublished
+
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_slug.return_value = unpublished
 
     with (
         patch(
@@ -998,6 +1009,10 @@ def test_unpublish_post_as_admin_succeeds(
         patch(
             "backend.api.middleware.auth_middleware._get_user_repository",
             return_value=mock_user_repo,
+        ),
+        patch(
+            "backend.api.routes.posts._get_post_repository",
+            return_value=mock_post_repo,
         ),
         patch(
             "backend.api.routes.posts._get_unpublish_post_handler",
@@ -1030,6 +1045,13 @@ def test_unpublish_other_author_post_as_author_returns_403(
         "Cannot unpublish another author's post"
     )
 
+    other_post = Post.create_draft(
+        slug="other-author-post", title="Other Post", author_id=99
+    )
+    other_post.id = 3
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_slug.return_value = other_post
+
     with (
         patch(
             "backend.api.middleware.auth_middleware._get_clerk_adapter",
@@ -1038,6 +1060,10 @@ def test_unpublish_other_author_post_as_author_returns_403(
         patch(
             "backend.api.middleware.auth_middleware._get_user_repository",
             return_value=mock_user_repo,
+        ),
+        patch(
+            "backend.api.routes.posts._get_post_repository",
+            return_value=mock_post_repo,
         ),
         patch(
             "backend.api.routes.posts._get_unpublish_post_handler",

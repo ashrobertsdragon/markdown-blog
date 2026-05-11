@@ -9,12 +9,12 @@ class UnpublishPostCommand:
     to draft status. Validation deferred to handler (domain and business logic).
 
     Attributes:
-        slug: The post identifier (URL-safe slug).
+        post_id: The post's primary key (avoids a redundant slug lookup).
         author_id: ID of the user attempting to unpublish the post
         user_role: Role of the user (for admin override)
     """
 
-    slug: str
+    post_id: int
     author_id: int
     user_role: str
 
@@ -22,17 +22,12 @@ class UnpublishPostCommand:
         """Validate input constraints.
 
         Raises:
-            ValueError: If slug is empty or None.
-            ValueError: If author_id is not positive
-            ValueError: If user_role is empty
-            TypeError: If slug is not a string.
+            ValueError: If post_id is not positive.
+            ValueError: If author_id is not positive.
+            ValueError: If user_role is empty.
         """
-        if self.slug is None:
-            raise ValueError("slug is required")
-        if not isinstance(self.slug, str):
-            raise TypeError(f"slug must be str, not {type(self.slug).__name__}")
-        if not self.slug:
-            raise ValueError("slug cannot be empty")
+        if self.post_id <= 0:
+            raise ValueError("post_id must be a positive integer")
         if self.author_id <= 0:
             raise ValueError("author_id must be a positive integer")
         if not self.user_role:

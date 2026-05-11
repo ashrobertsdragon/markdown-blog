@@ -277,50 +277,28 @@ def require_role(
         @wraps(f)
         def decorated(*args: Any, **kwargs: Any) -> Any:
             if not hasattr(g, "current_user"):
-                result = f(*args, **kwargs)
-                if not hasattr(g, "current_user"):
-                    raise AuthenticationError(
-                        "User not authenticated. `@require_role` must be used "
-                        "with `@require_auth`."
-                    )
-            else:
-                user = g.current_user
+                raise AuthenticationError(
+                    "User not authenticated. `@require_role` must be used "
+                    "with `@require_auth`."
+                )
 
-                if required_role == "authenticated":
-                    return f(*args, **kwargs)
+            user = g.current_user
 
-                if required_role == "author":
+            match required_role:
+                case "authenticated":
+                    pass
+                case "author":
                     if not user.role.can_access_author_endpoints():
                         raise AuthorizationError(
                             "Author role required", required_role="author"
                         )
-
-                elif required_role == "admin":
+                case "admin":
                     if not user.role.can_access_admin_endpoints():
                         raise AuthorizationError(
                             "Admin role required", required_role="admin"
                         )
 
-                return f(*args, **kwargs)
-
-            user = g.current_user
-
-            if required_role == "authenticated":
-                return result
-
-            if required_role == "author":
-                if not user.role.can_access_author_endpoints():
-                    raise AuthorizationError(
-                        "Author role required", required_role="author"
-                    )
-
-            elif required_role == "admin":
-                if not user.role.can_access_admin_endpoints():
-                    raise AuthorizationError(
-                        "Admin role required", required_role="admin"
-                    )
-
-            return result
+            return f(*args, **kwargs)
 
         return decorated
 

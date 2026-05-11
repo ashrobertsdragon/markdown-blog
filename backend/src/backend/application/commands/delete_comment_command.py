@@ -29,14 +29,14 @@ class DeleteCommentCommand:
         """Validate primitive constraints before the command is dispatched.
 
         Raises:
-            ValueError: If comment_id is not greater than zero.
-            ValueError: If author_id is not greater than zero.
+            ValueError: If comment_id is not a positive integer.
+            ValueError: If author_id is not a positive integer.
             ValueError: If user_role is empty.
         """
-        if self.comment_id <= 0:
+        if not isinstance(self.comment_id, int) or self.comment_id <= 0:
             raise ValueError("comment_id must be greater than 0")
 
-        if self.author_id <= 0:
+        if not isinstance(self.author_id, int) or self.author_id <= 0:
             raise ValueError("author_id must be greater than 0")
 
         if not self.user_role:

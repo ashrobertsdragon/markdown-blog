@@ -55,7 +55,9 @@ def handle_delete_comment(
             command.author_id,
             command.comment_id,
         )
-        return comment_repository.soft_delete(command.comment_id)
+        comment.mark_as_deleted()
+        comment_repository.save(comment)
+        return True
 
     if comment.author_id == command.author_id:
         logger.info(
@@ -63,7 +65,12 @@ def handle_delete_comment(
             command.author_id,
             command.comment_id,
         )
-        return comment_repository.hard_delete(command.comment_id)
+        deleted = comment_repository.hard_delete(command.comment_id)
+        if not deleted:
+            raise ValueError(
+                f"Comment {command.comment_id} could not be deleted"
+            )
+        return True
 
     logger.warning(
         "User %d (role=%s) attempted to delete comment %d owned by %d",

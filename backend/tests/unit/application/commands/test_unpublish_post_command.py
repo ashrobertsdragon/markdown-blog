@@ -1,17 +1,17 @@
 """Unit tests for UnpublishPostCommand dataclass.
 
-This module defines comprehensive unit tests for the UnpublishPostCommand
-following TDD Red phase principles. These tests will initially fail until
-the UnpublishPostCommand is implemented.
+Validates the command's primitive constraints per the CQRS pattern:
+only structural invariants (positive post_id, positive author_id) are
+enforced here. Domain rules (post exists, is published) are deferred
+to the handler.
 
 Test Coverage:
-- Dataclass structure verification (2 tests)
-- Immutability (frozen=True) (1 test)
-- String representation for debugging (1 test)
-- Validation (empty slug, type validation) (2 tests)
-- Equality comparison (1 test)
-
-Total: 7 unit tests
+- Valid command instantiation with legal values
+- Immutability (frozen=True)
+- post_id <= 0 raises ValueError
+- author_id <= 0 raises ValueError
+- Equality comparison
+- String representation
 """
 
 import pytest
@@ -21,98 +21,94 @@ from backend.application.commands.unpublish_post_command import (
 )
 
 
-def test_command_creation_with_slug() -> None:
-    """Verify UnpublishPostCommand creates successfully with valid slug.
+def test_valid_command_does_not_raise() -> None:
+    """Verify UnpublishPostCommand accepts positive post_id and author_id.
 
-    This test ensures the command dataclass can be instantiated with a
-    valid slug value. The slug should be a string and correctly assigned
-    to the command instance.
-    """
-    slug = "published-post"
-
-    command = UnpublishPostCommand(slug=slug, author_id=1, user_role="author")
-
-    assert command.slug == slug
-    assert isinstance(command.slug, str)
-
-
-def test_command_frozen_dataclass() -> None:
-    """Verify UnpublishPostCommand fields cannot be modified after creation.
-
-    This test ensures the UnpublishPostCommand is immutable by using frozen
-    dataclass. Attempting to modify the slug field after construction should
-    raise an error (either AttributeError or TypeError), preventing accidental
-    mutation of command objects.
+    This is the baseline happy-path check: a well-formed command must
+    construct without raising any exception.
     """
     command = UnpublishPostCommand(
-        slug="frozen-post", author_id=1, user_role="author"
+        post_id=42,
+        author_id=1,
+        user_role="admin",
     )
+
+    assert command.post_id == 42
+    assert command.author_id == 1
+    assert command.user_role == "admin"
+
+
+def test_command_with_zero_post_id_raises_value_error() -> None:
+    """Verify UnpublishPostCommand rejects post_id of 0.
+
+    post_id must be a positive integer (> 0). A value of 0 is not a
+    valid database row reference and must be rejected at construction
+    time so the handler never receives an invalid command.
+    """
+    with pytest.raises(ValueError, match="post_id"):
+        UnpublishPostCommand(post_id=0, author_id=1, user_role="admin")
+
+
+def test_command_with_negative_post_id_raises_value_error() -> None:
+    """Verify UnpublishPostCommand rejects negative post_id values.
+
+    Negative IDs cannot correspond to real database rows. The command
+    must enforce this constraint in __post_init__ rather than silently
+    propagating it to the handler or repository.
+    """
+    with pytest.raises(ValueError, match="post_id"):
+        UnpublishPostCommand(post_id=-5, author_id=1, user_role="admin")
+
+
+def test_command_with_zero_author_id_raises_value_error() -> None:
+    """Verify UnpublishPostCommand rejects author_id of 0."""
+    with pytest.raises(ValueError, match="author_id"):
+        UnpublishPostCommand(post_id=1, author_id=0, user_role="admin")
+
+
+def test_command_with_negative_author_id_raises_value_error() -> None:
+    """Verify UnpublishPostCommand rejects negative author_id values."""
+    with pytest.raises(ValueError, match="author_id"):
+        UnpublishPostCommand(post_id=1, author_id=-5, user_role="admin")
+
+
+def test_command_is_immutable() -> None:
+    """Verify UnpublishPostCommand cannot be mutated after construction.
+
+    Commands are value objects in the CQRS sense: they represent a past
+    intent and must not be altered in transit. frozen=True on the
+    dataclass enforces this at runtime.
+    """
+    command = UnpublishPostCommand(post_id=1, author_id=1, user_role="admin")
 
     with pytest.raises((AttributeError, TypeError)):
-        command.slug = "modified-slug"  # type: ignore[misc]
+        command.post_id = 99  # type: ignore[misc]
 
 
-def test_command_slug_type_validation() -> None:
-    """Verify UnpublishPostCommand handles invalid slug types gracefully.
+def test_command_equality_for_identical_fields() -> None:
+    """Verify two commands with identical fields compare equal.
 
-    This test ensures type validation in __post_init__. While type hints
-    provide static checking, runtime validation ensures invalid types
-    (None, int, etc.) raise clear ValueError messages.
+    Dataclass equality must hold so commands can be compared in test
+    assertions and deduplication logic without resorting to identity
+    checks.
     """
-    with pytest.raises((TypeError, ValueError)):
-        UnpublishPostCommand(slug=None, author_id=1, user_role="author")  # type: ignore[arg-type]
+    a = UnpublishPostCommand(post_id=42, author_id=7, user_role="admin")
+    b = UnpublishPostCommand(post_id=42, author_id=7, user_role="admin")
+    c = UnpublishPostCommand(post_id=99, author_id=7, user_role="admin")
 
-    with pytest.raises((TypeError, ValueError)):
-        UnpublishPostCommand(slug=123, author_id=1, user_role="author")  # type: ignore[arg-type]
+    assert a == b
+    assert a != c
 
 
-def test_command_repr() -> None:
-    """Verify UnpublishPostCommand repr includes slug value for debugging.
+def test_command_repr_contains_class_name_and_post_id() -> None:
+    """Verify repr is informative for debugging and log output.
 
-    This test ensures the string representation of the command shows the
-    slug value, which is useful for debugging and logging. The repr should
-    clearly identify the command type and show the slug value.
+    The default dataclass repr includes field names and values, which is
+    sufficient for tracing command flow through log aggregators.
     """
-    command = UnpublishPostCommand(
-        slug="debug-post", author_id=1, user_role="author"
-    )
+    command = UnpublishPostCommand(post_id=7, author_id=3, user_role="admin")
 
-    repr_str = repr(command)
+    r = repr(command)
 
-    assert "UnpublishPostCommand" in repr_str
-    assert "debug-post" in repr_str
-    assert "slug=" in repr_str.lower() or "slug:" in repr_str.lower()
-
-
-def test_command_empty_slug_validation() -> None:
-    """Verify UnpublishPostCommand validates empty slug in __post_init__.
-
-    This test ensures the command rejects empty slugs at creation time.
-    While Slug value object provides domain validation, the command should
-    fail fast with clear error messages for empty strings.
-    """
-    with pytest.raises(ValueError, match="slug.*empty|slug.*required"):
-        UnpublishPostCommand(slug="", author_id=1, user_role="author")
-
-
-def test_command_instances_are_comparable() -> None:
-    """Verify UnpublishPostCommand instances can be compared for equality.
-
-    This test ensures dataclass equality works correctly. Two commands
-    with identical slug values should be equal, while commands with
-    different values should not be equal. This supports testing scenarios
-    where commands need to be compared.
-    """
-    command1 = UnpublishPostCommand(
-        slug="same-post", author_id=1, user_role="author"
-    )
-    command2 = UnpublishPostCommand(
-        slug="same-post", author_id=1, user_role="author"
-    )
-    command3 = UnpublishPostCommand(
-        slug="different-post", author_id=1, user_role="author"
-    )
-
-    assert command1 == command2
-    assert command1 != command3
-    assert command2 != command3
+    assert "UnpublishPostCommand" in r
+    assert "7" in r

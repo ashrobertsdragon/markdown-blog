@@ -136,6 +136,35 @@ class PostRepository:
 
         raise RuntimeError("Failed to obtain database session")
 
+    def count_by_author(self, author_id: int) -> int:
+        """Count total non-deleted posts authored by a user.
+
+        Uses an indexed query on author_id with a deleted_at IS NULL
+        filter so soft-deleted posts are excluded from the count.
+
+        Args:
+            author_id: User ID of the post author.
+
+        Returns:
+            Total number of non-deleted posts for the given author.
+        """
+        statement = (
+            select(func.count())
+            .select_from(PostModel)
+            .where(
+                PostModel.author_id == author_id,
+                PostModel.deleted_at == None,  # noqa: E711
+            )
+        )
+
+        if self._session:
+            return self._session.exec(statement).one()
+
+        for session in get_db():
+            return session.exec(statement).one()
+
+        raise RuntimeError("Failed to obtain database session")
+
     def list_published(
         self, limit: int = 50, offset: int = 0
     ) -> list[DomainPost]:

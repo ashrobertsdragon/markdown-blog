@@ -8,6 +8,7 @@ layer. Handles conversion between CommentModel (SQLModel table) and Comment
 
 from datetime import UTC, datetime
 
+from sqlalchemy import func
 from sqlmodel import Session, col, select
 
 from backend.domain.aggregates.comment import Comment
@@ -154,6 +155,67 @@ class CommentRepository:
         for session in get_db():
             models = session.exec(statement).all()
             return [self._to_domain(m) for m in models]
+
+        raise RuntimeError("Failed to obtain database session")
+
+    def find_by_author(
+        self, author_id: int, limit: int = 10, offset: int = 0
+    ) -> list[Comment]:
+        """List all comments by a user ordered by created_at DESC.
+
+        Returns every comment row for the given author regardless of
+        deletion or moderation state, ordered newest first. Intended
+        for the admin activity summary view.
+
+        Args:
+            author_id: Primary key of the comment author.
+            limit: Maximum number of comments to return (default: 10).
+            offset: Number of comments to skip (default: 0).
+
+        Returns:
+            List of Comment aggregates, empty list if none found.
+        """
+        statement = (
+            select(CommentModel)
+            .where(CommentModel.author_id == author_id)
+            .order_by(col(CommentModel.created_at).desc())
+            .limit(limit)
+            .offset(offset)
+        )
+
+        if self._session:
+            models = self._session.exec(statement).all()
+            return [self._to_domain(m) for m in models]
+
+        for session in get_db():
+            models = session.exec(statement).all()
+            return [self._to_domain(m) for m in models]
+
+        raise RuntimeError("Failed to obtain database session")
+
+    def count_by_author(self, author_id: int) -> int:
+        """Count total comments posted by a user.
+
+        Counts all rows for the given author regardless of deletion or
+        moderation state, giving admins an accurate total activity count.
+
+        Args:
+            author_id: Primary key of the comment author.
+
+        Returns:
+            Total number of comments by the given author.
+        """
+        statement = (
+            select(func.count())
+            .select_from(CommentModel)
+            .where(CommentModel.author_id == author_id)
+        )
+
+        if self._session:
+            return self._session.exec(statement).one()
+
+        for session in get_db():
+            return session.exec(statement).one()
 
         raise RuntimeError("Failed to obtain database session")
 

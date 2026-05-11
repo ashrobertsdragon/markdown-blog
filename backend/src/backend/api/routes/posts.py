@@ -39,6 +39,7 @@ from backend.config import FileSystemSettings, GitHubSettings
 from backend.domain.aggregates.post import Post
 from backend.domain.value_objects.post_filter import PostFilter
 from backend.domain.value_objects.slug import Slug
+from backend.exceptions import NotFoundError
 from backend.infrastructure.markdown.markdown_rendering_service import (
     MarkdownRenderingService,
 )
@@ -559,18 +560,23 @@ def unpublish_post(slug: str) -> tuple[Response, int]:
         404: Post not found.
     """
     try:
+        existing = _get_post_repository().find_by_slug(slug)
+        if existing is None:
+            return jsonify({"error": f"Post '{slug}' not found"}), 404
+        post_id = existing.id
+        assert post_id is not None, "persisted post must have an id"
         command = UnpublishPostCommand(
-            slug=slug,
+            post_id=post_id,
             author_id=g.current_user.id,
             user_role=g.current_user.role.value,
         )
         handler = _get_unpublish_post_handler()
         post = handler.handle(command)
         return jsonify(post.to_dict()), 200
+    except NotFoundError as e:
+        return jsonify({"error": str(e)}), 404
     except ValueError as e:
         error_msg = str(e).lower()
-        if "not found" in error_msg:
-            return jsonify({"error": str(e)}), 404
         if "another author" in error_msg or "cannot unpublish" in error_msg:
             return jsonify({"error": str(e)}), 403
         return jsonify({"error": str(e)}), 400
