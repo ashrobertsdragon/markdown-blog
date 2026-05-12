@@ -22,3 +22,22 @@ Object.defineProperty(globalThis, 'jest', {
 const rootElement = document.createElement('div')
 rootElement.id = 'root'
 document.body.appendChild(rootElement)
+
+/**
+ * jsdom does not implement window.matchMedia, but react-hot-toast uses it
+ * to detect the user's color-scheme preference. This stub satisfies the call
+ * so Toaster renders without throwing in the test environment.
+ */
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+})

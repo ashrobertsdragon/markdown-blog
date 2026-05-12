@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
@@ -174,6 +175,21 @@ export default function App() {
         </AuthProvider>
       </BrowserRouter>
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      <div data-testid="toaster">
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+          gutter={8}
+          toastOptions={{
+            duration: 3500,
+            style: {
+              background: 'var(--card)',
+              color: 'var(--card-foreground)',
+              border: '1px solid var(--border)',
+            },
+          }}
+        />
+      </div>
     </QueryClientProvider>
   )
 }
