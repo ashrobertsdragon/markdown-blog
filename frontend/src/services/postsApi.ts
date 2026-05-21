@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getAuthHeaders } from '@/services/auth-headers'
 
 /**
  * Post response from backend API
@@ -59,13 +60,6 @@ const API_BASE_URL = typeof vBase === 'string' && vBase.trim() !== '' ? vBase : 
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-})
-
-/**
- * Helper to create authorization header config
- */
-const getAuthHeaders = (token: string) => ({
-  headers: { Authorization: `Bearer ${token}` },
 })
 
 /**

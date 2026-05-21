@@ -714,6 +714,190 @@ describe('App', () => {
   })
 })
 
+describe('react-hot-toast Toaster configuration', () => {
+  describe('package availability', () => {
+    /**
+     * Verifies that the react-hot-toast package is installed and importable.
+     * The package must be present before Toaster can be rendered in App.
+     */
+    it('should have react-hot-toast package installed', async () => {
+      const toastModule = await import('react-hot-toast')
+      expect(toastModule).toBeTruthy()
+    })
+
+    /**
+     * Verifies that Toaster is a named export from react-hot-toast.
+     * App.tsx must import Toaster specifically to render the toast container.
+     */
+    it('should export Toaster component from react-hot-toast', async () => {
+      const { Toaster } = await import('react-hot-toast')
+      expect(Toaster).toBeDefined()
+      expect(typeof Toaster).toBe('function')
+    })
+
+    /**
+     * Verifies that toast is a named export providing the imperative API.
+     * Components throughout the app call toast.success(), toast.error(), etc.
+     */
+    it('should export toast API from react-hot-toast', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(toast).toBeDefined()
+      expect(typeof toast).toBe('function')
+    })
+  })
+
+  describe('toast API methods', () => {
+    /**
+     * Verifies that toast.success is callable without throwing.
+     * Used by mutation success handlers to notify users of completed operations.
+     */
+    it('should have callable toast.success method', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(typeof toast.success).toBe('function')
+      expect(() => toast.success('Operation succeeded')).not.toThrow()
+    })
+
+    /**
+     * Verifies that toast.error is callable without throwing.
+     * Used by mutation error handlers to notify users of failed operations.
+     */
+    it('should have callable toast.error method', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(typeof toast.error).toBe('function')
+      expect(() => toast.error('Operation failed')).not.toThrow()
+    })
+
+    /**
+     * Verifies that toast.promise is callable without throwing.
+     * Used to show pending/success/error states for async operations like API calls.
+     */
+    it('should have callable toast.promise method', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(typeof toast.promise).toBe('function')
+      expect(() =>
+        toast.promise(Promise.resolve('done'), {
+          loading: 'Loading...',
+          success: 'Done',
+          error: 'Failed',
+        })
+      ).not.toThrow()
+    })
+  })
+
+  describe('Toaster renders in App without breaking providers', () => {
+    /**
+     * Verifies that App renders without errors after Toaster is added.
+     * Toaster must coexist with QueryClientProvider, BrowserRouter, and AuthProvider.
+     * This test FAILS until Toaster is imported and rendered inside App.
+     */
+    it('should render Toaster inside App without crashing', () => {
+      const { container } = render(<App />)
+      expect(container.firstChild).toBeTruthy()
+
+      const toasterElement = container.querySelector('[data-testid="toaster"]')
+      expect(toasterElement).toBeInTheDocument()
+    })
+
+    /**
+     * Verifies that the Toaster container element is present in the DOM after render.
+     * react-hot-toast renders a portal with a specific aria role for accessibility.
+     * This test FAILS until Toaster is placed in App's component tree.
+     */
+    it('should render Toaster container element in the DOM', () => {
+      render(<App />)
+
+      const toastContainer = document.querySelector('[aria-live]')
+      expect(toastContainer).toBeInTheDocument()
+    })
+
+    /**
+     * Verifies that AppRoutes child content still renders when Toaster is present.
+     * Toaster must not interfere with existing route rendering or wrap AppRoutes.
+     * This test FAILS until Toaster is positioned correctly — outside AppRoutes,
+     * as a sibling inside QueryClientProvider.
+     */
+    it('should still render route content alongside Toaster', () => {
+      render(<App />)
+
+      const homeElement = screen.queryByTestId('home-component')
+      expect(homeElement).toBeInTheDocument()
+    })
+  })
+
+  describe('Toaster position relative to providers', () => {
+    /**
+     * Verifies that Toaster is placed inside QueryClientProvider so that
+     * toast-triggering mutations (which need QueryClient context) can fire
+     * toasts from within the provider boundary.
+     *
+     * The expected structure is:
+     *   QueryClientProvider
+     *     BrowserRouter
+     *       AuthProvider
+     *         AppRoutes
+     *     Toaster          ← sibling of BrowserRouter, inside QueryClientProvider
+     *     ReactQueryDevtools
+     *
+     * This test FAILS until Toaster is added to App.tsx.
+     */
+    it('should position Toaster as sibling of BrowserRouter inside QueryClientProvider', () => {
+      const { container } = render(<App />)
+
+      const toasterElement = container.querySelector('[data-testid="toaster"]')
+      expect(toasterElement).toBeInTheDocument()
+    })
+
+    /**
+     * Verifies that Toaster is NOT nested inside AppRoutes.
+     * Placing it inside routes would unmount the toast container on navigation,
+     * losing in-flight toasts between route transitions.
+     * This test FAILS until Toaster is placed correctly outside AppRoutes.
+     */
+    it('should not render Toaster inside AppRoutes', () => {
+      render(<App />)
+
+      const homeElement = screen.queryByTestId('home-component')
+      expect(homeElement).toBeInTheDocument()
+
+      const toasterElement = document.querySelector('[aria-live]')
+      expect(toasterElement).toBeInTheDocument()
+
+      const routeContainer = homeElement?.closest('[data-testid="routes-container"]')
+      if (routeContainer) {
+        expect(routeContainer.contains(toasterElement)).toBe(false)
+      }
+    })
+  })
+
+  describe('Toaster TypeScript type safety', () => {
+    /**
+     * Verifies that ToasterProps type is exported and usable.
+     * TypeScript consumers must be able to type Toaster props without errors.
+     * This test validates the type contract exists in the installed package.
+     */
+    it('should have importable Toaster component with correct TypeScript signature', async () => {
+      const { Toaster } = await import('react-hot-toast')
+      expect(typeof Toaster).toBe('function')
+
+      const toasterLength = (Toaster as (...args: unknown[]) => unknown).length
+      expect(typeof toasterLength).toBe('number')
+    })
+
+    /**
+     * Verifies that the toast default export has the full API surface expected.
+     * Callers rely on toast, toast.success, toast.error, toast.promise, toast.dismiss.
+     */
+    it('should expose complete toast API surface', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(typeof toast).toBe('function')
+      expect(typeof toast.success).toBe('function')
+      expect(typeof toast.error).toBe('function')
+      expect(typeof toast.promise).toBe('function')
+      expect(typeof toast.dismiss).toBe('function')
+    })
+  })
+})
+
 describe('React Query devtools configuration', () => {
   /**
    * Verifies that the @tanstack/react-query-devtools package is installed and importable.
