@@ -106,6 +106,30 @@ export interface ErrorLogsResponse {
 }
 
 /**
+ * A single published post record returned by the admin posts endpoint
+ */
+export interface AdminPost {
+  id: number
+  slug: string
+  title: string
+  author: string
+  author_id: number
+  published_at: string
+  created_at: string
+}
+
+/**
+ * Paginated published post list response
+ */
+export interface PostsResponse {
+  posts: AdminPost[]
+  total_count: number
+  total_pages: number
+  page: number
+  limit: number
+}
+
+/**
  * Response from the unpublish post endpoint
  */
 export interface UnpublishPostResponse {
@@ -169,6 +193,24 @@ export const adminApi = {
       `/admin/users/${userId}/activity`,
       getAuthHeaders(token)
     )
+    return response.data
+  },
+
+  /**
+   * Retrieve a paginated list of all published posts (admin only)
+   *
+   * @param page - Page number (1-indexed)
+   * @param limit - Results per page
+   * @param token - Admin JWT authentication token
+   * @returns Paginated published post list with total count and page metadata
+   * @throws AxiosError on unauthorized (401), forbidden (403), or server error (500)
+   */
+  async getPosts(page: number, limit: number, token: string): Promise<PostsResponse> {
+    if (!token) throw new Error('Authentication required')
+    const response = await apiClient.get<PostsResponse>('/admin/posts', {
+      params: { page, limit },
+      ...getAuthHeaders(token),
+    })
     return response.data
   },
 

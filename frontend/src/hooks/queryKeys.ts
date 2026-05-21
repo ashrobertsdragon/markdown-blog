@@ -50,15 +50,21 @@ export const queryKeys = {
    */
   admin: {
     /**
-     * Query key namespace root for all admin.users queries — used for
-     * cache invalidation across all pages/limits without fetching specific ones.
+     * Query key namespace root for all admin queries — used for
+     * cache invalidation across all admin queries (users, posts, etc).
      */
-    all: () => ['admin', 'users'] as const,
+    all: () => ['admin'] as const,
     /**
      * Query key for paginated user list — each page/limit combination is a
      * distinct cache entry so navigation between pages does not overwrite data.
      */
     users: (page?: number, limit?: number) =>
       ['admin', 'users', { page: page ?? 1, limit: limit ?? 50 }] as const,
+    /**
+     * Query key for paginated posts list — each page/limit combination is a
+     * distinct cache entry so navigation between pages does not overwrite data.
+     */
+    posts: (page?: number, limit?: number) =>
+      ['admin', 'posts', { page: page ?? 1, limit: limit ?? 50 }] as const,
   },
 }
