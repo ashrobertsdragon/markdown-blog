@@ -44,4 +44,21 @@ export const queryKeys = {
    * Query key for the authenticated user's notification preferences
    */
   notificationPreferences: () => ['notificationPreferences'] as const,
+
+  /**
+   * Query key factory for admin-scoped queries
+   */
+  admin: {
+    /**
+     * Query key namespace root for all admin.users queries — used for
+     * cache invalidation across all pages/limits without fetching specific ones.
+     */
+    all: () => ['admin', 'users'] as const,
+    /**
+     * Query key for paginated user list — each page/limit combination is a
+     * distinct cache entry so navigation between pages does not overwrite data.
+     */
+    users: (page?: number, limit?: number) =>
+      ['admin', 'users', { page: page ?? 1, limit: limit ?? 50 }] as const,
+  },
 }

@@ -291,12 +291,12 @@ describe('adminApi', () => {
 
       mockAxiosInstance.put.mockRejectedValueOnce(mockError)
 
-      await expect(adminApi.updateUserRole(1, 'superuser', 'mock-jwt-token')).rejects.toMatchObject(
-        {
-          isAxiosError: true,
-          response: { status: 422 },
-        }
-      )
+      await expect(
+        adminApi.updateUserRole(1, 'authenticated', 'mock-jwt-token')
+      ).rejects.toMatchObject({
+        isAxiosError: true,
+        response: { status: 422 },
+      })
     })
 
     it('should throw AxiosError when token is missing or invalid (401 Unauthorized)', async () => {

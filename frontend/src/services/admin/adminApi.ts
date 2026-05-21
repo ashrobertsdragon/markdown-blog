@@ -145,7 +145,7 @@ export const adminApi = {
    * @returns Updated user record
    * @throws AxiosError on not found (404), invalid role (422), unauthorized (401), or forbidden (403)
    */
-  async updateUserRole(userId: number, role: string, token: string): Promise<User> {
+  async updateUserRole(userId: number, role: UserRole, token: string): Promise<User> {
     if (!token) throw new Error('Authentication required')
     const response = await apiClient.put<User>(
       `/admin/users/${userId}/role`,
