@@ -701,7 +701,7 @@ describe('admin usePosts hooks', () => {
 
     it('should not call adminApi.unpublishPost when token is null regardless of postId', async () => {
       const { useAuth } = await import('@/hooks/useAuth')
-      vi.mocked(useAuth).mockReturnValue({
+      vi.mocked(useAuth).mockReturnValueOnce({
         getToken: vi.fn(async () => null),
         isSignedIn: false,
         isLoaded: true,

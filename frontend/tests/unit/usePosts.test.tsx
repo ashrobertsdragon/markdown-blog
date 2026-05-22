@@ -62,7 +62,7 @@ describe('usePosts hooks', () => {
   })
 
   afterEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     queryClient.clear()
   })
 
