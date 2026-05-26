@@ -611,7 +611,7 @@ describe('UserTable', () => {
       renderWithQueryClient(<UserTable onEditRole={mockCallback} page={1} limit={50} />)
 
       expect(screen.getByRole('table')).toBeInTheDocument()
-      expect(screen.getAllByRole('columnheader')).toHaveLength(4) // email, role, created, actions
+      expect(screen.getAllByRole('columnheader')).toHaveLength(5) // email, role, created, last login, actions
     })
 
     it('should_have_semantic_button_elements_for_edit_role', () => {
