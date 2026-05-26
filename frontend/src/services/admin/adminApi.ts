@@ -138,6 +138,30 @@ export interface UnpublishPostResponse {
 }
 
 /**
+ * A single comment record returned by admin comment endpoints
+ */
+export interface AdminComment {
+  id: number
+  text: string
+  author: string
+  author_id: number
+  post_title: string
+  post_id: number
+  created_at: string
+}
+
+/**
+ * Paginated comment list response
+ */
+export interface CommentsResponse {
+  comments: AdminComment[]
+  total_count: number
+  total_pages: number
+  page: number
+  limit: number
+}
+
+/**
  * Admin API service object providing methods for all admin endpoints.
  * All methods require a valid admin JWT token.
  */
@@ -229,6 +253,24 @@ export const adminApi = {
       {},
       getAuthHeaders(token)
     )
+    return response.data
+  },
+
+  /**
+   * Retrieve a paginated list of all comments (admin moderation)
+   *
+   * @param page - Page number (1-indexed)
+   * @param limit - Results per page
+   * @param token - Admin JWT authentication token
+   * @returns Paginated comment list with total count and page metadata
+   * @throws AxiosError on unauthorized (401), forbidden (403), or server error (500)
+   */
+  async getComments(page: number, limit: number, token: string): Promise<CommentsResponse> {
+    if (!token) throw new Error('Authentication required')
+    const response = await apiClient.get<CommentsResponse>('/admin/comments', {
+      params: { page, limit },
+      ...getAuthHeaders(token),
+    })
     return response.data
   },
 

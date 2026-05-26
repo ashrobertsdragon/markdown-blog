@@ -66,5 +66,11 @@ export const queryKeys = {
      */
     posts: (page?: number, limit?: number) =>
       ['admin', 'posts', { page: page ?? 1, limit: limit ?? 50 }] as const,
+    /**
+     * Query key for paginated comments list — each page/limit combination is a
+     * distinct cache entry so navigation between pages does not overwrite data.
+     */
+    comments: (page?: number, limit?: number) =>
+      ['admin', 'comments', { page: page ?? 1, limit: limit ?? 50 }] as const,
   },
 }
