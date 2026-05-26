@@ -67,39 +67,19 @@ export function UserTable({
       <table role="table" className="w-full text-sm border-collapse">
         <thead>
           <tr>
-            <th
-              role="columnheader"
-              scope="col"
-              className="border-b px-4 py-2 text-left font-semibold"
-            >
+            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
               Email
             </th>
-            <th
-              role="columnheader"
-              scope="col"
-              className="border-b px-4 py-2 text-left font-semibold"
-            >
+            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
               Role
             </th>
-            <th
-              role="columnheader"
-              scope="col"
-              className="border-b px-4 py-2 text-left font-semibold"
-            >
+            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
               Created
             </th>
-            <th
-              role="columnheader"
-              scope="col"
-              className="border-b px-4 py-2 text-left font-semibold"
-            >
+            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
               Last Login
             </th>
-            <th
-              role="columnheader"
-              scope="col"
-              className="border-b px-4 py-2 text-left font-semibold"
-            >
+            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
               Actions
             </th>
           </tr>
