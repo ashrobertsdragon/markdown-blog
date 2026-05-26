@@ -29,8 +29,8 @@ export function createMockAdminUser(overrides: Partial<User> = {}): User {
   return createMockUser({
     id: 100,
     clerk_id: 'user_clerk_admin123',
-    email: 'admin@example.com',
-    display_name: 'Admin User',
+    email: 'alice@example.com',
+    display_name: 'Alice Manager',
     role: 'admin',
     ...overrides,
   })
@@ -131,8 +131,8 @@ export function createMockMixedRolesResponse(
   const admins = Array.from({ length: adminCount }, (_, i) =>
     createMockAdminUser({
       id: i + 1,
-      email: `admin${i + 1}@example.com`,
-      display_name: `Admin ${i + 1}`,
+      email: `manager${i + 1}@example.com`,
+      display_name: `Manager ${i + 1}`,
     })
   )
 
