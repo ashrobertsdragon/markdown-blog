@@ -72,5 +72,14 @@ export const queryKeys = {
      */
     comments: (page?: number, limit?: number) =>
       ['admin', 'comments', { page: page ?? 1, limit: limit ?? 50 }] as const,
+    /**
+     * Query key for system health — single entry, auto-refreshed on interval.
+     */
+    systemHealth: () => ['admin', 'system-health'] as const,
+    /**
+     * Query key for error logs — keyed by limit so different caps store
+     * independently in cache.
+     */
+    errorLogs: (limit?: number) => ['admin', 'error-logs', { limit: limit ?? 50 }] as const,
   },
 }
