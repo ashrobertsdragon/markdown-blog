@@ -73,6 +73,10 @@ export const queryKeys = {
     comments: (page?: number, limit?: number) =>
       ['admin', 'comments', { page: page ?? 1, limit: limit ?? 50 }] as const,
     /**
+     * Query key for user activity — one entry per userId.
+     */
+    userActivity: (userId: number) => ['admin', 'user-activity', userId] as const,
+    /**
      * Query key for system health — single entry, auto-refreshed on interval.
      */
     systemHealth: () => ['admin', 'system-health'] as const,

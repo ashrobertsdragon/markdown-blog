@@ -7,7 +7,13 @@ import {
 } from '@tanstack/react-query'
 import { queryKeys } from '@/hooks/queryKeys'
 import { useAuth } from '@/hooks/useAuth'
-import { adminApi, type User, type UserRole, type UsersResponse } from '@/services/admin/adminApi'
+import {
+  adminApi,
+  type User,
+  type UserActivity,
+  type UserRole,
+  type UsersResponse,
+} from '@/services/admin/adminApi'
 
 /**
  * Query hook for fetching a paginated list of all users (admin only).
@@ -66,5 +72,29 @@ export function useUpdateUserRole(): UseMutationResult<
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.all() })
     },
+  })
+}
+
+/**
+ * Query hook for fetching a user's activity summary (admin only).
+ *
+ * Fetches post count, comment count, last login, and recent posts/comments
+ * for the given user ID. Throws 'Authentication required' before calling
+ * the API when no token is available.
+ *
+ * @param userId - Numeric user ID to fetch activity for
+ * @returns React Query result containing `UserActivity` on success
+ */
+export function useUserActivity(userId: number): UseQueryResult<UserActivity, Error> {
+  const auth = useAuth()
+
+  return useQuery({
+    queryKey: queryKeys.admin.userActivity(userId),
+    queryFn: async () => {
+      const token = await auth.getToken()
+      if (!token) throw new Error('Authentication required')
+      return adminApi.getUserActivity(userId, token)
+    },
+    enabled: auth.isLoaded && auth.isSignedIn === true && userId > 0,
   })
 }
