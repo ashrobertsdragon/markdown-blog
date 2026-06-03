@@ -1,11 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'react-hot-toast'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
-import Admin from '@/pages/Admin'
+import AdminDashboard from '@/pages/AdminDashboard'
 import Author from '@/pages/Author'
+import ContentPage from '@/pages/admin/ContentPage'
+import SystemPage from '@/pages/admin/SystemPage'
+import UserProfilePage from '@/pages/admin/UserProfilePage'
+import UsersPage from '@/pages/admin/UsersPage'
 import Forbidden from '@/pages/Forbidden'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
@@ -93,10 +97,16 @@ export function AppRoutes() {
         path="/admin"
         element={
           <ProtectedRoute requireRole="admin">
-            <Admin />
+            <AdminDashboard />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<Navigate to="users" replace />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="users/:userId" element={<UserProfilePage />} />
+        <Route path="content" element={<ContentPage />} />
+        <Route path="system" element={<SystemPage />} />
+      </Route>
 
       {/* Author routes - require author role */}
       <Route
@@ -156,7 +166,11 @@ export function AppRoutes() {
  * - "/" - Home page displaying system health status
  * - "/login" - Login page for authentication
  * - "/forbidden" - Forbidden page for unauthorized access
- * - "/admin" - Admin dashboard (protected, requires admin role)
+ * - "/admin" - Redirects to /admin/users (protected, requires admin role)
+ * - "/admin/users" - User management page (protected, requires admin role)
+ * - "/admin/users/:userId" - User profile page (protected, requires admin role)
+ * - "/admin/content" - Content moderation page (protected, requires admin role)
+ * - "/admin/system" - System health page (protected, requires admin role)
  * - "/author" - Author dashboard (protected, requires author role)
  * - "/new-post" - Post editor for creating new posts (protected, requires author role)
  * - "/edit/:slug" - Post editor for editing existing posts (protected, requires author role)

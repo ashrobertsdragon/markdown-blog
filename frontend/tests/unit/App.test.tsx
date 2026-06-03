@@ -31,12 +31,35 @@ vi.mock('@/pages/Forbidden', () => ({
   default: () => <div data-testid="forbidden-component">Forbidden Page</div>,
 }))
 
-/**
- * Mock the Admin page component for protected route testing
- * This page does not exist yet - will be created in GREEN phase
- */
 vi.mock('@/pages/Admin', () => ({
   default: () => <div data-testid="admin-component">Admin Page</div>,
+}))
+
+vi.mock('@/pages/AdminDashboard', async () => {
+  const { Outlet } = await import('react-router-dom')
+  return {
+    default: () => (
+      <div data-testid="admin-dashboard">
+        <Outlet />
+      </div>
+    ),
+  }
+})
+
+vi.mock('@/pages/admin/UsersPage', () => ({
+  default: () => <div data-testid="users-page">Users Page</div>,
+}))
+
+vi.mock('@/pages/admin/ContentPage', () => ({
+  default: () => <div data-testid="content-page">Content Page</div>,
+}))
+
+vi.mock('@/pages/admin/SystemPage', () => ({
+  default: () => <div data-testid="system-page">System Page</div>,
+}))
+
+vi.mock('@/pages/admin/UserProfilePage', () => ({
+  default: () => <div data-testid="user-profile-page">User Profile Page</div>,
 }))
 
 /**
@@ -330,7 +353,7 @@ describe('App', () => {
 
       /**
        * Test that authenticated admin users can access /admin route
-       * Requirement 7.2: Authenticated admin user visits /admin → sees admin page
+       * Requirement 7.2: Authenticated admin user visits /admin → redirected to /admin/users
        */
       it('should allow authenticated admin users to access admin page', () => {
         mockUseAuth.mockReturnValue({
@@ -344,8 +367,8 @@ describe('App', () => {
           initialEntries: ['/admin'],
         })
 
-        const adminComponent = screen.queryByTestId('admin-component')
-        expect(adminComponent).toBeInTheDocument()
+        const usersPage = screen.queryByTestId('users-page')
+        expect(usersPage).toBeInTheDocument()
 
         const loginComponent = screen.queryByTestId('login-component')
         expect(loginComponent).not.toBeInTheDocument()
