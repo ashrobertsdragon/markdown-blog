@@ -157,7 +157,7 @@ install_dependencies() {
 
   logger -t litespeed_deploy.sh -p user.info "Installing dependencies into the selector virtualenv"
   run_remote_command "${SERVER_IP_ADDRESS}" \
-    "cloudlinux-selector install-modules --json --interpreter python --app-root ${APP_ROOT_NAME} --requirements-file ${remote_path}/requirements.txt" || return 1
+    "cloudlinux-selector install-modules --json --interpreter python --app-root \"${APP_ROOT_NAME}\" --requirements-file \"${remote_path}/requirements.txt\"" || return 1
 
   return 0
 }
@@ -179,7 +179,7 @@ verify_deployment() {
   local remote_path
   remote_path="$(get_remote_app_path)"
 
-  local endpoint code
+  local endpoint code body_file
   for endpoint in "/api/health" "/api/health/db" "/api/health/github"; do
     if retry_with_backoff "$max_retries" "$base_delay" \
       curl -sS -f -m 15 "https://${DOMAIN}${endpoint}" >/dev/null 2>&1; then
@@ -187,10 +187,12 @@ verify_deployment() {
       continue
     fi
 
-    code="$(curl -sS -o /tmp/health_body -w '%{http_code}' -m 15 \
+    body_file="$(mktemp)"
+    code="$(curl -sS -o "$body_file" -w '%{http_code}' -m 15 \
       "https://${DOMAIN}${endpoint}" 2>/dev/null || true)"
     printf "ERROR: Health check failed for %s (HTTP %s)\n" "$endpoint" "$code" >&2
-    printf "Response body:\n%s\n" "$(head -c 500 /tmp/health_body 2>/dev/null || true)" >&2
+    printf "Response body:\n%s\n" "$(head -c 500 "$body_file" 2>/dev/null || true)" >&2
+    rm -f "$body_file"
     printf "Remote application error log (last 30 lines):\n" >&2
     run_remote_command "${SERVER_IP_ADDRESS}" \
       "tail -n 30 \"${remote_path}/stderr.log\" 2>/dev/null || true" >&2 || true

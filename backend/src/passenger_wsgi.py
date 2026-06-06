@@ -44,7 +44,10 @@ def ensure_virtualenv(path: str | None = None) -> None:
         return
 
     python_bin = os.path.join(venv_path, "bin", "python3")
-    if sys.executable != python_bin and os.path.exists(python_bin):
+    already_active = os.path.realpath(sys.executable) == os.path.realpath(
+        python_bin
+    )
+    if not already_active and os.path.exists(python_bin):
         os.execl(python_bin, python_bin, *sys.argv)
 
 
