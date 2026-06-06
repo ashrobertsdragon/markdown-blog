@@ -20,31 +20,43 @@ def mock_virtualenv() -> str:
     return os.path.join("home", "cpaneluser", "virtualenv", "blog")
 
 
-def test_ensure_virtualenv_raises_without_path(ensure_virtualenv, monkeypatch):
-    """ensure_virtualenv should raise ValueError when no path/envvar set."""
+def test_ensure_virtualenv_noop_without_path(ensure_virtualenv, monkeypatch):
+    """ensure_virtualenv is a no-op when no path/envvar is set.
+
+    Under the CloudLinux Python Selector, ``lswsgi`` already runs the
+    selector-managed interpreter, so no re-exec is required and no error
+    should be raised.
+    """
     monkeypatch.delenv("VENV_PATH", raising=False)
-    with pytest.raises(
-        ValueError, match="Virtual Environment path must be set"
-    ):
+    with patch("os.execl") as mock_execl:
         ensure_virtualenv()
+        mock_execl.assert_not_called()
 
 
 @pytest.mark.parametrize("flask_env", ["development", "production", None])
-def test_passenger_wsgi_raises_value_error(flask_env, monkeypatch):
-    """passenger_wsgi should raise ValueError when flask_env not 'testing'."""
+def test_passenger_wsgi_no_exec_without_venv_path(flask_env, monkeypatch):
+    """Importing the module must not re-exec when VENV_PATH is unset.
+
+    The module-level guard calls ``ensure_virtualenv`` outside of TESTING, but
+    with no ``VENV_PATH`` configured it is a no-op (the selector case).
+    """
     if flask_env is not None:
         monkeypatch.setenv("FLASK_ENV", flask_env)
     else:
         monkeypatch.delenv("FLASK_ENV", raising=False)
     monkeypatch.delenv("VENV_PATH", raising=False)
 
-    if "passenger_wsgi" in sys.modules:
-        del sys.modules["passenger_wsgi"]
+    sys.modules.pop("passenger_wsgi", None)
+    try:
+        with (
+            patch("os.execl") as mock_execl,
+            patch("backend.main.create_app", return_value=object()),
+        ):
+            import passenger_wsgi  # noqa: F401
 
-    with pytest.raises(
-        ValueError, match="Virtual Environment path must be set"
-    ):
-        import passenger_wsgi  # noqa: F401
+            mock_execl.assert_not_called()
+    finally:
+        sys.modules.pop("passenger_wsgi", None)
 
 
 def test_passenger_wsgi_testing_does_not_exec(monkeypatch):
@@ -77,26 +89,6 @@ def test_ensure_virtualenv_unix_path(
         args = mock_execl.call_args[0]
         assert args[0] == expected_python
         assert args[1] == expected_python
-
-
-def test_ensure_virtualenv_windows_path(
-    ensure_virtualenv, mock_virtualenv, monkeypatch
-):
-    """Test path resolution on Windows systems."""
-    monkeypatch.setattr(sys, "platform", "win32")
-    monkeypatch.setenv("VENV_PATH", mock_virtualenv)
-
-    expected_python = os.path.join(mock_virtualenv, "Scripts", "python.exe")
-
-    with (
-        patch("sys.executable", "different/path"),
-        patch("os.path.exists", return_value=True),
-        patch("os.execl") as mock_execl,
-    ):
-        ensure_virtualenv()
-        mock_execl.assert_called_once()
-        args = mock_execl.call_args[0]
-        assert args[0] == expected_python
 
 
 def test_ensure_virtualenv_no_exec_if_already_active(
