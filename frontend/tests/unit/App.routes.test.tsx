@@ -4,6 +4,33 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/App'
 import type { AuthContextType } from '@/context/AuthContext'
 
+vi.mock('@/pages/AdminDashboard', async () => {
+  const { Outlet } = await import('react-router-dom')
+  return {
+    default: () => (
+      <div data-testid="admin-dashboard">
+        <Outlet />
+      </div>
+    ),
+  }
+})
+
+vi.mock('@/pages/admin/ContentPage', () => ({
+  default: () => <div data-testid="content-page">Content Page</div>,
+}))
+
+vi.mock('@/pages/admin/SystemPage', () => ({
+  default: () => <div data-testid="system-page">System Page</div>,
+}))
+
+vi.mock('@/pages/admin/UserProfilePage', () => ({
+  default: () => <div data-testid="user-profile-page">User Profile Page</div>,
+}))
+
+vi.mock('@/pages/admin/UsersPage', () => ({
+  default: () => <div data-testid="users-page">Users Page</div>,
+}))
+
 vi.mock('@/pages/Home', () => ({
   default: () => <div data-testid="home-component">Home Page</div>,
 }))
@@ -547,6 +574,183 @@ describe('App Routes - Loading States', () => {
 
       expect(screen.queryByRole('status')).not.toBeInTheDocument()
       expect(screen.getByTestId('public-post-component')).toBeInTheDocument()
+    })
+  })
+})
+
+describe('App Routes - Admin Nested Routes', () => {
+  describe('when user is not authenticated', () => {
+    beforeEach(() => {
+      mockAuthContext = {
+        user: null,
+        isLoaded: true,
+        isSignedIn: false,
+        role: 'authenticated',
+        getToken: vi.fn(),
+      } as unknown as AuthContextType
+    })
+
+    it('should redirect unauthenticated user to /login for /admin/users', async () => {
+      renderRoute('/admin/users')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('login-component')).toBeInTheDocument()
+        expect(screen.queryByTestId('users-page')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should redirect unauthenticated user to /login for /admin/content', async () => {
+      renderRoute('/admin/content')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('login-component')).toBeInTheDocument()
+        expect(screen.queryByTestId('content-page')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should redirect unauthenticated user to /login for /admin/system', async () => {
+      renderRoute('/admin/system')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('login-component')).toBeInTheDocument()
+        expect(screen.queryByTestId('system-page')).not.toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('when user is authenticated but not admin', () => {
+    beforeEach(() => {
+      mockAuthContext = {
+        user: { id: 'user-1' },
+        isLoaded: true,
+        isSignedIn: true,
+        role: 'authenticated',
+        getToken: vi.fn(),
+      } as unknown as AuthContextType
+    })
+
+    it('should redirect non-admin to /forbidden for /admin/users', async () => {
+      renderRoute('/admin/users')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('forbidden-component')).toBeInTheDocument()
+        expect(screen.queryByTestId('users-page')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should redirect non-admin to /forbidden for /admin/content', async () => {
+      renderRoute('/admin/content')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('forbidden-component')).toBeInTheDocument()
+        expect(screen.queryByTestId('content-page')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should redirect non-admin to /forbidden for /admin/system', async () => {
+      renderRoute('/admin/system')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('forbidden-component')).toBeInTheDocument()
+        expect(screen.queryByTestId('system-page')).not.toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('when user is author (not admin)', () => {
+    beforeEach(() => {
+      mockAuthContext = {
+        user: { id: 'author-1' },
+        isLoaded: true,
+        isSignedIn: true,
+        role: 'author',
+        getToken: vi.fn(),
+      } as unknown as AuthContextType
+    })
+
+    it('should redirect author to /forbidden for /admin/users', async () => {
+      renderRoute('/admin/users')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('forbidden-component')).toBeInTheDocument()
+        expect(screen.queryByTestId('users-page')).not.toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('when user is admin', () => {
+    beforeEach(() => {
+      mockAuthContext = {
+        user: { id: 'admin-1' },
+        isLoaded: true,
+        isSignedIn: true,
+        role: 'admin',
+        getToken: vi.fn(),
+      } as unknown as AuthContextType
+    })
+
+    it('should render UsersPage at /admin/users', async () => {
+      renderRoute('/admin/users')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('users-page')).toBeInTheDocument()
+        expect(screen.queryByTestId('login-component')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('forbidden-component')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should render ContentPage at /admin/content', async () => {
+      renderRoute('/admin/content')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('content-page')).toBeInTheDocument()
+        expect(screen.queryByTestId('login-component')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should render SystemPage at /admin/system', async () => {
+      renderRoute('/admin/system')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('system-page')).toBeInTheDocument()
+        expect(screen.queryByTestId('login-component')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should render UserProfilePage at /admin/users/:userId', async () => {
+      renderRoute('/admin/users/42')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('user-profile-page')).toBeInTheDocument()
+        expect(screen.queryByTestId('login-component')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should redirect /admin to /admin/users', async () => {
+      renderRoute('/admin')
+
+      await waitFor(() => {
+        expect(screen.getByTestId('users-page')).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('when auth is loading', () => {
+    beforeEach(() => {
+      mockAuthContext = {
+        user: null,
+        isLoaded: false,
+        isSignedIn: false,
+        role: 'authenticated',
+        getToken: vi.fn(),
+      } as unknown as AuthContextType
+    })
+
+    it('should show loading spinner for /admin/users while auth loads', () => {
+      renderRoute('/admin/users')
+
+      expect(screen.getByRole('status')).toBeInTheDocument()
+      expect(screen.queryByTestId('users-page')).not.toBeInTheDocument()
     })
   })
 })

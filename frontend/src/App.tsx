@@ -1,9 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Toaster } from 'react-hot-toast'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AuthProvider } from '@/context/AuthContext'
-import Admin from '@/pages/Admin'
+import AdminDashboard from '@/pages/AdminDashboard'
 import Author from '@/pages/Author'
+import ContentPage from '@/pages/admin/ContentPage'
+import SystemPage from '@/pages/admin/SystemPage'
+import UserProfilePage from '@/pages/admin/UserProfilePage'
+import UsersPage from '@/pages/admin/UsersPage'
 import Forbidden from '@/pages/Forbidden'
 import Home from '@/pages/Home'
 import Login from '@/pages/Login'
@@ -91,10 +97,16 @@ export function AppRoutes() {
         path="/admin"
         element={
           <ProtectedRoute requireRole="admin">
-            <Admin />
+            <AdminDashboard />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<Navigate to="users" replace />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="users/:userId" element={<UserProfilePage />} />
+        <Route path="content" element={<ContentPage />} />
+        <Route path="system" element={<SystemPage />} />
+      </Route>
 
       {/* Author routes - require author role */}
       <Route
@@ -143,11 +155,22 @@ export function AppRoutes() {
  * Uses React Router's BrowserRouter for client-side navigation without hash symbols.
  * Configured for deployment at root domain (no basename).
  *
+ * Server state is managed via React Query (QueryClientProvider) with these defaults:
+ * - staleTime: 5 minutes — cached data stays fresh for 5 minutes
+ * - gcTime: 10 minutes — unused cache entries are garbage collected after 10 minutes
+ * - retry: 3 — failed requests are retried up to 3 times
+ * - refetchOnWindowFocus: false — no automatic refetch on tab/window focus
+ * React Query devtools are mounted in development mode only (tree-shaken from production builds).
+ *
  * Routes:
  * - "/" - Home page displaying system health status
  * - "/login" - Login page for authentication
  * - "/forbidden" - Forbidden page for unauthorized access
- * - "/admin" - Admin dashboard (protected, requires admin role)
+ * - "/admin" - Redirects to /admin/users (protected, requires admin role)
+ * - "/admin/users" - User management page (protected, requires admin role)
+ * - "/admin/users/:userId" - User profile page (protected, requires admin role)
+ * - "/admin/content" - Content moderation page (protected, requires admin role)
+ * - "/admin/system" - System health page (protected, requires admin role)
  * - "/author" - Author dashboard (protected, requires author role)
  * - "/new-post" - Post editor for creating new posts (protected, requires author role)
  * - "/edit/:slug" - Post editor for editing existing posts (protected, requires author role)
@@ -165,6 +188,22 @@ export default function App() {
           <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      <div data-testid="toaster">
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+          gutter={8}
+          toastOptions={{
+            duration: 3500,
+            style: {
+              background: 'var(--card)',
+              color: 'var(--card-foreground)',
+              border: '1px solid var(--border)',
+            },
+          }}
+        />
+      </div>
     </QueryClientProvider>
   )
 }

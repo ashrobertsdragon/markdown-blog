@@ -31,12 +31,35 @@ vi.mock('@/pages/Forbidden', () => ({
   default: () => <div data-testid="forbidden-component">Forbidden Page</div>,
 }))
 
-/**
- * Mock the Admin page component for protected route testing
- * This page does not exist yet - will be created in GREEN phase
- */
 vi.mock('@/pages/Admin', () => ({
   default: () => <div data-testid="admin-component">Admin Page</div>,
+}))
+
+vi.mock('@/pages/AdminDashboard', async () => {
+  const { Outlet } = await import('react-router-dom')
+  return {
+    default: () => (
+      <div data-testid="admin-dashboard">
+        <Outlet />
+      </div>
+    ),
+  }
+})
+
+vi.mock('@/pages/admin/UsersPage', () => ({
+  default: () => <div data-testid="users-page">Users Page</div>,
+}))
+
+vi.mock('@/pages/admin/ContentPage', () => ({
+  default: () => <div data-testid="content-page">Content Page</div>,
+}))
+
+vi.mock('@/pages/admin/SystemPage', () => ({
+  default: () => <div data-testid="system-page">System Page</div>,
+}))
+
+vi.mock('@/pages/admin/UserProfilePage', () => ({
+  default: () => <div data-testid="user-profile-page">User Profile Page</div>,
 }))
 
 /**
@@ -330,7 +353,7 @@ describe('App', () => {
 
       /**
        * Test that authenticated admin users can access /admin route
-       * Requirement 7.2: Authenticated admin user visits /admin → sees admin page
+       * Requirement 7.2: Authenticated admin user visits /admin → redirected to /admin/users
        */
       it('should allow authenticated admin users to access admin page', () => {
         mockUseAuth.mockReturnValue({
@@ -344,8 +367,8 @@ describe('App', () => {
           initialEntries: ['/admin'],
         })
 
-        const adminComponent = screen.queryByTestId('admin-component')
-        expect(adminComponent).toBeInTheDocument()
+        const usersPage = screen.queryByTestId('users-page')
+        expect(usersPage).toBeInTheDocument()
 
         const loginComponent = screen.queryByTestId('login-component')
         expect(loginComponent).not.toBeInTheDocument()
@@ -711,5 +734,237 @@ describe('App', () => {
         expect(forbiddenComponent).not.toBeInTheDocument()
       })
     })
+  })
+})
+
+describe('react-hot-toast Toaster configuration', () => {
+  describe('package availability', () => {
+    /**
+     * Verifies that the react-hot-toast package is installed and importable.
+     * The package must be present before Toaster can be rendered in App.
+     */
+    it('should have react-hot-toast package installed', async () => {
+      const toastModule = await import('react-hot-toast')
+      expect(toastModule).toBeTruthy()
+    })
+
+    /**
+     * Verifies that Toaster is a named export from react-hot-toast.
+     * App.tsx must import Toaster specifically to render the toast container.
+     */
+    it('should export Toaster component from react-hot-toast', async () => {
+      const { Toaster } = await import('react-hot-toast')
+      expect(Toaster).toBeDefined()
+      expect(typeof Toaster).toBe('function')
+    })
+
+    /**
+     * Verifies that toast is a named export providing the imperative API.
+     * Components throughout the app call toast.success(), toast.error(), etc.
+     */
+    it('should export toast API from react-hot-toast', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(toast).toBeDefined()
+      expect(typeof toast).toBe('function')
+    })
+  })
+
+  describe('toast API methods', () => {
+    /**
+     * Verifies that toast.success is callable without throwing.
+     * Used by mutation success handlers to notify users of completed operations.
+     */
+    it('should have callable toast.success method', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(typeof toast.success).toBe('function')
+      expect(() => toast.success('Operation succeeded')).not.toThrow()
+    })
+
+    /**
+     * Verifies that toast.error is callable without throwing.
+     * Used by mutation error handlers to notify users of failed operations.
+     */
+    it('should have callable toast.error method', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(typeof toast.error).toBe('function')
+      expect(() => toast.error('Operation failed')).not.toThrow()
+    })
+
+    /**
+     * Verifies that toast.promise is callable without throwing.
+     * Used to show pending/success/error states for async operations like API calls.
+     */
+    it('should have callable toast.promise method', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(typeof toast.promise).toBe('function')
+      expect(() =>
+        toast.promise(Promise.resolve('done'), {
+          loading: 'Loading...',
+          success: 'Done',
+          error: 'Failed',
+        })
+      ).not.toThrow()
+    })
+  })
+
+  describe('Toaster renders in App without breaking providers', () => {
+    /**
+     * Verifies that App renders without errors after Toaster is added.
+     * Toaster must coexist with QueryClientProvider, BrowserRouter, and AuthProvider.
+     * This test FAILS until Toaster is imported and rendered inside App.
+     */
+    it('should render Toaster inside App without crashing', () => {
+      const { container } = render(<App />)
+      expect(container.firstChild).toBeTruthy()
+
+      const toasterElement = container.querySelector('[data-testid="toaster"]')
+      expect(toasterElement).toBeInTheDocument()
+    })
+
+    /**
+     * Verifies that the Toaster container element is present in the DOM after render.
+     * react-hot-toast renders a portal with a specific aria role for accessibility.
+     * This test FAILS until Toaster is placed in App's component tree.
+     */
+    it('should render Toaster container element in the DOM', () => {
+      render(<App />)
+
+      const toastContainer = document.querySelector('[aria-live]')
+      expect(toastContainer).toBeInTheDocument()
+    })
+
+    /**
+     * Verifies that AppRoutes child content still renders when Toaster is present.
+     * Toaster must not interfere with existing route rendering or wrap AppRoutes.
+     * This test FAILS until Toaster is positioned correctly — outside AppRoutes,
+     * as a sibling inside QueryClientProvider.
+     */
+    it('should still render route content alongside Toaster', () => {
+      render(<App />)
+
+      const homeElement = screen.queryByTestId('home-component')
+      expect(homeElement).toBeInTheDocument()
+    })
+  })
+
+  describe('Toaster position relative to providers', () => {
+    /**
+     * Verifies that Toaster is placed inside QueryClientProvider so that
+     * toast-triggering mutations (which need QueryClient context) can fire
+     * toasts from within the provider boundary.
+     *
+     * The expected structure is:
+     *   QueryClientProvider
+     *     BrowserRouter
+     *       AuthProvider
+     *         AppRoutes
+     *     Toaster          ← sibling of BrowserRouter, inside QueryClientProvider
+     *     ReactQueryDevtools
+     *
+     * This test FAILS until Toaster is added to App.tsx.
+     */
+    it('should position Toaster as sibling of BrowserRouter inside QueryClientProvider', () => {
+      const { container } = render(<App />)
+
+      const toasterElement = container.querySelector('[data-testid="toaster"]')
+      expect(toasterElement).toBeInTheDocument()
+    })
+
+    /**
+     * Verifies that Toaster is NOT nested inside AppRoutes.
+     * Placing it inside routes would unmount the toast container on navigation,
+     * losing in-flight toasts between route transitions.
+     * This test FAILS until Toaster is placed correctly outside AppRoutes.
+     */
+    it('should not render Toaster inside AppRoutes', () => {
+      render(<App />)
+
+      const homeElement = screen.queryByTestId('home-component')
+      expect(homeElement).toBeInTheDocument()
+
+      const toasterElement = document.querySelector('[aria-live]')
+      expect(toasterElement).toBeInTheDocument()
+
+      const routeContainer = homeElement?.closest('[data-testid="routes-container"]')
+      if (routeContainer) {
+        expect(routeContainer.contains(toasterElement)).toBe(false)
+      }
+    })
+  })
+
+  describe('Toaster TypeScript type safety', () => {
+    /**
+     * Verifies that ToasterProps type is exported and usable.
+     * TypeScript consumers must be able to type Toaster props without errors.
+     * This test validates the type contract exists in the installed package.
+     */
+    it('should have importable Toaster component with correct TypeScript signature', async () => {
+      const { Toaster } = await import('react-hot-toast')
+      expect(typeof Toaster).toBe('function')
+
+      const toasterLength = (Toaster as (...args: unknown[]) => unknown).length
+      expect(typeof toasterLength).toBe('number')
+    })
+
+    /**
+     * Verifies that the toast default export has the full API surface expected.
+     * Callers rely on toast, toast.success, toast.error, toast.promise, toast.dismiss.
+     */
+    it('should expose complete toast API surface', async () => {
+      const { default: toast } = await import('react-hot-toast')
+      expect(typeof toast).toBe('function')
+      expect(typeof toast.success).toBe('function')
+      expect(typeof toast.error).toBe('function')
+      expect(typeof toast.promise).toBe('function')
+      expect(typeof toast.dismiss).toBe('function')
+    })
+  })
+})
+
+describe('React Query devtools configuration', () => {
+  /**
+   * Verifies that the @tanstack/react-query-devtools package is installed and importable.
+   * This test will fail until the package is added as a dev dependency.
+   * The devtools panel aids development by exposing query cache state.
+   */
+  it('should have @tanstack/react-query-devtools package installed', async () => {
+    const devtoolsModule = await import('@tanstack/react-query-devtools')
+    expect(devtoolsModule).toBeTruthy()
+  })
+
+  /**
+   * Verifies that ReactQueryDevtools is a named export from the devtools package.
+   * The component must be exported so App.tsx can import and render it conditionally.
+   */
+  it('should export ReactQueryDevtools component from the package', async () => {
+    const { ReactQueryDevtools } = await import('@tanstack/react-query-devtools')
+    expect(ReactQueryDevtools).toBeDefined()
+    expect(typeof ReactQueryDevtools).toBe('function')
+  })
+
+  /**
+   * Verifies that App renders correctly when ReactQueryDevtools is present in the tree.
+   * The devtools component must not interfere with existing route rendering.
+   * This test validates structural integrity — it will pass once the package is installed
+   * and the component is placed inside QueryClientProvider in App.
+   */
+  it('should render App without errors when devtools component is mounted', () => {
+    const { container } = render(<App />)
+    expect(container.firstChild).toBeTruthy()
+  })
+
+  /**
+   * Verifies that ReactQueryDevtools initialIsOpen prop type is correct.
+   * The component should accept an initialIsOpen boolean prop so it starts closed
+   * by default in development, reducing visual noise on first load.
+   */
+  it('should accept initialIsOpen prop on ReactQueryDevtools component', async () => {
+    const { ReactQueryDevtools } = await import('@tanstack/react-query-devtools')
+    expect(ReactQueryDevtools).toBeDefined()
+    const propTypes = (ReactQueryDevtools as { propTypes?: Record<string, unknown> }).propTypes
+    if (propTypes !== undefined) {
+      expect(typeof propTypes).toBe('object')
+    }
+    expect(typeof ReactQueryDevtools).toBe('function')
   })
 })

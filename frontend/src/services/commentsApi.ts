@@ -1,3 +1,4 @@
+import { getAuthHeaders } from '@/services/auth-headers'
 import { apiClient } from './postsApi'
 
 /**
@@ -23,13 +24,6 @@ export interface ListCommentsResponse {
   total_count: number
   has_more: boolean
 }
-
-/**
- * Helper to create authorization header config
- */
-const getAuthHeaders = (token: string) => ({
-  headers: { Authorization: `Bearer ${token}` },
-})
 
 /**
  * Comments API service object

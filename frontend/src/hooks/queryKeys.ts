@@ -44,4 +44,46 @@ export const queryKeys = {
    * Query key for the authenticated user's notification preferences
    */
   notificationPreferences: () => ['notificationPreferences'] as const,
+
+  /**
+   * Query key factory for admin-scoped queries
+   */
+  admin: {
+    /**
+     * Query key namespace root for all admin queries — used for
+     * cache invalidation across all admin queries (users, posts, etc).
+     */
+    all: () => ['admin'] as const,
+    /**
+     * Query key for paginated user list — each page/limit combination is a
+     * distinct cache entry so navigation between pages does not overwrite data.
+     */
+    users: (page?: number, limit?: number) =>
+      ['admin', 'users', { page: page ?? 1, limit: limit ?? 50 }] as const,
+    /**
+     * Query key for paginated posts list — each page/limit combination is a
+     * distinct cache entry so navigation between pages does not overwrite data.
+     */
+    posts: (page?: number, limit?: number) =>
+      ['admin', 'posts', { page: page ?? 1, limit: limit ?? 50 }] as const,
+    /**
+     * Query key for paginated comments list — each page/limit combination is a
+     * distinct cache entry so navigation between pages does not overwrite data.
+     */
+    comments: (page?: number, limit?: number) =>
+      ['admin', 'comments', { page: page ?? 1, limit: limit ?? 50 }] as const,
+    /**
+     * Query key for user activity — one entry per userId.
+     */
+    userActivity: (userId: number) => ['admin', 'user-activity', userId] as const,
+    /**
+     * Query key for system health — single entry, auto-refreshed on interval.
+     */
+    systemHealth: () => ['admin', 'system-health'] as const,
+    /**
+     * Query key for error logs — keyed by limit so different caps store
+     * independently in cache.
+     */
+    errorLogs: (limit?: number) => ['admin', 'error-logs', { limit: limit ?? 50 }] as const,
+  },
 }
