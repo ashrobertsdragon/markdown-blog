@@ -1,25 +1,23 @@
-"""Passenger WSGI entry point for cPanel deployment.
+"""WSGI entry point for cPanel shared hosting (LiteSpeed lswsgi / Passenger).
 
-This module serves as the WSGI entry point for Passenger web server on cPanel
-shared hosting. It handles virtual environment bootstrap and Flask application
-initialization.
+This module is the WSGI entry point loaded by the web server on cPanel shared
+hosting. On CloudLinux + LiteSpeed the application is launched by ``lswsgi``
+using the Python Selector's virtualenv, so no virtualenv bootstrap is needed.
+On stock Passenger hosts where ``VENV_PATH`` is provided, it re-executes under
+that interpreter before importing the application.
 
 Environment Variables:
-    VENV_PATH: Path to Python virtual environment (uv-managed).
+    VENV_PATH: Optional path to the Python virtual environment. When set and
+        valid, the process re-executes under that interpreter. When unset (the
+        CloudLinux Python Selector case), the current interpreter is used.
 
 Deployment Notes:
-    - Passenger requires the WSGI application object to be named 'application'
-    - Dependencies must be synced: `uv sync`
-    - This file should be placed in the application root directory
-    - Passenger will execute this file to start the application
-
-Usage:
-    Passenger automatically loads this module when starting the application.
-    No manual execution required in production.
+    - The WSGI application object must be named 'application'.
+    - The 'backend' package sits beside this file in the application root, which
+      is added to sys.path so it is importable.
 
 References:
     - PEP 3333: Python Web Server Gateway Interface v1.0.1
-    - Passenger documentation: https://www.phusionpassenger.com/
 """
 
 import os
@@ -31,21 +29,25 @@ if APP_ROOT not in sys.path:
 
 
 def ensure_virtualenv(path: str | None = None) -> None:
-    """Ensure we are running inside the configured virtual environment.
+    """Re-execute under the configured virtualenv interpreter if one is set.
+
+    Does nothing when no virtualenv path is configured, which is the expected
+    case under the CloudLinux Python Selector where ``lswsgi`` already runs the
+    selector-managed interpreter.
 
     Args:
-        path: Optional override for virtual environment path.
+        path: Optional override for the virtual environment path. Falls back to
+            the ``VENV_PATH`` environment variable.
     """
     venv_path = path or os.environ.get("VENV_PATH")
     if not venv_path:
-        raise ValueError("Virtual Environment path must be set")
+        return
 
-    if sys.platform == "win32":
-        python_bin = os.path.join(venv_path, "Scripts", "python.exe")
-    else:
-        python_bin = os.path.join(venv_path, "bin", "python3")
-
-    if sys.executable != python_bin and os.path.exists(python_bin):
+    python_bin = os.path.join(venv_path, "bin", "python3")
+    already_active = os.path.realpath(sys.executable) == os.path.realpath(
+        python_bin
+    )
+    if not already_active and os.path.exists(python_bin):
         os.execl(python_bin, python_bin, *sys.argv)
 
 

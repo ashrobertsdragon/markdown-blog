@@ -123,14 +123,14 @@ def test_ensure_virtualenv_loads_correct_python_env(
         assert mock_execl.call_args[0][0] == mock_interpreter_path
 
 
-def test_ensure_virtualenv_raises_value_error_with_no_path(
+def test_ensure_virtualenv_noop_with_no_path(
     patched_passenger_wsgi, monkeypatch
 ):
-    """ensure_virtualenv should raise a ValueError when no path is set."""
+    """ensure_virtualenv is a no-op when no path is set (selector case)."""
     monkeypatch.delenv("VENV_PATH", raising=False)
-    with pytest.raises(ValueError) as exec_info:
+    with patch("os.execl") as mock_execl:
         patched_passenger_wsgi.ensure_virtualenv()
-    assert str(exec_info.value) == "Virtual Environment path must be set"
+        mock_execl.assert_not_called()
 
 
 def test_ensure_virtualenv_uses_envvar(patched_passenger_wsgi, monkeypatch):

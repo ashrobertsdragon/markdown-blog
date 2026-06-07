@@ -1,6 +1,7 @@
+---
 name: Deployment
 
-on:
+'on':
   pull_request:
     branches:
       - main
@@ -8,9 +9,16 @@ on:
       - closed
   workflow_dispatch:
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   build-frontend:
     name: Build Frontend
+    if: >-
+      github.event.pull_request.merged == true ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -40,6 +48,9 @@ jobs:
   deploy:
     name: Deploy to Production
     needs: build-frontend
+    if: >-
+      github.event.pull_request.merged == true ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
