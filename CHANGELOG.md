@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Admin dashboard E2E tests**: Added `tests/e2e/admin-dashboard.spec.ts` with 8 end-to-end tests covering the complete admin workflow against a real seeded backend. Tests cover default redirect to `/admin/users`, sidebar navigation between all sections, active link highlighting via `aria-current`, user role change via `RoleEditModal`, post unpublishing through `ConfirmModal`, comment deletion through `ConfirmModal`, system health status indicators, and non-admin access prevention (redirect to `/forbidden`). All destructive-action tests verify the API call completes before asserting the modal closes.
+
 - **Frontend README admin dashboard docs**: Added Admin Dashboard section to the frontend README covering admin routing, all eight admin components with props and usage examples, all eight admin hooks with signatures and cache-key references, the `adminApi` method table, and a step-by-step extension guide for adding new admin sections.
 
 - **Admin dashboard routing**: Replaced the flat `/admin` placeholder route with a nested route tree in `App.tsx`. The `/admin` parent is wrapped by `ProtectedRoute requireRole="admin"`, so unauthenticated users are redirected to `/login` and non-admins to `/forbidden`. An index redirect sends `/admin` to `/admin/users`. Nested child routes wire `AdminDashboard` as the shared layout with `UsersPage` at `/admin/users`, `UserProfilePage` at `/admin/users/:userId`, `ContentPage` at `/admin/content`, and `SystemPage` at `/admin/system`.
