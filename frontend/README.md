@@ -10,6 +10,7 @@ React-based frontend for the blog platform with Clerk authentication, React Quer
 - [Hooks](#hooks)
 - [API Client](#api-client)
 - [Complete Workflows](#complete-workflows)
+- [Admin Dashboard](#admin-dashboard)
 - [Testing](#testing)
 - [Accessibility](#accessibility)
 - [Security](#security)
@@ -270,11 +271,11 @@ interface PostFormProps {
 **Slug Normalization Rules:**
 
 1. Convert to lowercase
-2. Replace spaces with hyphens
-3. Remove special characters (keep only `a-z`, `0-9`, `-`)
-4. Collapse consecutive hyphens
-5. Trim leading/trailing hyphens
-6. Enforce 200 character limit
+1. Replace spaces with hyphens
+1. Remove special characters (keep only `a-z`, `0-9`, `-`)
+1. Collapse consecutive hyphens
+1. Trim leading/trailing hyphens
+1. Enforce 200 character limit
 
 **Example Usage:**
 
@@ -338,17 +339,17 @@ Main page for editing blog post drafts with markdown editor and preview.
 **Workflow:**
 
 1. Component mounts with slug from URL
-2. `useDraft(slug)` fetches draft from API
-3. Display loading spinner while fetching
-4. Render editor with draft content
-5. User edits markdown in editor
-6. User saves with button or Ctrl+S
-7. `useSaveDraft` mutation with optimistic update
-8. Success message shown and auto-dismissed
-9. User publishes with button
-10. Confirmation dialog shown
-11. `usePublishPost` mutation
-12. Navigate to public post page
+1. `useDraft(slug)` fetches draft from API
+1. Display loading spinner while fetching
+1. Render editor with draft content
+1. User edits markdown in editor
+1. User saves with button or Ctrl+S
+1. `useSaveDraft` mutation with optimistic update
+1. Success message shown and auto-dismissed
+1. User publishes with button
+1. Confirmation dialog shown
+1. `usePublishPost` mutation
+1. Navigate to public post page
 
 **Example Navigation:**
 
@@ -407,11 +408,11 @@ Author's post management page with filtering, pagination, and CRUD actions.
 **Workflow:**
 
 1. Component mounts, fetches posts with `useMyPosts(filter, page)`
-2. Display posts in table
-3. User clicks filter button → update filter state → refetch with new filter
-4. User clicks pagination → update page state → refetch with new page
-5. User clicks Delete → confirmation dialog opens
-6. User confirms → `useDeleteDraft` mutation → cache invalidated → list refreshes
+1. Display posts in table
+1. User clicks filter button → update filter state → refetch with new filter
+1. User clicks pagination → update page state → refetch with new page
+1. User clicks Delete → confirmation dialog opens
+1. User confirms → `useDeleteDraft` mutation → cache invalidated → list refreshes
 
 **Example Usage in Route:**
 
@@ -464,10 +465,10 @@ Public-facing page for viewing published blog posts.
 **Workflow:**
 
 1. Component mounts with slug from URL
-2. `usePublicPost(slug)` fetches from public endpoint (no auth)
-3. Display loading spinner while fetching
-4. Render post with title, metadata, and content
-5. Error: show "Post not found" alert with back link
+1. `usePublicPost(slug)` fetches from public endpoint (no auth)
+1. Display loading spinner while fetching
+1. Render post with title, metadata, and content
+1. Error: show "Post not found" alert with back link
 
 **Example Usage:**
 
@@ -863,10 +864,10 @@ function DraftEditor({ slug }: { slug: string }) {
 **Optimistic Update Behavior:**
 
 1. User clicks Save
-2. UI immediately shows updated `updated_at` timestamp
-3. API request sent in background
-4. On success: cache updated with server response
-5. On error: cache rolled back to previous state, error shown
+1. UI immediately shows updated `updated_at` timestamp
+1. API request sent in background
+1. On success: cache updated with server response
+1. On error: cache rolled back to previous state, error shown
 
 ### usePublishPost
 
@@ -934,11 +935,11 @@ function PublishButton({ slug }: { slug: string }) {
 On publish, the backend:
 
 1. Reads markdown from filesystem
-2. Renders to HTML with syntax highlighting
-3. Sanitizes HTML with Bleach
-4. Stores in database
-5. Updates `published: true` and `published_at` timestamp
-6. Commits to GitHub
+1. Renders to HTML with syntax highlighting
+1. Sanitizes HTML with Bleach
+1. Stores in database
+1. Updates `published: true` and `published_at` timestamp
+1. Commits to GitHub
 
 ### useUnpublishPost
 
@@ -1705,6 +1706,554 @@ function DeleteDraftButton({ slug }: { slug: string }) {
     </>
   )
 }
+```
+
+## Admin Dashboard
+
+The admin dashboard is a protected section of the SPA available only to users with the `admin` role. It provides user management, content moderation, and system health monitoring.
+
+### Architecture
+
+```text
+src/
+├── components/admin/      # Presentational admin components
+│   ├── AdminSidebar.tsx   # Responsive navigation drawer
+│   ├── ConfirmModal.tsx   # Reusable confirmation dialog
+│   ├── UserTable.tsx      # User list table with role edit action
+│   ├── RoleEditModal.tsx  # Role change form with mutation
+│   ├── PostsTable.tsx     # Published post list with unpublish action
+│   ├── CommentsTable.tsx  # Comment list with delete action
+│   ├── HealthMetrics.tsx  # System health status cards
+│   └── ErrorLogTable.tsx  # Expandable error log table
+├── hooks/admin/           # React Query hooks for admin data
+│   ├── useUsers.ts        # useUsers, useUpdateUserRole, useUserActivity
+│   ├── usePosts.ts        # usePosts, useUnpublishPost
+│   ├── useComments.ts     # useComments, useDeleteComment
+│   └── useSystemHealth.ts # useSystemHealth, useErrorLogs
+├── pages/admin/           # Admin page components (route targets)
+│   ├── UsersPage.tsx      # /admin/users — paginated user list
+│   ├── UserProfilePage.tsx # /admin/users/:userId — user activity detail
+│   ├── ContentPage.tsx    # /admin/content — tabbed posts + comments
+│   └── SystemPage.tsx     # /admin/system — health metrics + error logs
+└── services/admin/
+    └── adminApi.ts        # Typed fetch wrappers for all admin endpoints
+```
+
+### Admin Routing
+
+Admin routes are nested under `/admin` and protected by `ProtectedRoute requireRole="admin"`. Non-admins are redirected to `/forbidden`.
+
+| Path                   | Component         | Purpose                               |
+| :--------------------- | :---------------- | :------------------------------------ |
+| `/admin`               | —                 | Redirects to `/admin/users`           |
+| `/admin/users`         | `UsersPage`       | Paginated user list with role editing |
+| `/admin/users/:userId` | `UserProfilePage` | User activity detail view             |
+| `/admin/content`       | `ContentPage`     | Tabbed posts and comments moderation  |
+| `/admin/system`        | `SystemPage`      | System health and error logs          |
+
+**Route definition (from `src/App.tsx`):**
+
+```tsx
+<Route
+  path="/admin"
+  element={
+    <ProtectedRoute requireRole="admin">
+      <AdminDashboard />
+    </ProtectedRoute>
+  }
+>
+  <Route index element={<Navigate to="users" replace />} />
+  <Route path="users" element={<UsersPage />} />
+  <Route path="users/:userId" element={<UserProfilePage />} />
+  <Route path="content" element={<ContentPage />} />
+  <Route path="system" element={<SystemPage />} />
+</Route>
+```
+
+### Admin Components
+
+#### AdminSidebar
+
+Responsive navigation drawer for the admin panel.
+
+**Location:** `src/components/admin/AdminSidebar.tsx`
+
+**Props:**
+
+```typescript
+interface AdminSidebarProps {
+  isOpen: boolean    // Whether the mobile drawer is open
+  onClose: () => void  // Called on backdrop click, nav link click, or Escape key
+  onOpen: () => void   // Called when the hamburger button is clicked
+}
+```
+
+**Behavior:**
+
+- Desktop (`md+`): Always visible, fixed on the left
+- Mobile: Hidden by default; hamburger button opens it as a slide-in drawer
+- Escape key closes the drawer on mobile
+- Clicking a nav link closes the drawer on mobile
+- Active route highlighted via `NavLink`
+
+**Example Usage:**
+
+```tsx
+import { useState } from 'react'
+import AdminSidebar from '@/components/admin/AdminSidebar'
+
+function AdminLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  return (
+    <div className="flex min-h-screen">
+      <AdminSidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onOpen={() => setSidebarOpen(true)}
+      />
+      <main className="flex-1 md:ml-64 p-6">
+        {/* page content */}
+      </main>
+    </div>
+  )
+}
+```
+
+#### ConfirmModal
+
+Accessible confirmation dialog for destructive actions.
+
+**Location:** `src/components/admin/ConfirmModal.tsx`
+
+**Props:**
+
+```typescript
+interface ConfirmModalProps {
+  title: string          // Dialog heading
+  message: string        // Body text describing the action
+  confirmText?: string   // Confirm button label (default: "Confirm")
+  cancelText?: string    // Cancel button label (default: "Cancel")
+  onConfirm: () => void  // Called when the confirm button is clicked
+  onCancel: () => void   // Called on cancel, Escape, or backdrop click
+}
+```
+
+**Accessibility:**
+
+- `role="dialog"`, `aria-modal`, `aria-labelledby`, `aria-describedby`
+- Focus moves to the cancel button on mount
+- Focus trapped between cancel and confirm buttons (Tab / Shift+Tab)
+- Escape key invokes `onCancel`
+- Backdrop click invokes `onCancel`
+
+**Example Usage:**
+
+```tsx
+import { useState } from 'react'
+import ConfirmModal from '@/components/admin/ConfirmModal'
+
+function DeleteButton({ onDelete }: { onDelete: () => void }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Delete</button>
+      {open && (
+        <ConfirmModal
+          title="Delete Comment"
+          message="This comment will be permanently removed."
+          confirmText="Delete"
+          onConfirm={() => { onDelete(); setOpen(false) }}
+          onCancel={() => setOpen(false)}
+        />
+      )}
+    </>
+  )
+}
+```
+
+#### UserTable
+
+Tabular list of users with an "Edit Role" action per row.
+
+**Location:** `src/components/admin/UserTable.tsx`
+
+**Props:**
+
+```typescript
+interface UserTableProps {
+  onEditRole: (user: User) => void  // Called with the selected user when "Edit Role" is clicked
+}
+```
+
+Fetches data internally via `useUsers`. Columns: Email, Role, Joined (formatted date), Actions.
+
+#### RoleEditModal
+
+Modal form for changing a user's role.
+
+**Location:** `src/components/admin/RoleEditModal.tsx`
+
+**Props:**
+
+```typescript
+interface RoleEditModalProps {
+  user: User           // The user whose role is being changed
+  onClose: () => void  // Called after a successful mutation or on cancel
+}
+```
+
+Calls `useUpdateUserRole` internally. Submit button is disabled while the mutation is pending or if the selected role equals the current role.
+
+#### PostsTable
+
+Paginated table of published posts with unpublish action.
+
+**Location:** `src/components/admin/PostsTable.tsx`
+
+**Props:**
+
+```typescript
+interface PostsTableProps {
+  page?: number   // 1-indexed page number (default: 1)
+  limit?: number  // Results per page (default: 50)
+}
+```
+
+Fetches via `usePosts`. Columns: Title, Author, Published, Actions (View in new tab, Unpublish). Unpublish opens `ConfirmModal` before calling `useUnpublishPost`.
+
+#### CommentsTable
+
+Paginated table of all comments with delete action.
+
+**Location:** `src/components/admin/CommentsTable.tsx`
+
+**Props:**
+
+```typescript
+interface CommentsTableProps {
+  page?: number   // 1-indexed page number (default: 1)
+  limit?: number  // Results per page (default: 50)
+}
+```
+
+Fetches via `useComments`. Columns: Comment (truncated), Author, Post, Posted, Actions (Delete). Delete opens `ConfirmModal` before calling `useDeleteComment`.
+
+#### HealthMetrics
+
+System health status cards. No props — fetches via `useSystemHealth` internally.
+
+**Location:** `src/components/admin/HealthMetrics.tsx`
+
+Displays status cards for `status`, `database`, `filesystem`, and `github_api` subsystems. Color coding: green = healthy, yellow = degraded, red = unhealthy. Shows human-readable uptime.
+
+#### ErrorLogTable
+
+Expandable error log table.
+
+**Location:** `src/components/admin/ErrorLogTable.tsx`
+
+**Props:**
+
+```typescript
+interface ErrorLogTableProps {
+  limit?: number  // Maximum log entries to fetch (default: 50, max: 100)
+}
+```
+
+Fetches via `useErrorLogs`. Columns: Level (color-coded badge), Timestamp, Message, Context (expandable). Sensitive keys (`token`, `secret`, `password`, `key`, `auth`, `credential`) are redacted from context JSON.
+
+### Admin Hooks
+
+All admin hooks require an authenticated admin session. They call `useAuth().getToken()` internally and throw `'Authentication required'` if no token is available. Queries are disabled until `auth.isLoaded && auth.isSignedIn === true`.
+
+#### useUsers
+
+Fetch a paginated list of all users.
+
+**Location:** `src/hooks/admin/useUsers.ts`
+
+**Signature:**
+
+```typescript
+function useUsers(options?: { page?: number; limit?: number }): UseQueryResult<UsersResponse, Error>
+```
+
+**Parameters:**
+
+- `page` (optional): 1-indexed page number (default: 1, clamped to ≥ 1)
+- `limit` (optional): Results per page (default: 50, clamped to 1–100)
+
+**Cache key:** `queryKeys.admin.users(page, limit)`
+
+**Example Usage:**
+
+```tsx
+import { useUsers } from '@/hooks/admin/useUsers'
+
+function UserList() {
+  const { data, isLoading, error } = useUsers({ page: 1, limit: 25 })
+
+  if (isLoading) return <p>Loading users...</p>
+  if (error) return <p>Error: {error.message}</p>
+
+  return (
+    <ul>
+      {data?.users.map(user => (
+        <li key={user.id}>{user.email} — {user.role}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+#### useUpdateUserRole
+
+Mutation hook for changing a user's role.
+
+**Location:** `src/hooks/admin/useUsers.ts`
+
+**Signature:**
+
+```typescript
+function useUpdateUserRole(): UseMutationResult<User, Error, { userId: number; role: UserRole }>
+```
+
+On success, invalidates the entire `['admin']` cache namespace so all active admin queries reload.
+
+**Example Usage:**
+
+```tsx
+import { useUpdateUserRole } from '@/hooks/admin/useUsers'
+
+function RoleButton({ userId }: { userId: number }) {
+  const updateRole = useUpdateUserRole()
+
+  return (
+    <button
+      onClick={() => updateRole.mutate({ userId, role: 'admin' })}
+      disabled={updateRole.isPending}
+    >
+      Make Admin
+    </button>
+  )
+}
+```
+
+#### useUserActivity
+
+Fetch activity summary for a specific user.
+
+**Location:** `src/hooks/admin/useUsers.ts`
+
+**Signature:**
+
+```typescript
+function useUserActivity(userId: number): UseQueryResult<UserActivity, Error>
+```
+
+Returns `UserActivity` with `post_count`, `comment_count`, `last_login`, `recent_posts` (last 5), and `recent_comments` (last 10). Query is disabled when `userId <= 0`.
+
+**Cache key:** `queryKeys.admin.userActivity(userId)`
+
+#### usePosts (admin)
+
+Fetch a paginated list of all published posts.
+
+**Location:** `src/hooks/admin/usePosts.ts`
+
+**Signature:**
+
+```typescript
+function usePosts(options?: { page?: number; limit?: number }): UseQueryResult<PostsResponse, Error>
+```
+
+**Cache key:** `queryKeys.admin.posts(page, limit)`
+
+#### useUnpublishPost
+
+Mutation hook for unpublishing a post by numeric ID.
+
+**Location:** `src/hooks/admin/usePosts.ts`
+
+**Signature:**
+
+```typescript
+function useUnpublishPost(): UseMutationResult<UnpublishPostResponse, Error, { postId: number }>
+```
+
+On success, invalidates the `['admin']` cache namespace.
+
+#### useComments (admin)
+
+Fetch a paginated list of all comments.
+
+**Location:** `src/hooks/admin/useComments.ts`
+
+**Signature:**
+
+```typescript
+function useComments(options?: { page?: number; limit?: number }): UseQueryResult<CommentsResponse, Error>
+```
+
+**Cache key:** `queryKeys.admin.comments(page, limit)`
+
+#### useDeleteComment
+
+Mutation hook for deleting a comment by numeric ID.
+
+**Location:** `src/hooks/admin/useComments.ts`
+
+**Signature:**
+
+```typescript
+function useDeleteComment(): UseMutationResult<void, Error, { commentId: number }>
+```
+
+On success, invalidates the `['admin']` cache namespace.
+
+#### useSystemHealth
+
+Fetch system health status with automatic polling.
+
+**Location:** `src/hooks/admin/useSystemHealth.ts`
+
+**Signature:**
+
+```typescript
+function useSystemHealth(): UseQueryResult<SystemHealth, Error>
+```
+
+Re-fetches every 60 seconds (`refetchInterval: 60_000`). Degraded/unhealthy responses are treated as successful query results — inspect `data.status` to determine rendering.
+
+**Cache key:** `queryKeys.admin.systemHealth()`
+
+#### useErrorLogs
+
+Fetch recent application error log entries.
+
+**Location:** `src/hooks/admin/useSystemHealth.ts`
+
+**Signature:**
+
+```typescript
+function useErrorLogs(options?: { limit?: number }): UseQueryResult<ErrorLogsResponse, Error>
+```
+
+- `limit` (optional): Max entries to return (default: 50, clamped to 1–100)
+
+**Cache key:** `queryKeys.admin.errorLogs(limit)`
+
+### Admin API Client
+
+**Location:** `src/services/admin/adminApi.ts`
+
+All methods require a valid admin JWT token passed as the last argument. They throw `'Authentication required'` at call time if `token` is falsy, before the network request is made.
+
+| Method                                | HTTP                              | Description               |
+| :------------------------------------ | :-------------------------------- | :------------------------ |
+| `getUsers(page, limit, token)`        | `GET /admin/users`                | Paginated user list       |
+| `updateUserRole(userId, role, token)` | `PUT /admin/users/:id/role`       | Change user role          |
+| `getUserActivity(userId, token)`      | `GET /admin/users/:id/activity`   | User activity summary     |
+| `getPosts(page, limit, token)`        | `GET /admin/posts`                | Paginated published posts |
+| `unpublishPost(postId, token)`        | `POST /admin/posts/:id/unpublish` | Unpublish a post          |
+| `getComments(page, limit, token)`     | `GET /admin/comments`             | Paginated comment list    |
+| `deleteComment(commentId, token)`     | `DELETE /admin/comments/:id`      | Delete a comment          |
+| `getSystemHealth(token)`              | `GET /admin/system/health`        | System health status      |
+| `getErrorLogs(limit, token)`          | `GET /admin/system/errors`        | Recent error logs         |
+
+All endpoints return 403 for non-admin users and 401 for unauthenticated requests.
+
+### Extending the Admin Dashboard
+
+To add a new admin section (e.g., a "Tags" management page):
+
+**1. Add an API method to `adminApi.ts`:**
+
+```typescript
+// src/services/admin/adminApi.ts
+export interface Tag { id: number; name: string; slug: string }
+export interface TagsResponse { tags: Tag[]; total_count: number }
+
+// Inside the adminApi object:
+async getTags(token: string): Promise<TagsResponse> {
+  if (!token) throw new Error('Authentication required')
+  const response = await apiClient.get<TagsResponse>('/admin/tags', getAuthHeaders(token))
+  return response.data
+},
+```
+
+**2. Add query keys to `queryKeys.ts`:**
+
+```typescript
+// src/hooks/queryKeys.ts — inside the admin namespace
+tags: () => [...adminBase, 'tags'] as const,
+```
+
+**3. Create a hook in `src/hooks/admin/`:**
+
+```typescript
+// src/hooks/admin/useTags.ts
+import { useQuery } from '@tanstack/react-query'
+import { queryKeys } from '@/hooks/queryKeys'
+import { useAuth } from '@/hooks/useAuth'
+import { adminApi, type TagsResponse } from '@/services/admin/adminApi'
+
+export function useTags(): UseQueryResult<TagsResponse, Error> {
+  const auth = useAuth()
+  return useQuery({
+    queryKey: queryKeys.admin.tags(),
+    queryFn: async () => {
+      const token = await auth.getToken()
+      if (!token) throw new Error('Authentication required')
+      return adminApi.getTags(token)
+    },
+    enabled: auth.isLoaded && auth.isSignedIn === true,
+  })
+}
+```
+
+**4. Create a page in `src/pages/admin/`:**
+
+```typescript
+// src/pages/admin/TagsPage.tsx
+import { useTags } from '@/hooks/admin/useTags'
+
+export default function TagsPage() {
+  const { data, isLoading, error } = useTags()
+
+  if (isLoading) return <p>Loading tags...</p>
+  if (error) return <p>Error: {error.message}</p>
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-4">Tags</h1>
+      <ul>
+        {data?.tags.map(tag => <li key={tag.id}>{tag.name}</li>)}
+      </ul>
+    </div>
+  )
+}
+```
+
+**5. Add a nav link to `AdminSidebar.tsx`:**
+
+```typescript
+// src/components/admin/AdminSidebar.tsx
+const navLinks: NavItem[] = [
+  { to: '/admin/users', label: 'Users' },
+  { to: '/admin/content', label: 'Content' },
+  { to: '/admin/system', label: 'System' },
+  { to: '/admin/tags', label: 'Tags' },   // ← add this
+]
+```
+
+**6. Register the route in `App.tsx`:**
+
+```tsx
+// src/App.tsx — inside the /admin Route
+<Route path="tags" element={<TagsPage />} />
 ```
 
 ## Testing

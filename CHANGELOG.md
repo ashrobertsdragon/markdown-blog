@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Frontend README admin dashboard docs**: Added Admin Dashboard section to the frontend README covering admin routing, all eight admin components with props and usage examples, all eight admin hooks with signatures and cache-key references, the `adminApi` method table, and a step-by-step extension guide for adding new admin sections.
+
 - **Admin dashboard routing**: Replaced the flat `/admin` placeholder route with a nested route tree in `App.tsx`. The `/admin` parent is wrapped by `ProtectedRoute requireRole="admin"`, so unauthenticated users are redirected to `/login` and non-admins to `/forbidden`. An index redirect sends `/admin` to `/admin/users`. Nested child routes wire `AdminDashboard` as the shared layout with `UsersPage` at `/admin/users`, `UserProfilePage` at `/admin/users/:userId`, `ContentPage` at `/admin/content`, and `SystemPage` at `/admin/system`.
 
 - **Admin content page**: Added `ContentPage` at `/admin/content` providing a tabbed interface for content moderation. "Posts" tab (default) renders `PostsTable`; "Comments" tab renders `CommentsTable`. Tab buttons carry proper ARIA semantics (`role="tab"`, boolean `aria-selected`, `id` attributes) and the panel carries `aria-labelledby` pointing to the active tab. A shared `tabClass` helper eliminates the duplicated active/inactive class ternary. 12 unit tests covering heading render, tab button presence, default tab state, tab switching, and `aria-selected` transitions.
