@@ -98,7 +98,7 @@ Standalone Python scripts designed to be invoked by cron. They import applicatio
 All admin endpoints require the request to carry a valid JWT in the `Authorization` header with the `admin` role. Requests that omit the header or carry a non-admin token receive `403 Forbidden`.
 
 ```http
-Authorization: Bearer YOUR_ADMIN_JWT_TOKEN
+Authorization: Bearer $ADMIN_TOKEN
 ```
 
 ### Post Operations
@@ -113,7 +113,7 @@ POST /api/admin/posts/<post_id>/unpublish
 
 ```bash
 curl -X POST https://example.com/api/admin/posts/42/unpublish \
-  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+  -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 **Success** `200 OK`:
@@ -144,7 +144,7 @@ GET /api/admin/users/<user_id>/activity
 
 ```bash
 curl https://example.com/api/admin/users/7/activity \
-  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+  -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 **Success** `200 OK`:
@@ -155,12 +155,16 @@ curl https://example.com/api/admin/users/7/activity \
   "last_login": "2026-06-01T14:32:00Z",
   "posts_count": 12,
   "comments_count": 34,
-  "recent_posts": ["..."],
-  "recent_comments": ["..."]
+  "recent_posts": [
+    { "id": 1, "slug": "my-first-post", "title": "My First Post", "published": true, "created_at": "2026-01-15T10:00:00Z" }
+  ],
+  "recent_comments": [
+    { "id": 42, "post_slug": "my-first-post", "text": "Great article!", "created_at": "2026-06-01T09:00:00Z" }
+  ]
 }
 ```
 
-`last_login` is `null` if the user has never logged in. `recent_posts` contains up to 5 entries; `recent_comments` contains up to 10 entries.
+`last_login` is `null` if the user has never logged in. `recent_posts` contains up to 5 post objects; `recent_comments` contains up to 10 comment objects. Each object shape is determined by the aggregate's `to_dict()` method.
 
 **Errors**:
 
@@ -183,7 +187,7 @@ GET /api/admin/system/health
 
 ```bash
 curl https://example.com/api/admin/system/health \
-  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+  -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 **Success** `200 OK`:
@@ -218,7 +222,7 @@ GET /api/admin/system/errors?limit=<N>
 
 ```bash
 curl "https://example.com/api/admin/system/errors?limit=20" \
-  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+  -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 **Success** `200 OK`:
@@ -258,7 +262,7 @@ DELETE /api/admin/comments/<comment_id>
 
 ```bash
 curl -X DELETE https://example.com/api/admin/comments/99 \
-  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+  -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 **Success** `204 No Content`
@@ -282,7 +286,7 @@ PUT /api/admin/comments/<comment_id>/approve
 
 ```bash
 curl -X PUT https://example.com/api/admin/comments/99/approve \
-  -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+  -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
 **Success** `200 OK`
@@ -432,7 +436,7 @@ Two methods are available:
 
    ```bash
    curl "https://example.com/api/admin/system/errors?limit=50" \
-     -H "Authorization: Bearer YOUR_ADMIN_JWT_TOKEN"
+     -H "Authorization: Bearer $ADMIN_TOKEN"
    ```
 
 1. **Via the log file** on the server (survives restarts, unlike the in-memory buffer):

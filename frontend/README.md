@@ -2151,19 +2151,19 @@ function useErrorLogs(options?: { limit?: number }): UseQueryResult<ErrorLogsRes
 
 All methods require a valid admin JWT token passed as the last argument. They throw `'Authentication required'` at call time if `token` is falsy, before the network request is made.
 
-| Method                                | HTTP                              | Description               |
-| :------------------------------------ | :-------------------------------- | :------------------------ |
-| `getUsers(page, limit, token)`        | `GET /admin/users`                | Paginated user list       |
-| `updateUserRole(userId, role, token)` | `PUT /admin/users/:id/role`       | Change user role          |
-| `getUserActivity(userId, token)`      | `GET /admin/users/:id/activity`   | User activity summary     |
-| `getPosts(page, limit, token)`        | `GET /admin/posts`                | Paginated published posts |
-| `unpublishPost(postId, token)`        | `POST /admin/posts/:id/unpublish` | Unpublish a post          |
-| `getComments(page, limit, token)`     | `GET /admin/comments`             | Paginated comment list    |
-| `deleteComment(commentId, token)`     | `DELETE /admin/comments/:id`      | Delete a comment          |
-| `getSystemHealth(token)`              | `GET /admin/system/health`        | System health status      |
-| `getErrorLogs(limit, token)`          | `GET /admin/system/errors`        | Recent error logs         |
+| Method                                | Backend route                         | Description               |
+| :------------------------------------ | :------------------------------------ | :------------------------ |
+| `getUsers(page, limit, token)`        | `GET /api/users`                      | Paginated user list       |
+| `updateUserRole(userId, role, token)` | `PUT /api/users/:id/role`             | Change user role          |
+| `getUserActivity(userId, token)`      | `GET /api/admin/users/:id/activity`   | User activity summary     |
+| `getPosts(page, limit, token)`        | `GET /api/admin/posts`                | Paginated published posts |
+| `unpublishPost(postId, token)`        | `POST /api/admin/posts/:id/unpublish` | Unpublish a post          |
+| `getComments(page, limit, token)`     | `GET /api/admin/comments`             | Paginated comment list    |
+| `deleteComment(commentId, token)`     | `DELETE /api/admin/comments/:id`      | Delete a comment          |
+| `getSystemHealth(token)`              | `GET /api/admin/system/health`        | System health status      |
+| `getErrorLogs(limit, token)`          | `GET /api/admin/system/errors`        | Recent error logs         |
 
-All endpoints return 403 for non-admin users and 401 for unauthenticated requests.
+All endpoints return `403 Forbidden` for any request with a missing, expired, or non-admin JWT token. User management routes (`/api/users`) are served by the `users_bp` blueprint; all other admin routes are served by `admin_bp` and `admin_comments_bp` under `/api/admin`.
 
 ### Extending the Admin Dashboard
 
