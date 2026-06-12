@@ -219,6 +219,57 @@ class CommentRepository:
 
         raise RuntimeError("Failed to obtain database session")
 
+    def list_all_admin(self, limit: int = 50, offset: int = 0) -> list[Comment]:
+        """List non-deleted comments across all posts (admin view).
+
+        Returns active (non-soft-deleted) comment rows, ordered by
+        created_at DESC (newest first).
+
+        Args:
+            limit: Maximum number of comments to return (default: 50).
+            offset: Number of comments to skip for pagination (default: 0).
+
+        Returns:
+            List of Comment aggregates, empty list if none found.
+        """
+        statement = (
+            select(CommentModel)
+            .where(CommentModel.is_deleted == False)  # noqa: E712
+            .order_by(col(CommentModel.created_at).desc())
+            .offset(offset)
+            .limit(limit)
+        )
+
+        if self._session:
+            models = self._session.exec(statement).all()
+            return [self._to_domain(m) for m in models]
+
+        for session in get_db():
+            models = session.exec(statement).all()
+            return [self._to_domain(m) for m in models]
+
+        raise RuntimeError("Failed to obtain database session")
+
+    def count_all_admin(self) -> int:
+        """Count non-deleted comments across all posts.
+
+        Returns:
+            Total number of active (non-soft-deleted) comment rows.
+        """
+        statement = (
+            select(func.count())
+            .select_from(CommentModel)
+            .where(CommentModel.is_deleted == False)  # noqa: E712
+        )
+
+        if self._session:
+            return self._session.exec(statement).one()
+
+        for session in get_db():
+            return session.exec(statement).one()
+
+        raise RuntimeError("Failed to obtain database session")
+
     def hard_delete(self, comment_id: int) -> bool:
         """Remove comment row from database permanently (author self-delete).
 

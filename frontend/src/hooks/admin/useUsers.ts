@@ -76,6 +76,29 @@ export function useUpdateUserRole(): UseMutationResult<
 }
 
 /**
+ * Query hook for fetching a single user record by ID (admin only).
+ *
+ * Used by UserProfilePage when the user record is not available via router state
+ * (e.g. direct URL access or page refresh).
+ *
+ * @param userId - Numeric user ID to fetch
+ * @returns React Query result containing `User` on success
+ */
+export function useUser(userId: number): UseQueryResult<User, Error> {
+  const auth = useAuth()
+
+  return useQuery({
+    queryKey: queryKeys.admin.user(userId),
+    queryFn: async () => {
+      const token = await auth.getToken()
+      if (!token) throw new Error('Authentication required')
+      return adminApi.getUser(userId, token)
+    },
+    enabled: auth.isLoaded && auth.isSignedIn === true && userId > 0,
+  })
+}
+
+/**
  * Query hook for fetching a user's activity summary (admin only).
  *
  * Fetches post count, comment count, last login, and recent posts/comments

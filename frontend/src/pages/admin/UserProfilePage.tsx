@@ -1,5 +1,5 @@
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { useUserActivity } from '@/hooks/admin/useUsers'
+import { useUser, useUserActivity } from '@/hooks/admin/useUsers'
 import type { User } from '@/services/admin/adminApi'
 
 const formatDate = (d: string | null): string => (d ? new Date(d).toLocaleDateString() : 'Never')
@@ -26,16 +26,26 @@ function isUser(value: unknown): value is User {
 export default function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>()
   const location = useLocation()
-  const user = isUser(location.state?.user) ? location.state.user : undefined
+  const stateUser = isUser(location.state?.user) ? location.state.user : undefined
 
   const numericId = parseInt(userId ?? '', 10)
-  const { data: activity, isLoading, isError } = useUserActivity(numericId)
+  const isValidId = !Number.isNaN(numericId) && numericId > 0
 
-  if (!user) {
+  const { data: fetchedUser, isLoading: isUserLoading, isError: isUserError } = useUser(numericId)
+  const user: User | undefined = stateUser ?? fetchedUser
+  const {
+    data: activity,
+    isLoading: isActivityLoading,
+    isError: isActivityError,
+  } = useUserActivity(numericId)
+
+  const isLoading = (stateUser ? false : isUserLoading) || isActivityLoading
+
+  if (!isValidId) {
     return (
       <div className="p-6">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">User Profile</h1>
-        <p className="text-gray-500">User not found</p>
+        <p className="text-gray-500">Invalid user ID</p>
       </div>
     )
   }
@@ -49,11 +59,20 @@ export default function UserProfilePage() {
     )
   }
 
-  if (isError) {
+  if ((!stateUser && isUserError) || isActivityError) {
     return (
       <div className="p-6">
         <h1 className="text-2xl font-semibold text-gray-900 mb-6">User Profile</h1>
-        <p className="text-red-600">Failed to load activity data</p>
+        <p className="text-red-600">Failed to load user data</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-6">User Profile</h1>
+        <p className="text-gray-500">User not found</p>
       </div>
     )
   }
@@ -84,7 +103,7 @@ export default function UserProfilePage() {
         </dl>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
+      <div data-testid="user-activity" className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <p className="text-sm font-medium text-gray-500">Posts</p>
           <p className="text-2xl font-semibold text-gray-900">{activity?.post_count}</p>
@@ -95,7 +114,7 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+      <div data-testid="user-posts" className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-medium text-gray-900">Recent Posts</h2>
           <Link

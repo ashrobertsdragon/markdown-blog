@@ -7,6 +7,7 @@ Handles conversion between SQLModel User table and domain User aggregate.
 
 from datetime import UTC
 
+from sqlalchemy import func
 from sqlmodel import Session, col, select
 
 from backend.domain.aggregates.user import User as DomainUser
@@ -186,7 +187,7 @@ class UserRepository:
     def list_all(self, limit: int = 50, offset: int = 0) -> list[DomainUser]:
         """List all users with pagination.
 
-        Returns users ordered by created_at DESC (newest first).
+        Returns users ordered by created_at ASC (oldest first).
         Applies LIMIT and OFFSET for pagination support.
 
         Args:
@@ -198,7 +199,7 @@ class UserRepository:
         """
         statement = (
             select(UserModel)
-            .order_by(col(UserModel.created_at).desc())
+            .order_by(col(UserModel.created_at).asc())
             .limit(limit)
             .offset(offset)
         )
@@ -210,6 +211,22 @@ class UserRepository:
         for session in get_db():
             user_models = session.exec(statement).all()
             return [self._to_domain(model) for model in user_models]
+
+        raise RuntimeError("Failed to obtain database session")
+
+    def count_all(self) -> int:
+        """Count all users.
+
+        Returns:
+            Total number of user rows.
+        """
+        statement = select(func.count()).select_from(UserModel)
+
+        if self._session:
+            return self._session.exec(statement).one()
+
+        for session in get_db():
+            return session.exec(statement).one()
 
         raise RuntimeError("Failed to obtain database session")
 

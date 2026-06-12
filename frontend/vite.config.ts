@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   resolve: {
     alias: {
@@ -14,6 +14,7 @@ export default defineConfig({
     assetsDir: 'static',
     emptyOutDir: true,
   },
+  define: mode === 'test' ? { 'import.meta.env.VITE_API_BASE_URL': JSON.stringify('') } : {},
   server: {
     port: 5556,
     strictPort: true,
@@ -25,4 +26,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

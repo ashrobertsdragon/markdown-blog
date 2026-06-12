@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `GET /api/admin/users/<id>` endpoint for fetching a single user record (admin only)
+- `useUser` React Query hook and `adminApi.getUser` service method for user profile self-fetch
+- `data-testid` attributes on `HealthMetrics` status cards, `ErrorLogTable`, and `AdminSidebar` backdrop for stable Playwright selectors
+
+### Changed
+
+- `UserProfilePage` now self-fetches user data when no router location state is present; fixes direct URL navigation to `/admin/users/:id`
+- `UserProfilePage` loading state no longer flashes when navigating from the user list (state user skips the fetch wait)
+- Admin API responses no longer include `clerk_id` to prevent internal Clerk identifier exposure
+- `User` TypeScript interface marks `clerk_id` as optional to reflect API change
+
+### Fixed
+
+- Backend acceptance tests for admin dashboard were empty stubs — replaced with 7 real tests covering all acceptance criteria
+- Frontend acceptance tests used `test.skip()` and broken route mocking — rewritten to test against the real seeded backend
+- No-op `in (200, 403)` role assertion in content moderation acceptance test tightened to `== 403`
+- Error messages on admin 404 responses no longer echo the user ID (enumeration hardening)
+- `UserProfilePage` NaN guard added for invalid `userId` route params
+- `UserProfilePage` error state now surfaces `useUser` fetch failures, not only activity fetch failures
+- Backdrop click to close mobile sidebar uses `data-testid` selector instead of hard-coded viewport coordinates
+
+### Previous fixes
+
+- **E2E test suite: all previously failing tests now pass** (95 passed, 1 skipped, 0 failed):
+  - *Role edit modal Save button (test 3.1)*: Fixed `UserRepository.list_all()` ordering from `DESC` to `ASC` so the first user returned is the author (authenticated role); selecting "admin" now marks the form dirty and enables Save.
+  - *System health colour dot (test 6.1)*: Switched `frontend/src/index.css` from Tailwind v3 `@tailwind base/components/utilities` directives to `@import "tailwindcss"` plus `@source "./**/*.{tsx,ts,jsx,js,html}"`. Tailwind v4 with the v3 directives does not perform upfront content scanning, so classes used only in `HealthMetrics` (`bg-green-500`, `w-2.5`, `h-2.5`) were absent from the generated CSS; the spans had zero CSS dimensions and were invisible to Playwright.
+  - *Unsubscribe success text (test 2.2)*: Fixed a layered issue where (a) Flask dev server `StaticPool` SQLite + React 18 StrictMode double-mount caused concurrent INSERTs to violate the UNIQUE constraint — resolved by catching `IntegrityError` in `_disable_all_with_session`, rolling back, and retrying as an UPDATE; (b) direct browser–backend requests (`VITE_API_BASE_URL=http://localhost:5555/api`) caused TCP keep-alive connection reuse to silently swallow the second test's request — resolved by overriding `import.meta.env.VITE_API_BASE_URL` to `""` in Vite test mode (`vite.config.ts` `define`) so all browser requests route through the Vite proxy; (c) TanStack Query's `useMutation` observer was unsubscribed during StrictMode's cleanup/remount cycle so success state never reached the component — resolved by replacing `useUnsubscribe`/`useMutation` with plain `axios.get` + `useState` in `Unsubscribe.tsx`, and using a `useRef` guard to prevent the StrictMode double-mount from firing two concurrent requests.
+  - Vitest config (`vitest.config.ts`) decoupled from `vite.config.ts` to avoid `mergeConfig` incompatibility with the new function-form `defineConfig`. The Vitest config now inlines the shared Vite plugin and alias settings directly.
+  - Unsubscribe unit tests updated to spy on `axios.get` instead of mocking `useUnsubscribe`, with `vi.useRealTimers()` in `beforeEach` so promise microtasks resolve naturally.
+
+### Added
+
+- **Admin dashboard E2E tests**: Added `tests/e2e/admin-dashboard.spec.ts` with 8 end-to-end tests covering the complete admin workflow against a real seeded backend. Tests cover default redirect to `/admin/users`, sidebar navigation between all sections, active link highlighting via `aria-current`, user role change via `RoleEditModal`, post unpublishing through `ConfirmModal`, comment deletion through `ConfirmModal`, system health status indicators, and non-admin access prevention (redirect to `/forbidden`). All destructive-action tests verify the API call completes before asserting the modal closes.
+
 - **Frontend README admin dashboard docs**: Added Admin Dashboard section to the frontend README covering admin routing, all eight admin components with props and usage examples, all eight admin hooks with signatures and cache-key references, the `adminApi` method table, and a step-by-step extension guide for adding new admin sections.
 
 - **Admin dashboard routing**: Replaced the flat `/admin` placeholder route with a nested route tree in `App.tsx`. The `/admin` parent is wrapped by `ProtectedRoute requireRole="admin"`, so unauthenticated users are redirected to `/login` and non-admins to `/forbidden`. An index redirect sends `/admin` to `/admin/users`. Nested child routes wire `AdminDashboard` as the shared layout with `UsersPage` at `/admin/users`, `UserProfilePage` at `/admin/users/:userId`, `ContentPage` at `/admin/content`, and `SystemPage` at `/admin/system`.

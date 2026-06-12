@@ -73,6 +73,10 @@ export const queryKeys = {
     comments: (page?: number, limit?: number) =>
       ['admin', 'comments', { page: page ?? 1, limit: limit ?? 50 }] as const,
     /**
+     * Query key for a single user record — one entry per userId.
+     */
+    user: (userId: number) => ['admin', 'user', userId] as const,
+    /**
      * Query key for user activity — one entry per userId.
      */
     userActivity: (userId: number) => ['admin', 'user-activity', userId] as const,

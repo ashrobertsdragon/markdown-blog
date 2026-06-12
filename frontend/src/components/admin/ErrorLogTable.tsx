@@ -111,7 +111,7 @@ export function ErrorLogTable({ limit }: ErrorLogTableProps): React.ReactElement
   }
 
   return (
-    <div>
+    <div data-testid="error-log">
       {/* biome-ignore lint/a11y/useSemanticElements: Tests require explicit role attribute */}
       {/* biome-ignore lint/a11y/noRedundantRoles: Tests require explicit role attribute */}
       <table role="table" className="w-full text-sm border-collapse">

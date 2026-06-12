@@ -53,6 +53,7 @@ export default function AdminSidebar({ isOpen, onClose, onOpen }: AdminSidebarPr
       <div
         role="presentation"
         aria-hidden={!isOpen}
+        data-testid="sidebar-backdrop"
         onClick={onClose}
         style={!isOpen ? { opacity: 0, pointerEvents: 'none' } : undefined}
         className="fixed inset-0 bg-black/50 z-30 md:hidden"
@@ -60,6 +61,7 @@ export default function AdminSidebar({ isOpen, onClose, onOpen }: AdminSidebarPr
 
       <nav
         id="admin-sidebar"
+        data-testid="admin-sidebar"
         aria-label="Admin"
         className={cn(
           'fixed top-0 left-0 h-screen w-64 flex flex-col bg-white border-r border-gray-200 z-40',

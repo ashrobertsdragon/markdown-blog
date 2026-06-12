@@ -954,16 +954,15 @@ def test_admin_delete_comment_returns_204(
     """DELETE /api/admin/comments/{id} returns 204 for admin."""
     clerk_patch, user_patch = _make_auth_patches(admin_jwt_payload, admin_user)
 
+    mock_repo = MagicMock()
+    mock_repo.soft_delete.return_value = True
+
     with (
         clerk_patch,
         user_patch,
         patch(
-            "backend.api.routes.comments._get_comment_repository",
-            return_value=MagicMock(),
-        ),
-        patch(
-            "backend.api.routes.comments.handle_moderate_comment",
-            return_value=None,
+            "backend.api.routes.admin._get_comment_repository",
+            return_value=mock_repo,
         ),
     ):
         response = client.delete(

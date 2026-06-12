@@ -335,13 +335,16 @@ def test_system_health_returns_200_with_required_fields(
     admin_user: User,
     admin_jwt_payload: dict[str, Any],
 ) -> None:
-    """GET /api/admin/system/health returns 200 with status, api_status, database_status, uptime."""
+    """GET /api/admin/system/health returns 200 with required fields."""
     mock_clerk, mock_user_repo = _auth_patches(admin_jwt_payload, admin_user)
 
     health_result = SystemHealth(
-        api_status="Healthy",
-        database_status="Healthy",
-        uptime=7200,
+        status="healthy",
+        database="healthy",
+        filesystem="healthy",
+        github_api="healthy",
+        uptime_seconds=7200,
+        checked_at="2026-01-01T00:00:00+00:00",
     )
     mock_handler = MagicMock()
     mock_handler.handle.return_value = health_result
@@ -367,12 +370,15 @@ def test_system_health_returns_200_with_required_fields(
 
     assert response.status_code == 200
     body = response.json
-    assert "api_status" in body
-    assert "database_status" in body
-    assert "uptime" in body
-    assert body["api_status"] == "Healthy"
-    assert body["database_status"] == "Healthy"
-    assert isinstance(body["uptime"], int)
+    assert "status" in body
+    assert "database" in body
+    assert "filesystem" in body
+    assert "github_api" in body
+    assert "uptime_seconds" in body
+    assert "checked_at" in body
+    assert body["status"] == "healthy"
+    assert body["database"] == "healthy"
+    assert isinstance(body["uptime_seconds"], int)
 
 
 def test_system_health_api_status_is_string(
@@ -380,11 +386,16 @@ def test_system_health_api_status_is_string(
     admin_user: User,
     admin_jwt_payload: dict[str, Any],
 ) -> None:
-    """api_status field in health response is a non-empty string."""
+    """status field in health response is a non-empty string."""
     mock_clerk, mock_user_repo = _auth_patches(admin_jwt_payload, admin_user)
     mock_handler = MagicMock()
     mock_handler.handle.return_value = SystemHealth(
-        api_status="Healthy", database_status="Degraded", uptime=100
+        status="degraded",
+        database="healthy",
+        filesystem="unhealthy",
+        github_api="healthy",
+        uptime_seconds=100,
+        checked_at="2026-01-01T00:00:00+00:00",
     )
 
     with (
@@ -406,8 +417,8 @@ def test_system_health_api_status_is_string(
             headers={"Authorization": "Bearer admin_token"},
         )
 
-    assert isinstance(response.json["api_status"], str)
-    assert len(response.json["api_status"]) > 0
+    assert isinstance(response.json["status"], str)
+    assert len(response.json["status"]) > 0
 
 
 # ---------------------------------------------------------------------------
@@ -486,12 +497,14 @@ def test_system_errors_entry_shape_matches_schema(
     errors = response.json["errors"]
     assert len(errors) == 1
     entry = errors[0]
+    assert "id" in entry
+    assert "level" in entry
     assert "timestamp" in entry
     assert "message" in entry
-    assert "stack_trace" in entry
-    assert "endpoint" in entry
+    assert "context" in entry
     assert entry["message"] == "Something broke"
-    assert entry["endpoint"] == "/api/posts"
+    assert entry["context"]["endpoint"] == "/api/posts"
+    assert "stack_trace" in entry["context"]
 
 
 def test_system_errors_limit_query_param_accepted(
