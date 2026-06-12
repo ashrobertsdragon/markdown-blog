@@ -73,11 +73,7 @@ function StatusCard({ title, status }: StatusCardProps): React.ReactElement {
     <div className="rounded-lg border p-4 flex flex-col gap-2">
       <span className="text-sm font-medium text-gray-600">{title}</span>
       <div className="flex items-center gap-2">
-        {/* aria-hidden: purely decorative duplicate of the text badge below */}
-        <span
-          aria-hidden="true"
-          className={`inline-block w-2.5 h-2.5 rounded-full ${colours.dot}`}
-        />
+        <span className={`inline-block w-2.5 h-2.5 rounded-full ${colours.dot}`} />
         <span className={`text-sm font-semibold px-2 py-0.5 rounded ${colours.badge}`}>
           {statusLabel(status)}
         </span>

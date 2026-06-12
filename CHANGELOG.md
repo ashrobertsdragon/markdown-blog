@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **E2E test suite: all previously failing tests now pass** (95 passed, 1 skipped, 0 failed):
+  - *Role edit modal Save button (test 3.1)*: Fixed `UserRepository.list_all()` ordering from `DESC` to `ASC` so the first user returned is the author (authenticated role); selecting "admin" now marks the form dirty and enables Save.
+  - *System health colour dot (test 6.1)*: Switched `frontend/src/index.css` from Tailwind v3 `@tailwind base/components/utilities` directives to `@import "tailwindcss"` plus `@source "./**/*.{tsx,ts,jsx,js,html}"`. Tailwind v4 with the v3 directives does not perform upfront content scanning, so classes used only in `HealthMetrics` (`bg-green-500`, `w-2.5`, `h-2.5`) were absent from the generated CSS; the spans had zero CSS dimensions and were invisible to Playwright.
+  - *Unsubscribe success text (test 2.2)*: Fixed a layered issue where (a) Flask dev server `StaticPool` SQLite + React 18 StrictMode double-mount caused concurrent INSERTs to violate the UNIQUE constraint — resolved by catching `IntegrityError` in `_disable_all_with_session`, rolling back, and retrying as an UPDATE; (b) direct browser–backend requests (`VITE_API_BASE_URL=http://localhost:5555/api`) caused TCP keep-alive connection reuse to silently swallow the second test's request — resolved by overriding `import.meta.env.VITE_API_BASE_URL` to `""` in Vite test mode (`vite.config.ts` `define`) so all browser requests route through the Vite proxy; (c) TanStack Query's `useMutation` observer was unsubscribed during StrictMode's cleanup/remount cycle so success state never reached the component — resolved by replacing `useUnsubscribe`/`useMutation` with plain `axios.get` + `useState` in `Unsubscribe.tsx`, and using a `useRef` guard to prevent the StrictMode double-mount from firing two concurrent requests.
+  - Vitest config (`vitest.config.ts`) decoupled from `vite.config.ts` to avoid `mergeConfig` incompatibility with the new function-form `defineConfig`. The Vitest config now inlines the shared Vite plugin and alias settings directly.
+  - Unsubscribe unit tests updated to spy on `axios.get` instead of mocking `useUnsubscribe`, with `vi.useRealTimers()` in `beforeEach` so promise microtasks resolve naturally.
+
 ### Added
 
 - **Admin dashboard E2E tests**: Added `tests/e2e/admin-dashboard.spec.ts` with 8 end-to-end tests covering the complete admin workflow against a real seeded backend. Tests cover default redirect to `/admin/users`, sidebar navigation between all sections, active link highlighting via `aria-current`, user role change via `RoleEditModal`, post unpublishing through `ConfirmModal`, comment deletion through `ConfirmModal`, system health status indicators, and non-admin access prevention (redirect to `/forbidden`). All destructive-action tests verify the API call completes before asserting the modal closes.
