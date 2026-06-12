@@ -220,10 +220,10 @@ class CommentRepository:
         raise RuntimeError("Failed to obtain database session")
 
     def list_all_admin(self, limit: int = 50, offset: int = 0) -> list[Comment]:
-        """List all comments across all posts (admin view).
+        """List non-deleted comments across all posts (admin view).
 
-        Returns every comment row regardless of deletion or moderation state,
-        ordered by created_at DESC (newest first).
+        Returns active (non-soft-deleted) comment rows, ordered by
+        created_at DESC (newest first).
 
         Args:
             limit: Maximum number of comments to return (default: 50).
@@ -234,6 +234,7 @@ class CommentRepository:
         """
         statement = (
             select(CommentModel)
+            .where(CommentModel.is_deleted == False)  # noqa: E712
             .order_by(col(CommentModel.created_at).desc())
             .offset(offset)
             .limit(limit)
@@ -250,12 +251,16 @@ class CommentRepository:
         raise RuntimeError("Failed to obtain database session")
 
     def count_all_admin(self) -> int:
-        """Count all comments across all posts.
+        """Count non-deleted comments across all posts.
 
         Returns:
-            Total number of comment rows regardless of state.
+            Total number of active (non-soft-deleted) comment rows.
         """
-        statement = select(func.count()).select_from(CommentModel)
+        statement = (
+            select(func.count())
+            .select_from(CommentModel)
+            .where(CommentModel.is_deleted == False)  # noqa: E712
+        )
 
         if self._session:
             return self._session.exec(statement).one()

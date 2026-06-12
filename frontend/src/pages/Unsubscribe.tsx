@@ -72,9 +72,10 @@ export default function Unsubscribe() {
     const userId = parseInt(userIdParam as string, 10)
     const token = tokenParam as string
 
+    const apiBase = import.meta.env.VITE_API_BASE_URL ?? ''
     setStatus('pending')
     axios
-      .get('/api/unsubscribe', { params: { user_id: userId, token } })
+      .get(`${apiBase}/api/unsubscribe`, { params: { user_id: userId, token } })
       .then(() => setStatus('success'))
       .catch((err: unknown) => {
         setErrorMessage(classifyError(err))

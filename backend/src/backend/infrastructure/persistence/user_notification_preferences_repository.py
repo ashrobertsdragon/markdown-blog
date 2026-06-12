@@ -205,6 +205,7 @@ class UserNotificationPreferencesRepository:
                 notify_on_comment_replies=False,
                 notify_on_mentions=False,
                 notify_on_new_posts=False,
+                created_at=now,
                 updated_at=now,
             )
             session.add(model)
