@@ -62,15 +62,16 @@ function statusLabel(status: HealthStatus): string {
 interface StatusCardProps {
   title: string
   status: HealthStatus
+  testId?: string
 }
 
 /**
  * Renders a single health status card with a coloured indicator badge.
  */
-function StatusCard({ title, status }: StatusCardProps): React.ReactElement {
+function StatusCard({ title, status, testId }: StatusCardProps): React.ReactElement {
   const colours = statusColour(status)
   return (
-    <div className="rounded-lg border p-4 flex flex-col gap-2">
+    <div data-testid={testId} className="rounded-lg border p-4 flex flex-col gap-2">
       <span className="text-sm font-medium text-gray-600">{title}</span>
       <div className="flex items-center gap-2">
         <span className={`inline-block w-2.5 h-2.5 rounded-full ${colours.dot}`} />
@@ -110,8 +111,8 @@ export function HealthMetrics(): React.ReactElement {
     <section aria-label="System health" className="space-y-4">
       {/* aria-live so screen readers announce status changes on auto-refresh */}
       <div aria-live="polite" className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatusCard title="Overall" status={data.status} />
-        <StatusCard title="Database" status={data.database} />
+        <StatusCard title="Overall" status={data.status} testId="api-status" />
+        <StatusCard title="Database" status={data.database} testId="database-status" />
         <StatusCard title="Filesystem" status={data.filesystem} />
         <StatusCard title="GitHub" status={data.github_api} />
       </div>

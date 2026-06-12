@@ -358,9 +358,12 @@ def test_get_system_health_success(
     mock_user_repo.find_by_clerk_user_id.return_value = admin_user
 
     health_response = SystemHealth(
-        api_status="Healthy",
-        database_status="Healthy",
-        uptime=123456,
+        status="healthy",
+        database="healthy",
+        filesystem="healthy",
+        github_api="healthy",
+        uptime_seconds=123456,
+        checked_at="2026-01-01T00:00:00+00:00",
     )
 
     mock_handler = MagicMock()
@@ -386,9 +389,12 @@ def test_get_system_health_success(
         )
 
     assert response.status_code == 200
-    assert "api_status" in response.json
-    assert "database_status" in response.json
-    assert "uptime" in response.json
+    assert "status" in response.json
+    assert "database" in response.json
+    assert "filesystem" in response.json
+    assert "github_api" in response.json
+    assert "uptime_seconds" in response.json
+    assert "checked_at" in response.json
 
 
 def test_get_error_logs_success(
@@ -541,3 +547,373 @@ def test_unpublish_already_unpublished(
     assert response.status_code == 400
     assert "error" in response.json
     assert "already unpublished" in response.json["error"].lower()
+
+
+# Test group: User list
+
+
+def test_list_users_requires_admin_role(
+    client: Any, regular_user: User, regular_jwt_payload: dict[str, Any]
+) -> None:
+    """Non-admin users get 403 when listing users."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = regular_jwt_payload
+    mock_user_repo = MagicMock()
+    mock_user_repo.find_by_clerk_user_id.return_value = regular_user
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_user_repo,
+        ),
+    ):
+        response = client.get(
+            "/api/admin/users",
+            headers={"Authorization": "Bearer regular_token"},
+        )
+
+    assert response.status_code == 403
+
+
+def test_list_users_success(
+    client: Any, admin_user: User, admin_jwt_payload: dict[str, Any]
+) -> None:
+    """Admin receives paginated user list with required fields."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = admin_jwt_payload
+    mock_auth_user_repo = MagicMock()
+    mock_auth_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+    mock_admin_user_repo = MagicMock()
+    mock_admin_user_repo.list_all.return_value = [admin_user]
+    mock_admin_user_repo.count_all.return_value = 1
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_auth_user_repo,
+        ),
+        patch(
+            "backend.api.routes.admin._get_user_repository",
+            return_value=mock_admin_user_repo,
+        ),
+    ):
+        response = client.get(
+            "/api/admin/users",
+            headers={"Authorization": "Bearer admin_token_123"},
+        )
+
+    assert response.status_code == 200
+    body = response.json
+    assert "users" in body
+    assert "total_count" in body
+    assert "total_pages" in body
+    assert "page" in body
+    assert "limit" in body
+    assert len(body["users"]) == 1
+    user_entry = body["users"][0]
+    assert user_entry["email"] == "admin@example.com"
+    assert user_entry["role"] == "admin"
+
+
+# Test group: Update user role
+
+
+def test_update_user_role_success(
+    client: Any,
+    admin_user: User,
+    admin_jwt_payload: dict[str, Any],
+    author_user: User,
+) -> None:
+    """Admin can promote a user to admin role."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = admin_jwt_payload
+    mock_auth_user_repo = MagicMock()
+    mock_auth_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+    promoted = User(
+        id=author_user.id,
+        clerk_user_id=author_user.clerk_user_id,
+        email=author_user.email,
+        role=Role.ADMIN,
+        created_at=author_user.created_at,
+    )
+    mock_admin_user_repo = MagicMock()
+    mock_admin_user_repo.find_by_id.return_value = author_user
+    mock_admin_user_repo.save.return_value = promoted
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_auth_user_repo,
+        ),
+        patch(
+            "backend.api.routes.admin._get_user_repository",
+            return_value=mock_admin_user_repo,
+        ),
+    ):
+        response = client.put(
+            f"/api/admin/users/{author_user.id}/role",
+            json={"role": "admin"},
+            headers={"Authorization": "Bearer admin_token_123"},
+        )
+
+    assert response.status_code == 200
+    assert response.json["role"] == "admin"
+
+
+def test_update_user_role_invalid_role_returns_422(
+    client: Any, admin_user: User, admin_jwt_payload: dict[str, Any]
+) -> None:
+    """Invalid role value returns 422 Unprocessable Entity."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = admin_jwt_payload
+    mock_user_repo = MagicMock()
+    mock_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_user_repo,
+        ),
+    ):
+        response = client.put(
+            "/api/admin/users/1/role",
+            json={"role": "superuser"},
+            headers={"Authorization": "Bearer admin_token_123"},
+        )
+
+    assert response.status_code == 422
+
+
+def test_update_user_role_not_found_returns_404(
+    client: Any, admin_user: User, admin_jwt_payload: dict[str, Any]
+) -> None:
+    """Unknown user ID returns 404."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = admin_jwt_payload
+    mock_auth_user_repo = MagicMock()
+    mock_auth_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+    mock_admin_user_repo = MagicMock()
+    mock_admin_user_repo.find_by_id.return_value = None
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_auth_user_repo,
+        ),
+        patch(
+            "backend.api.routes.admin._get_user_repository",
+            return_value=mock_admin_user_repo,
+        ),
+    ):
+        response = client.put(
+            "/api/admin/users/9999/role",
+            json={"role": "admin"},
+            headers={"Authorization": "Bearer admin_token_123"},
+        )
+
+    assert response.status_code == 404
+
+
+# Test group: Post list
+
+
+def test_list_posts_requires_admin_role(
+    client: Any, regular_user: User, regular_jwt_payload: dict[str, Any]
+) -> None:
+    """Non-admin users get 403 when listing posts via admin endpoint."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = regular_jwt_payload
+    mock_user_repo = MagicMock()
+    mock_user_repo.find_by_clerk_user_id.return_value = regular_user
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_user_repo,
+        ),
+    ):
+        response = client.get(
+            "/api/admin/posts",
+            headers={"Authorization": "Bearer regular_token"},
+        )
+
+    assert response.status_code == 403
+
+
+def test_list_posts_success(
+    client: Any,
+    admin_user: User,
+    admin_jwt_payload: dict[str, Any],
+    published_post: Post,
+) -> None:
+    """Admin receives paginated published post list with required fields."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = admin_jwt_payload
+    mock_auth_user_repo = MagicMock()
+    mock_auth_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+    published_post.id = 1
+    mock_post_repo = MagicMock()
+    mock_post_repo.list_published.return_value = [published_post]
+    mock_post_repo.count_published.return_value = 1
+
+    mock_admin_user_repo = MagicMock()
+    mock_admin_user_repo.find_by_id.return_value = admin_user
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_auth_user_repo,
+        ),
+        patch(
+            "backend.api.routes.admin._get_post_repository",
+            return_value=mock_post_repo,
+        ),
+        patch(
+            "backend.api.routes.admin._get_user_repository",
+            return_value=mock_admin_user_repo,
+        ),
+    ):
+        response = client.get(
+            "/api/admin/posts",
+            headers={"Authorization": "Bearer admin_token_123"},
+        )
+
+    assert response.status_code == 200
+    body = response.json
+    assert "posts" in body
+    assert "total_count" in body
+    assert len(body["posts"]) == 1
+    post_entry = body["posts"][0]
+    assert post_entry["slug"] == "published-article"
+    assert "author" in post_entry
+    assert "published_at" in post_entry
+
+
+# Test group: Comment list
+
+
+def test_list_comments_requires_admin_role(
+    client: Any, regular_user: User, regular_jwt_payload: dict[str, Any]
+) -> None:
+    """Non-admin users get 403 when listing comments via admin endpoint."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = regular_jwt_payload
+    mock_user_repo = MagicMock()
+    mock_user_repo.find_by_clerk_user_id.return_value = regular_user
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_user_repo,
+        ),
+    ):
+        response = client.get(
+            "/api/admin/comments",
+            headers={"Authorization": "Bearer regular_token"},
+        )
+
+    assert response.status_code == 403
+
+
+def test_list_comments_success(
+    client: Any,
+    admin_user: User,
+    admin_jwt_payload: dict[str, Any],
+    comment: Comment,
+    published_post: Post,
+) -> None:
+    """Admin receives paginated comment list with required fields."""
+    mock_clerk = MagicMock()
+    mock_clerk.verify_token.return_value = admin_jwt_payload
+    mock_auth_user_repo = MagicMock()
+    mock_auth_user_repo.find_by_clerk_user_id.return_value = admin_user
+
+    mock_comment_repo = MagicMock()
+    mock_comment_repo.list_all_admin.return_value = [comment]
+    mock_comment_repo.count_all_admin.return_value = 1
+
+    mock_admin_user_repo = MagicMock()
+    mock_admin_user_repo.find_by_id.return_value = User(
+        id=comment.author_id,
+        clerk_user_id="c",
+        email="commenter@example.com",
+        role=Role.AUTHENTICATED,
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+    )
+
+    published_post.id = comment.post_id
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_id.return_value = published_post
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_auth_user_repo,
+        ),
+        patch(
+            "backend.api.routes.admin._get_comment_repository",
+            return_value=mock_comment_repo,
+        ),
+        patch(
+            "backend.api.routes.admin._get_user_repository",
+            return_value=mock_admin_user_repo,
+        ),
+        patch(
+            "backend.api.routes.admin._get_post_repository",
+            return_value=mock_post_repo,
+        ),
+    ):
+        response = client.get(
+            "/api/admin/comments",
+            headers={"Authorization": "Bearer admin_token_123"},
+        )
+
+    assert response.status_code == 200
+    body = response.json
+    assert "comments" in body
+    assert "total_count" in body
+    assert len(body["comments"]) == 1
+    comment_entry = body["comments"][0]
+    assert "text" in comment_entry
+    assert "author" in comment_entry
+    assert "post_title" in comment_entry

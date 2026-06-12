@@ -15,6 +15,9 @@ class GetSystemHealthQuery:
 class SystemHealth:
     """Health snapshot returned by get_system_health_query_handler."""
 
-    api_status: str
-    database_status: str
-    uptime: int
+    status: str
+    database: str
+    filesystem: str
+    github_api: str
+    uptime_seconds: int
+    checked_at: str

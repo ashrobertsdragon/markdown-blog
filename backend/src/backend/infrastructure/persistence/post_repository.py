@@ -201,6 +201,29 @@ class PostRepository:
 
         raise RuntimeError("Failed to obtain database session")
 
+    def count_published(self) -> int:
+        """Count published non-deleted posts.
+
+        Returns:
+            Total number of published posts.
+        """
+        statement = (
+            select(func.count())
+            .select_from(PostModel)
+            .where(
+                PostModel.published,
+                PostModel.deleted_at == None,  # noqa: E711
+            )
+        )
+
+        if self._session:
+            return self._session.exec(statement).one()
+
+        for session in get_db():
+            return session.exec(statement).one()
+
+        raise RuntimeError("Failed to obtain database session")
+
     def find_by_id(self, post_id: int) -> DomainPost | None:
         """Find post by primary key ID.
 

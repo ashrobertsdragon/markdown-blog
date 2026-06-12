@@ -11,7 +11,7 @@ export type UserRole = 'admin' | 'authenticated'
  */
 export interface User {
   id: number
-  clerk_id: string
+  clerk_id?: string
   email: string
   display_name: string
   role: UserRole
@@ -181,6 +181,19 @@ export const adminApi = {
       params: { page, limit },
       ...getAuthHeaders(token),
     })
+    return response.data
+  },
+
+  /**
+   * Retrieve a single user record by ID
+   *
+   * @param userId - Numeric user ID
+   * @param token - Admin JWT authentication token
+   * @returns User record, or throws 404 AxiosError if not found
+   */
+  async getUser(userId: number, token: string): Promise<User> {
+    if (!token) throw new Error('Authentication required')
+    const response = await apiClient.get<User>(`/admin/users/${userId}`, getAuthHeaders(token))
     return response.data
   },
 

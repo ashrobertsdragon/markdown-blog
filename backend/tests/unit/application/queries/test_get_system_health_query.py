@@ -2,11 +2,11 @@
 
 Test Coverage:
 - GetSystemHealthQuery is a frozen dataclass with no parameters (1 test)
-- SystemHealth stores all required fields (1 test)
+- SystemHealth stores all required fields and is immutable (1 test)
 - Handler returns healthy status when database is reachable (1 test)
-- Handler returns unhealthy database_status when connection fails (1 test)
+- Handler returns unhealthy database when connection fails (1 test)
 - Handler returns unhealthy when execute raises after connect succeeds (1 test)
-- Handler api_status is always 'healthy' regardless of database state (1 test)
+- Handler status is always 'healthy' when all subsystems are up (1 test)
 - Handler calculates uptime correctly from start_time (1 test)
 
 Total: 7 unit tests
@@ -41,28 +41,34 @@ def test_get_system_health_query_is_frozen_dataclass() -> None:
 def test_system_health_frozen_dataclass() -> None:
     """Verify SystemHealth stores all required fields and is immutable.
 
-    The result dataclass must hold api_status, database_status, and
-    uptime so callers can read the complete system health snapshot.
+    The result dataclass must hold status, database, filesystem, github_api,
+    uptime_seconds, and checked_at so callers can read the full snapshot.
     """
     health = SystemHealth(
-        api_status="healthy",
-        database_status="healthy",
-        uptime=120,
+        status="healthy",
+        database="healthy",
+        filesystem="healthy",
+        github_api="healthy",
+        uptime_seconds=120,
+        checked_at="2026-01-01T00:00:00+00:00",
     )
 
-    assert health.api_status == "healthy"
-    assert health.database_status == "healthy"
-    assert health.uptime == 120
+    assert health.status == "healthy"
+    assert health.database == "healthy"
+    assert health.filesystem == "healthy"
+    assert health.github_api == "healthy"
+    assert health.uptime_seconds == 120
+    assert health.checked_at == "2026-01-01T00:00:00+00:00"
 
     with pytest.raises((AttributeError, TypeError)):
-        health.api_status = "degraded"  # type: ignore[misc]
+        health.status = "degraded"  # type: ignore[misc]
 
 
 def test_handle_returns_healthy_when_database_up() -> None:
     """Verify handler returns healthy statuses when the database is reachable.
 
     When engine.connect() succeeds and SELECT 1 executes without error,
-    both api_status and database_status must be 'healthy', and uptime
+    both status and database must be 'healthy', and uptime_seconds
     must be a non-negative integer.
     """
     mock_engine = MagicMock()
@@ -73,22 +79,23 @@ def test_handle_returns_healthy_when_database_up() -> None:
     mock_engine.connect.return_value.__exit__ = MagicMock(return_value=False)
 
     start_time = time.time()
-    result = get_system_health_query_handler(
-        GetSystemHealthQuery(), engine=mock_engine, start_time=start_time
-    )
+    with patch.dict("os.environ", {"DRAFTS_PATH": "/tmp"}):
+        result = get_system_health_query_handler(
+            GetSystemHealthQuery(), engine=mock_engine, start_time=start_time
+        )
 
     assert isinstance(result, SystemHealth)
-    assert result.api_status == "healthy"
-    assert result.database_status == "healthy"
-    assert isinstance(result.uptime, int)
-    assert result.uptime >= 0
+    assert result.status == "healthy"
+    assert result.database == "healthy"
+    assert isinstance(result.uptime_seconds, int)
+    assert result.uptime_seconds >= 0
 
 
 def test_handle_returns_unhealthy_database_when_connection_fails() -> None:
-    """Verify handler sets database_status to 'unhealthy' on connection failure.
+    """Verify handler sets database to 'unhealthy' on connection failure.
 
     When engine.connect() raises an exception, the database is unreachable.
-    The handler must catch the exception and return database_status='unhealthy'
+    The handler must catch the exception and return database='unhealthy'
     rather than propagating the error to the caller.
     """
     mock_engine = MagicMock()
@@ -98,15 +105,15 @@ def test_handle_returns_unhealthy_database_when_connection_fails() -> None:
         GetSystemHealthQuery(), engine=mock_engine, start_time=time.time()
     )
 
-    assert result.database_status == "unhealthy"
+    assert result.database == "unhealthy"
 
 
 def test_handle_returns_unhealthy_when_execute_fails() -> None:
-    """Verify handler sets database_status to 'unhealthy' when execute raises.
+    """Verify handler sets database to 'unhealthy' when execute raises.
 
     When engine.connect() succeeds but conn.execute() raises an exception
     (e.g., a permission error or query timeout), the handler must still
-    catch the exception and return database_status='unhealthy'.
+    catch the exception and return database='unhealthy'.
     """
     mock_engine = MagicMock()
     mock_conn = MagicMock()
@@ -120,42 +127,38 @@ def test_handle_returns_unhealthy_when_execute_fails() -> None:
         GetSystemHealthQuery(), engine=mock_engine, start_time=time.time()
     )
 
-    assert result.database_status == "unhealthy"
+    assert result.database == "unhealthy"
 
 
 def test_handle_api_status_always_healthy() -> None:
-    """Verify api_status is always 'healthy' regardless of database state.
+    """Verify status is 'healthy' when all subsystems including database are up.
 
     The handler was reached, which proves the API layer is operational.
-    api_status must be 'healthy' whether the database is up or down.
+    When database, filesystem, and github_api are all healthy, status is healthy.
     """
-    mock_engine_up = MagicMock()
+    mock_engine = MagicMock()
     mock_conn = MagicMock()
-    mock_engine_up.connect.return_value.__enter__ = MagicMock(
+    mock_engine.connect.return_value.__enter__ = MagicMock(
         return_value=mock_conn
     )
-    mock_engine_up.connect.return_value.__exit__ = MagicMock(return_value=False)
-
-    mock_engine_down = MagicMock()
-    mock_engine_down.connect.side_effect = Exception("unreachable")
+    mock_engine.connect.return_value.__exit__ = MagicMock(return_value=False)
 
     start_time = time.time()
+    with patch.dict("os.environ", {"DRAFTS_PATH": "/tmp"}):
+        result_db_up = get_system_health_query_handler(
+            GetSystemHealthQuery(),
+            engine=mock_engine,
+            start_time=start_time,
+        )
 
-    result_db_up = get_system_health_query_handler(
-        GetSystemHealthQuery(), engine=mock_engine_up, start_time=start_time
-    )
-    result_db_down = get_system_health_query_handler(
-        GetSystemHealthQuery(), engine=mock_engine_down, start_time=start_time
-    )
-
-    assert result_db_up.api_status == "healthy"
-    assert result_db_down.api_status == "healthy"
+    assert result_db_up.status == "healthy"
+    assert result_db_up.github_api == "healthy"
 
 
 def test_handle_calculates_uptime_correctly() -> None:
     """Verify handler computes uptime as int(time.time() - start_time).
 
-    Given a start_time 100 seconds in the past, uptime must equal 100
+    Given a start_time 100 seconds in the past, uptime_seconds must equal 100
     within a ±1 second tolerance to account for execution time jitter.
     """
     mock_engine = MagicMock()
@@ -173,4 +176,4 @@ def test_handle_calculates_uptime_correctly() -> None:
             GetSystemHealthQuery(), engine=mock_engine, start_time=start_time
         )
 
-    assert abs(result.uptime - 100) <= 1
+    assert abs(result.uptime_seconds - 100) <= 1

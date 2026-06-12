@@ -6,11 +6,13 @@ import type { ActivityComment, ActivityPost, UserActivity } from '@/services/adm
 import { createMockUser } from '../../../fixtures/users.fixtures'
 
 const mockUseUserActivity = vi.hoisted(() => vi.fn())
+const mockUseUser = vi.hoisted(() => vi.fn())
 
 vi.mock('@/hooks/admin/useUsers', async importOriginal => {
   const actual = await importOriginal<typeof import('@/hooks/admin/useUsers')>()
   return {
     ...actual,
+    useUser: mockUseUser,
     useUserActivity: mockUseUserActivity,
   }
 })
@@ -74,6 +76,7 @@ const renderWithProviders = (ui: React.ReactElement) =>
 describe('UserProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUseUser.mockReturnValue({ data: undefined, isLoading: false, isError: false, error: null })
   })
 
   describe('Render', () => {
@@ -130,7 +133,7 @@ describe('UserProfilePage', () => {
 
       renderWithProviders(<UserProfilePage />)
 
-      expect(screen.getByText(/failed to load activity/i)).toBeInTheDocument()
+      expect(screen.getByText(/failed to load user data/i)).toBeInTheDocument()
     })
 
     it('does not show loading indicator when in error state', () => {
