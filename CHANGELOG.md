@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `GET /api/admin/users/<id>` endpoint for fetching a single user record (admin only)
+- `useUser` React Query hook and `adminApi.getUser` service method for user profile self-fetch
+- `data-testid` attributes on `HealthMetrics` status cards, `ErrorLogTable`, and `AdminSidebar` backdrop for stable Playwright selectors
+
+### Changed
+
+- `UserProfilePage` now self-fetches user data when no router location state is present; fixes direct URL navigation to `/admin/users/:id`
+- `UserProfilePage` loading state no longer flashes when navigating from the user list (state user skips the fetch wait)
+- Admin API responses no longer include `clerk_id` to prevent internal Clerk identifier exposure
+- `User` TypeScript interface marks `clerk_id` as optional to reflect API change
+
 ### Fixed
+
+- Backend acceptance tests for admin dashboard were empty stubs — replaced with 7 real tests covering all acceptance criteria
+- Frontend acceptance tests used `test.skip()` and broken route mocking — rewritten to test against the real seeded backend
+- No-op `in (200, 403)` role assertion in content moderation acceptance test tightened to `== 403`
+- Error messages on admin 404 responses no longer echo the user ID (enumeration hardening)
+- `UserProfilePage` NaN guard added for invalid `userId` route params
+- `UserProfilePage` error state now surfaces `useUser` fetch failures, not only activity fetch failures
+- Backdrop click to close mobile sidebar uses `data-testid` selector instead of hard-coded viewport coordinates
+
+### Previous fixes
 
 - **E2E test suite: all previously failing tests now pass** (95 passed, 1 skipped, 0 failed):
   - *Role edit modal Save button (test 3.1)*: Fixed `UserRepository.list_all()` ordering from `DESC` to `ASC` so the first user returned is the author (authenticated role); selecting "admin" now marks the form dirty and enables Save.
