@@ -73,11 +73,11 @@ mockAxios.create = vi.fn(() => mockAxiosInstance)
 export default mockAxios
 
 export {
-  mockAxiosInstance,
+  mockAxiosDelete,
   mockAxiosGet,
+  mockAxiosInstance,
+  mockAxiosPatch,
   mockAxiosPost,
   mockAxiosPut,
-  mockAxiosDelete,
-  mockAxiosPatch,
   mockAxiosRequest,
 }

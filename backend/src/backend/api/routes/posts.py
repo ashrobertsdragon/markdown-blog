@@ -28,12 +28,19 @@ from backend.application.commands.save_draft_command import SaveDraftCommand
 from backend.application.commands.unpublish_post_command import (
     UnpublishPostCommand,
 )
+from backend.application.queries.handlers import (
+    list_public_posts_query_handler as public_posts_handler,
+)
 from backend.application.queries.handlers.list_posts_query_handler import (
     list_posts_query_handler,
 )
 from backend.application.queries.list_posts_query import (
     ListPostsQuery,
     ListPostsResponse,
+)
+from backend.application.queries.list_public_posts_query import (
+    ListPublicPostsQuery,
+    ListPublicPostsResponse,
 )
 from backend.config import FileSystemSettings, GitHubSettings
 from backend.domain.aggregates.post import Post
@@ -177,6 +184,16 @@ class ListPostsQueryHandler:
         return list_posts_query_handler(query, _get_post_repository())
 
 
+class ListPublicPostsQueryHandler:
+    """Handler wrapper for list_public_posts_query_handler."""
+
+    def handle(self, query: ListPublicPostsQuery) -> ListPublicPostsResponse:
+        """Handle ListPublicPostsQuery."""
+        return public_posts_handler.list_public_posts_query_handler(
+            query, _get_post_repository()
+        )
+
+
 def _get_create_draft_handler() -> CreateDraftHandler:
     """Get create_draft_handler wrapper."""
     return CreateDraftHandler()
@@ -210,6 +227,11 @@ def _get_get_post_query_handler() -> GetPostQueryHandler:
 def _get_list_posts_query_handler() -> ListPostsQueryHandler:
     """Get list_posts_query_handler wrapper."""
     return ListPostsQueryHandler()
+
+
+def _get_list_public_posts_query_handler() -> ListPublicPostsQueryHandler:
+    """Get list_public_posts_query_handler wrapper."""
+    return ListPublicPostsQueryHandler()
 
 
 @posts_bp.route("", methods=["POST"])
@@ -373,6 +395,60 @@ def get_public_post(slug: str) -> tuple[Response, int]:
             extra={"slug": slug},
         )
         return jsonify({"error": "An error occurred"}), 500
+
+
+@posts_bp.route("/public", methods=["GET"])
+def list_public_posts() -> tuple[Response, int]:
+    """List published posts (public access, no auth required).
+
+    Supports pagination via query params.
+
+    Query parameters:
+        page: Page number, 1-indexed (default: 1).
+        limit: Posts per page, 1-100 (default: 20).
+
+    Returns:
+        JSON response with posts list, pagination metadata, and 200 status.
+
+    Raises:
+        400: Invalid query parameters.
+    """
+    try:
+        page = int(request.args.get("page", 1))
+        limit = int(request.args.get("limit", 20))
+
+        query = ListPublicPostsQuery(
+            page=page,
+            limit=limit,
+        )
+
+        handler = _get_list_public_posts_query_handler()
+        response = handler.handle(query)
+
+        return (
+            jsonify(
+                {
+                    "posts": [post.to_public_dict() for post in response.posts],
+                    "total_count": response.total_count,
+                    "total_pages": response.total_pages,
+                    "page": response.current_page,
+                    "limit": response.limit,
+                }
+            ),
+            200,
+        )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.exception(
+            "Unexpected error in list_public_posts",
+            exc_info=e,
+            extra={
+                "page": page,
+                "limit": limit,
+            },
+        )
+        raise
 
 
 @posts_bp.route("/<slug>", methods=["PUT"])

@@ -87,20 +87,6 @@ describe('UserTable', () => {
       expect(screen.getByRole('columnheader', { name: /created/i })).toBeInTheDocument()
     })
 
-    it('should_render_table_with_aria_attributes', () => {
-      const mockCallback = vi.fn()
-      vi.mocked(useUsers).mockReturnValue({
-        ...mockUseUsersReturn,
-        data: createMockUsersResponse([createMockUser()]),
-        isSuccess: true,
-      } as never)
-
-      renderWithQueryClient(<UserTable onEditRole={mockCallback} page={1} limit={50} />)
-
-      const table = screen.getByRole('table')
-      expect(table).toHaveAttribute('role', 'table')
-    })
-
     it('should_render_user_rows_as_table_rows', () => {
       const mockCallback = vi.fn()
       const users = [

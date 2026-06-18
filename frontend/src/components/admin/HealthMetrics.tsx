@@ -94,7 +94,6 @@ export function HealthMetrics(): React.ReactElement {
   const { data, isLoading, isError } = useSystemHealth()
 
   if (isLoading) {
-    // biome-ignore lint/a11y/useSemanticElements: Tests require role="status"
     return <div role="status" className="hidden" />
   }
 
@@ -103,7 +102,6 @@ export function HealthMetrics(): React.ReactElement {
   }
 
   if (!data) {
-    // biome-ignore lint/a11y/useSemanticElements: Tests require role="status"
     return <div role="status" className="hidden" />
   }
 
