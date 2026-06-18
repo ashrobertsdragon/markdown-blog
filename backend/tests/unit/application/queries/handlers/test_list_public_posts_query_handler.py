@@ -1,8 +1,12 @@
-import pytest
 from unittest.mock import Mock
-from backend.application.queries.list_public_posts_query import ListPublicPostsQuery
-from backend.application.queries.handlers.list_public_posts_query_handler import list_public_posts_query_handler
+from backend.application.queries.list_public_posts_query import (
+    ListPublicPostsQuery,
+)
+from backend.application.queries.handlers.list_public_posts_query_handler import (
+    list_public_posts_query_handler,
+)
 from backend.infrastructure.persistence.post_repository import PostRepository
+
 
 def test_list_public_posts_query_handler():
     # Arrange
