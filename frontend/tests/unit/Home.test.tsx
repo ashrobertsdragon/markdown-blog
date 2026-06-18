@@ -60,7 +60,7 @@ describe('Home', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Connection Error')).toBeInTheDocument()
-      expect(screen.getByText(/API error/)).toBeInTheDocument()
+      expect(screen.getByText(/Unable to load posts/)).toBeInTheDocument()
     })
   })
 

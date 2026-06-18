@@ -30,7 +30,7 @@ export function UserTable({
   const { data, isLoading, isError, error } = useUsers({ page, limit })
 
   if (isLoading) {
-    return <div className="hidden" />
+    return <output className="hidden" />
   }
 
   if (isError) {

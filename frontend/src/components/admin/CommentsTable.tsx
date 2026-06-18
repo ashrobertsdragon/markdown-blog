@@ -46,7 +46,7 @@ export function CommentsTable({ page = 1, limit = 50 }: CommentsTableProps): Rea
   const [confirmCommentId, setConfirmCommentId] = useState<number | null>(null)
 
   if (isLoading) {
-    return <div className="hidden" />
+    return <output className="hidden" />
   }
 
   if (isError) {

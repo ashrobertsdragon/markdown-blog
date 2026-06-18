@@ -18,6 +18,7 @@ export default function Home() {
         setPosts(data.posts)
         setError(null)
       } catch (err) {
+        console.error('Failed to load posts:', err)
         setError(err instanceof Error ? err : new Error('Failed to load posts'))
       } finally {
         setLoading(false)
@@ -38,9 +39,7 @@ export default function Home() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 text-white">
         <Alert variant="destructive" className="max-w-md bg-red-950 border-red-900 text-red-200">
           <AlertTitle>Connection Error</AlertTitle>
-          <AlertDescription>
-            {error.message || 'Unable to load posts. Please try again later.'}
-          </AlertDescription>
+          <AlertDescription>Unable to load posts. Please try again later.</AlertDescription>
         </Alert>
       </div>
     )
@@ -88,11 +87,13 @@ export default function Home() {
                   </CardHeader>
                   <CardContent className="flex-grow">
                     <p className="text-slate-400/90 line-clamp-3 leading-relaxed font-light text-[15px]">
-                      {post.html_content
-                        .replace(/<[^>]+>/g, '')
-                        .substring(0, 150)
-                        .trim()}
-                      ...
+                      {(() => {
+                        const rawHtml = post.html_content ?? ''
+                        const plainText = rawHtml.replace(/<[^>]+>/g, '').trim()
+                        const limit = 150
+                        if (plainText.length <= limit) return plainText
+                        return `${plainText.substring(0, limit).trimEnd()}...`
+                      })()}
                     </p>
                   </CardContent>
                   <CardFooter className="pt-0 pb-6 text-sm font-semibold text-purple-400 flex items-center tracking-wide">

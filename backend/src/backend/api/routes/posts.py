@@ -448,7 +448,7 @@ def list_public_posts() -> tuple[Response, int]:
                 "limit": limit,
             },
         )
-        raise
+        return jsonify({"error": "An error occurred"}), 500
 
 
 @posts_bp.route("/<slug>", methods=["PUT"])
