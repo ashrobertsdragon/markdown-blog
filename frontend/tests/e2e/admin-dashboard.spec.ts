@@ -68,7 +68,7 @@ test.describe('Admin Dashboard E2E', () => {
   test.describe('Test Group 3: User Role Management', () => {
     test('3.1: Admin changes a user role via the role edit modal', async ({ page }) => {
       await page.goto('/admin/users')
-      await expect(page.locator('table[role="table"]')).toBeVisible()
+      await expect(page.getByRole('table')).toBeVisible()
 
       await page.getByRole('button', { name: 'Edit Role' }).first().click()
       await expect(page.getByRole('dialog')).toBeVisible()
@@ -81,12 +81,12 @@ test.describe('Admin Dashboard E2E', () => {
       await roleUpdatePromise
 
       await expect(page.getByRole('dialog')).not.toBeVisible()
-      await expect(page.locator('table[role="table"]')).toContainText('admin')
+      await expect(page.getByRole('table')).toContainText('admin')
     })
 
     test('3.2: Cancel button dismisses role edit modal without saving', async ({ page }) => {
       await page.goto('/admin/users')
-      await expect(page.locator('table[role="table"]')).toBeVisible()
+      await expect(page.getByRole('table')).toBeVisible()
 
       await page.getByRole('button', { name: 'Edit Role' }).first().click()
       await expect(page.getByRole('dialog')).toBeVisible()
@@ -102,7 +102,7 @@ test.describe('Admin Dashboard E2E', () => {
       await expect(page.locator('button[role="tab"]:has-text("Posts")')).toBeVisible()
 
       await page.locator('button[role="tab"]:has-text("Posts")').click()
-      await expect(page.locator('table[role="table"]')).toBeVisible()
+      await expect(page.getByRole('table')).toBeVisible()
 
       await page.getByRole('button', { name: 'Unpublish' }).first().click()
       await expect(page.getByRole('dialog')).toBeVisible()
@@ -121,7 +121,7 @@ test.describe('Admin Dashboard E2E', () => {
       await expect(page.locator('button[role="tab"]:has-text("Comments")')).toBeVisible()
 
       await page.locator('button[role="tab"]:has-text("Comments")').click()
-      await expect(page.locator('table[role="table"]')).toBeVisible()
+      await expect(page.getByRole('table')).toBeVisible()
 
       await page.getByRole('button', { name: 'Delete' }).first().click()
       await expect(page.getByRole('dialog')).toBeVisible()
