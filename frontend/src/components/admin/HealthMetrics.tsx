@@ -94,7 +94,7 @@ export function HealthMetrics(): React.ReactElement {
   const { data, isLoading, isError } = useSystemHealth()
 
   if (isLoading) {
-    return <output className="hidden" />
+    return <div className="hidden" aria-hidden="true" data-testid="loading" />
   }
 
   if (isError) {
@@ -102,7 +102,7 @@ export function HealthMetrics(): React.ReactElement {
   }
 
   if (!data) {
-    return <output className="hidden" />
+    return <div className="hidden" aria-hidden="true" data-testid="loading" />
   }
 
   return (

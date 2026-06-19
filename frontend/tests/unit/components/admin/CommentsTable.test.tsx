@@ -436,7 +436,7 @@ describe('CommentsTable', () => {
 
       renderWithQueryClient(<CommentsTable />)
 
-      expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument()
+      expect(screen.getByTestId('loading')).toBeInTheDocument()
     })
 
     it('should_show_loading_indicator_when_fetching', () => {
@@ -449,7 +449,7 @@ describe('CommentsTable', () => {
 
       renderWithQueryClient(<CommentsTable />)
 
-      const loadingIndicator = screen.queryByText(/loading/i) || screen.queryByRole('status')
+      const loadingIndicator = screen.queryByText(/loading/i) || screen.queryByTestId('loading')
       expect(loadingIndicator).toBeInTheDocument()
     })
   })

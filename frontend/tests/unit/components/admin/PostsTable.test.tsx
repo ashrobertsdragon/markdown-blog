@@ -404,7 +404,7 @@ describe('PostsTable', () => {
 
       renderWithQueryClient(<PostsTable />)
 
-      expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument()
+      expect(screen.getByTestId('loading')).toBeInTheDocument()
     })
   })
 

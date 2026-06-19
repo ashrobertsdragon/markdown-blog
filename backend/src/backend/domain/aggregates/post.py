@@ -132,6 +132,7 @@ class Post:
         Returns:
             Dictionary with public-safe fields only (no author_id, published).
         """
+        assert self.published, "to_public_dict() requires published post"
         pub_at = self.published_at or self.updated_at or self.created_at
         html_val = str(self._html_content) if self._html_content else ""
         return {

@@ -55,7 +55,7 @@ export function PostsTable({ page = 1, limit = 50 }: PostsTableProps): React.Rea
   const [confirmPostId, setConfirmPostId] = useState<number | null>(null)
 
   if (isLoading) {
-    return <output className="hidden" />
+    return <div className="hidden" aria-hidden="true" data-testid="loading" />
   }
 
   if (isError) {

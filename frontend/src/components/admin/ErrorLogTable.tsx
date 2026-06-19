@@ -96,7 +96,7 @@ export function ErrorLogTable({ limit }: ErrorLogTableProps): React.ReactElement
   const { data, isLoading, isError } = useErrorLogs({ limit })
 
   if (isLoading) {
-    return <output className="hidden" />
+    return <div className="hidden" aria-hidden="true" data-testid="loading" />
   }
 
   if (isError) {
