@@ -37,6 +37,17 @@ export interface ListPostsResponse {
 }
 
 /**
+ * Paginated list of public posts response
+ */
+export interface ListPublicPostsResponse {
+  posts: PublicPostResponse[]
+  total_count: number
+  total_pages: number
+  page: number
+  limit: number
+}
+
+/**
  * Public post response from backend API
  */
 export interface PublicPostResponse {
@@ -201,6 +212,22 @@ export const postsApi = {
    */
   async getPublicPost(slug: string): Promise<PublicPostResponse> {
     const response = await apiClient.get<PublicPostResponse>(`/posts/${slug}/public`)
+    return response.data
+  },
+
+  /**
+   * List all published posts (public endpoint, no auth required)
+   *
+   * @param page - Page number (defaults to 1)
+   * @param limit - Results per page (defaults to 20)
+   * @returns Paginated list of public posts
+   */
+  async listPublicPosts(page?: number, limit?: number): Promise<ListPublicPostsResponse> {
+    const params: Record<string, number> = {
+      page: page ?? 1,
+      limit: limit ?? 20,
+    }
+    const response = await apiClient.get<ListPublicPostsResponse>('/posts/public', { params })
     return response.data
   },
 }

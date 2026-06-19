@@ -46,8 +46,7 @@ export function CommentsTable({ page = 1, limit = 50 }: CommentsTableProps): Rea
   const [confirmCommentId, setConfirmCommentId] = useState<number | null>(null)
 
   if (isLoading) {
-    // biome-ignore lint/a11y/useSemanticElements: Tests require role="status"
-    return <div role="status" className="hidden" />
+    return <output className="hidden" />
   }
 
   if (isError) {
@@ -62,9 +61,7 @@ export function CommentsTable({ page = 1, limit = 50 }: CommentsTableProps): Rea
 
   return (
     <div>
-      {/* biome-ignore lint/a11y/useSemanticElements: Tests require explicit role attribute */}
-      {/* biome-ignore lint/a11y/noRedundantRoles: Tests require explicit role attribute */}
-      <table role="table" className="w-full text-sm border-collapse">
+      <table className="w-full text-sm border-collapse">
         <thead>
           <tr>
             <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
