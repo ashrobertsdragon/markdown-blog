@@ -375,7 +375,7 @@ describe('UserTable', () => {
 
       renderWithQueryClient(<UserTable onEditRole={mockCallback} page={1} limit={50} />)
 
-      expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument()
+      expect(screen.getByTestId('loading')).toBeInTheDocument()
     })
 
     it('should_display_loading_message_or_skeleton_when_fetching', () => {
@@ -391,7 +391,7 @@ describe('UserTable', () => {
       renderWithQueryClient(<UserTable onEditRole={mockCallback} page={1} limit={50} />)
 
       const loadingIndicator =
-        screen.queryByText(/loading|skeleton/i) || screen.queryByRole('status')
+        screen.queryByText(/loading|skeleton/i) || screen.queryByTestId('loading')
       expect(loadingIndicator).toBeInTheDocument()
     })
   })

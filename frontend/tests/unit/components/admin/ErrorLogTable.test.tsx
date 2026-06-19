@@ -268,7 +268,7 @@ describe('ErrorLogTable', () => {
 
       renderWithQueryClient(<ErrorLogTable />)
 
-      expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument()
+      expect(screen.getByTestId('loading')).toBeInTheDocument()
     })
   })
 
