@@ -19,11 +19,21 @@ def run_migrations(engine: Engine) -> None:
     Args:
         engine: SQLAlchemy engine connected to the target database.
     """
-    inspector = inspect(engine)
-    existing_columns = {col["name"] for col in inspector.get_columns("post")}
-    if "html_content" not in existing_columns:
-        with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE post ADD COLUMN html_content TEXT"))
-            conn.commit()
-        logger.info("Added html_content column to post table")
-    logger.info("Schema migrations applied")
+    try:
+        inspector = inspect(engine)
+        existing_columns = {
+            col["name"] for col in inspector.get_columns("post")
+        }
+        if "html_content" not in existing_columns:
+            with engine.connect() as conn:
+                conn.execute(
+                    text("ALTER TABLE post ADD COLUMN html_content TEXT")
+                )
+                conn.commit()
+            logger.info("Added html_content column to post table")
+        logger.info("Schema migrations applied")
+    except Exception:
+        logger.exception(
+            "Startup migration failed — run manually: "
+            "ALTER TABLE post ADD COLUMN html_content TEXT"
+        )
