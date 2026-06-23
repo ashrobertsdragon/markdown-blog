@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `useUser` React Query hook and `adminApi.getUser` service method for user profile self-fetch
 - `data-testid` attributes on `HealthMetrics` status cards, `ErrorLogTable`, and `AdminSidebar` backdrop for stable Playwright selectors
 
+### Fixed
+
+- `list_published()` ORDER BY replaced COALESCE (which caused a PostgreSQL type mismatch when timestamp columns have different types) with a two-column `published_at DESC NULLS LAST, created_at DESC` sort
+
 ### Changed
 
 - `UserProfilePage` now self-fetches user data when no router location state is present; fixes direct URL navigation to `/admin/users/:id`

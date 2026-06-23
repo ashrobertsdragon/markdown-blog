@@ -187,11 +187,8 @@ class PostRepository:
                 PostModel.deleted_at == None,  # noqa: E711
             )
             .order_by(
-                func.coalesce(
-                    PostModel.published_at,
-                    PostModel.updated_at,
-                    PostModel.created_at,
-                ).desc()
+                col(PostModel.published_at).desc().nullslast(),
+                col(PostModel.created_at).desc(),
             )
             .limit(limit)
             .offset(offset)
