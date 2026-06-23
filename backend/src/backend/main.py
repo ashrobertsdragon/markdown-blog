@@ -35,6 +35,8 @@ from backend.exceptions import (
     RateLimitExceededError,
 )
 from backend.infrastructure.monitoring.error_logger import ErrorLogger
+from backend.infrastructure.persistence.database import get_engine
+from backend.infrastructure.persistence.migrations import run_migrations
 from scripts.create_schema import create_schema
 
 logger = logging.getLogger(__name__)
@@ -74,6 +76,8 @@ def create_app() -> Flask:
     if flask_env in [FlaskEnv.TESTING, FlaskEnv.DEVELOPMENT]:
         CORS(app)
         create_schema()
+    elif flask_env == FlaskEnv.PRODUCTION:
+        run_migrations(get_engine())
 
     app.register_blueprint(health_bp, url_prefix="/api")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")

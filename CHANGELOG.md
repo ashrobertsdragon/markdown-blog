@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `list_published()` ORDER BY replaced COALESCE (which caused a PostgreSQL type mismatch when timestamp columns have different types) with a two-column `published_at DESC NULLS LAST, created_at DESC` sort
+- Production 500 on `GET /api/posts/public` caused by missing `html_content` column — startup migration now runs in production to add the column idempotently if absent
+- `Post.html_content` model field changed to `str | None` to align with application code that already treats it as optional
 
 ### Changed
 

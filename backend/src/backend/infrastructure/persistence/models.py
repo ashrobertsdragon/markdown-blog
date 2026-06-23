@@ -22,7 +22,7 @@ class Post(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     slug: str = Field(unique=True, index=True)
     title: str
-    html_content: str
+    html_content: str | None = Field(default=None)
     published: bool = Field(default=False, index=True)
     published_at: datetime | None = Field(default=None, index=True)
     deleted_at: datetime | None = Field(default=None, index=True)

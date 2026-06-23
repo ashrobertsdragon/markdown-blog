@@ -86,6 +86,8 @@ def test_create_app_disables_cors_in_production(monkeypatch):
     with (
         patch("pathlib.Path.exists", return_value=True),
         patch("backend.main.CORS") as mock_cors,
+        patch("backend.main.run_migrations"),
+        patch("backend.main.get_engine"),
     ):
         create_app()
         mock_cors.assert_not_called()
@@ -136,6 +138,8 @@ def test_create_app_handles_missing_flask_env_gracefully(monkeypatch):
     with (
         patch("pathlib.Path.exists", return_value=True),
         patch("backend.main.CORS") as mock_cors,
+        patch("backend.main.run_migrations"),
+        patch("backend.main.get_engine"),
     ):
         create_app()
 
