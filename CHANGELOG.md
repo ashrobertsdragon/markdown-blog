@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `useImageUpload` React Query hook exposing `uploadImage`, `isUploading`, and `error` via `useMutation`
 - `imagesApi` TypeScript service (`uploadImage`, `listImages`, `deleteImage`) using shared `apiClient` and `getAuthHeaders`
 - `images_bp` registered in Flask app under `/api/posts` prefix, activating image CRUD endpoints
 - `images_bp` Blueprint exposing `POST/GET/DELETE /api/posts/<slug>/images[/<filename>]` with Content-Length guard, magic-byte validation, and post-ownership check
