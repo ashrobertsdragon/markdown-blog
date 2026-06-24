@@ -22,6 +22,7 @@ from backend.api.routes import (
     auth_bp,
     comments_bp,
     health_bp,
+    images_bp,
     notifications_bp,  # noqa: F401 - used in create_app
     posts_bp,
     revisions_bp,
@@ -88,6 +89,7 @@ def create_app() -> Flask:
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(posts_bp, url_prefix="/api/posts")
     app.register_blueprint(comments_bp, url_prefix="/api/posts")
+    app.register_blueprint(images_bp, url_prefix="/api/posts")
     app.register_blueprint(revisions_bp, url_prefix="/api/posts")
     app.register_blueprint(admin_bp)
     app.register_blueprint(admin_comments_bp, url_prefix="/api/admin")
