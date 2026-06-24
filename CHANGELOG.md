@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `ImageUploadButton` component with hidden file input, drag-and-drop, upload spinner, and `onInsert` markdown callback
 - `useImageUpload` React Query hook exposing `uploadImage`, `isUploading`, and `error` via `useMutation`
 - `imagesApi` TypeScript service (`uploadImage`, `listImages`, `deleteImage`) using shared `apiClient` and `getAuthHeaders`
 - `images_bp` registered in Flask app under `/api/posts` prefix, activating image CRUD endpoints
