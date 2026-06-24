@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `UPLOADS_PATH` and `MAX_UPLOAD_SIZE` configuration fields to `FileSystemSettings` for centralised image storage configuration
 - `GET /api/admin/users/<id>` endpoint for fetching a single user record (admin only)
 - `useUser` React Query hook and `adminApi.getUser` service method for user profile self-fetch
 - `data-testid` attributes on `HealthMetrics` status cards, `ErrorLogTable`, and `AdminSidebar` backdrop for stable Playwright selectors
