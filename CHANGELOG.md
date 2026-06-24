@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `images_bp` Blueprint exposing `POST/GET/DELETE /api/posts/<slug>/images[/<filename>]` with Content-Length guard, magic-byte validation, and post-ownership check
 - `GET /uploads/<slug>/<filename>` static-file route with path-traversal guard and `Cache-Control: public, max-age=31536000` for browser caching of uploaded images
 - `FileSystemImageRepository` infrastructure class for storing, listing, and deleting uploaded images under `uploads/{slug}/` with automatic directory creation
 - `ImageFilename` domain value object validating image extension against allowlist (jpg, jpeg, png, gif, webp), sanitizing stem to `[a-zA-Z0-9_-]`, and enforcing 100-character maximum length
