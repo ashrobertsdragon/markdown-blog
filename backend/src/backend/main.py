@@ -28,7 +28,11 @@ from backend.api.routes import (
     test_bp,
     users_bp,
 )
-from backend.config import FlaskEnv, FlaskSettings
+from backend.config import (
+    FileSystemSettings,
+    FlaskEnv,
+    FlaskSettings,
+)
 from backend.exceptions import (
     AuthenticationError,
     AuthorizationError,
@@ -206,6 +210,30 @@ def create_app() -> Flask:
             endpoint=request.endpoint or request.path,
         )
         return jsonify({"error": "Not found"}), 404
+
+    _fs_settings = FileSystemSettings()
+    _uploads_path = _fs_settings.UPLOADS_PATH
+
+    @app.route("/uploads/<path:filepath>")
+    def serve_upload(filepath: str) -> Response:
+        """Serve an uploaded image with path traversal protection.
+
+        Args:
+            filepath: Relative path within UPLOADS_PATH
+                (e.g. ``slug/photo.jpg``).
+
+        Returns:
+            File response with long-lived Cache-Control header.
+
+        Raises:
+            403: If the resolved path escapes UPLOADS_PATH.
+        """
+        resolved = (_uploads_path / filepath).resolve()
+        if not str(resolved).startswith(str(_uploads_path.resolve())):
+            abort(403)
+        response: Response = send_from_directory(_uploads_path, filepath)
+        response.headers["Cache-Control"] = "public, max-age=31536000"
+        return response
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
