@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `ImageUploadButton` integrated into `PostEditor` toolbar; `insertAtCursor` tracks cursor position via textarea events and inserts markdown at that position
+- `textareaProps` passthrough on `MarkdownEditor` (typed via `React.ComponentProps`) for forwarding textarea event handlers
 - Unit tests for `ImageUploadButton` (5) and `useImageUpload` hook (3)
 - `ImageUploadButton` component with hidden file input, drag-and-drop, upload spinner, and `onInsert` markdown callback
 - `useImageUpload` React Query hook exposing `uploadImage`, `isUploading`, and `error` via `useMutation`

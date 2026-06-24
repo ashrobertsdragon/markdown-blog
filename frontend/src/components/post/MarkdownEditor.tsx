@@ -1,6 +1,9 @@
 import MDEditor from '@uiw/react-md-editor'
+import type React from 'react'
 import rehypeSanitize from 'rehype-sanitize'
 import { cn } from '@/lib/utils'
+
+type MDEditorTextareaProps = React.ComponentProps<typeof MDEditor>['textareaProps']
 
 /**
  * Props for the MarkdownEditor component
@@ -10,6 +13,8 @@ interface MarkdownEditorProps {
   onChange: (content: string) => void
   onSave?: () => void | Promise<void>
   className?: string
+  /** Textarea event handlers forwarded to the underlying MDEditor textarea */
+  textareaProps?: MDEditorTextareaProps
 }
 
 /**
@@ -22,7 +27,13 @@ interface MarkdownEditorProps {
  * @param props - Component props
  * @returns React component
  */
-export function MarkdownEditor({ value, onChange, onSave, className }: MarkdownEditorProps) {
+export function MarkdownEditor({
+  value,
+  onChange,
+  onSave,
+  className,
+  textareaProps,
+}: MarkdownEditorProps) {
   const handleKeyDown = async (event: React.KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 's') {
       event.preventDefault()
@@ -45,6 +56,7 @@ export function MarkdownEditor({ value, onChange, onSave, className }: MarkdownE
       <MDEditor
         value={value}
         onChange={content => onChange(content ?? '')}
+        textareaProps={textareaProps}
         previewOptions={{
           rehypePlugins: [[rehypeSanitize]],
         }}

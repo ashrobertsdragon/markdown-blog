@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ImageUploadButton } from '@/components/admin/ImageUploadButton'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { MarkdownEditor } from '@/components/post/MarkdownEditor'
 import { PreviewPane } from '@/components/post/PreviewPane'
@@ -26,6 +27,7 @@ import { cn } from '@/lib/utils'
  * - Markdown editing with real-time preview
  * - Auto-save on Ctrl+S/Cmd+S
  * - Save and publish workflows
+ * - Image upload with cursor-position insertion via ImageUploadButton
  * - Loading and error state handling
  *
  * @returns Post editor interface
@@ -41,6 +43,7 @@ export default function PostEditor() {
   const [saveSuccess, setSaveSuccess] = useState(false)
 
   const successAlertRef = useRef<HTMLDivElement>(null)
+  const cursorPos = useRef(0)
 
   const { data: draft, isLoading, error } = useDraft(isEditMode ? slug || '' : '')
   const saveDraft = useSaveDraft()
@@ -87,6 +90,16 @@ export default function PostEditor() {
     } catch {
       setShowPublishDialog(false)
     }
+  }
+
+  /**
+   * Inserts markdown at the last-tracked cursor position.
+   * Position is updated via textarea onSelect/onClick/onKeyUp events.
+   */
+  function insertAtCursor(markdown: string) {
+    const pos = cursorPos.current
+    setContent(prev => prev.slice(0, pos) + markdown + prev.slice(pos))
+    cursorPos.current = pos + markdown.length
   }
 
   if (isEditMode && isLoading) {
@@ -138,6 +151,8 @@ export default function PostEditor() {
                 View History
               </Button>
             )}
+
+            {isEditMode && slug && <ImageUploadButton slug={slug} onInsert={insertAtCursor} />}
 
             <Button
               variant="outline"
@@ -207,7 +222,22 @@ export default function PostEditor() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Editor Column (always shown on desktop, toggle on mobile) */}
           <div className={cn('lg:col-span-1', showPreview && 'hidden lg:block')}>
-            <MarkdownEditor value={content} onChange={setContent} onSave={handleSave} />
+            <MarkdownEditor
+              value={content}
+              onChange={setContent}
+              onSave={handleSave}
+              textareaProps={{
+                onSelect: e => {
+                  cursorPos.current = e.currentTarget.selectionStart
+                },
+                onClick: e => {
+                  cursorPos.current = e.currentTarget.selectionStart
+                },
+                onKeyUp: e => {
+                  cursorPos.current = e.currentTarget.selectionStart
+                },
+              }}
+            />
           </div>
 
           {/* Preview Column (only shown when enabled) */}
