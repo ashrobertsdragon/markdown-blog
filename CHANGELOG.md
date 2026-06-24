@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `ImageFilename` domain value object validating image extension against allowlist (jpg, jpeg, png, gif, webp), sanitizing stem to `[a-zA-Z0-9_-]`, and enforcing 100-character maximum length
 - `UPLOADS_PATH` and `MAX_UPLOAD_SIZE` configuration fields to `FileSystemSettings` for centralised image storage configuration
 - `GET /api/admin/users/<id>` endpoint for fetching a single user record (admin only)
 - `useUser` React Query hook and `adminApi.getUser` service method for user profile self-fetch
