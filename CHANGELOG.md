@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- DELETE image endpoint now validates `<filename>` via `ImageFilename` before filesystem access, returning 400 for unsupported extensions or empty stems
+- `FileSystemImageRepository.delete()` resolves the target path and verifies it stays within `uploads_path`, preventing path traversal via crafted slug or filename
+- `ImageFilename` now rejects filenames whose stem sanitizes to empty (e.g. `###.jpg`), preventing hidden dotfiles from being written to the uploads directory
+
 ### Added
 
 - `ImageUploadButton` integrated into `PostEditor` toolbar; `insertAtCursor` tracks cursor position via textarea events and inserts markdown at that position
