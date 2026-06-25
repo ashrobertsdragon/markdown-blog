@@ -230,8 +230,11 @@ def create_app() -> Flask:
         Raises:
             403: If the resolved path escapes UPLOADS_PATH.
         """
+        uploads_root = _uploads_path.resolve()
         resolved = (_uploads_path / filepath).resolve()
-        if not str(resolved).startswith(str(_uploads_path.resolve())):
+        try:
+            resolved.relative_to(uploads_root)
+        except ValueError:
             abort(403)
         response: Response = send_from_directory(_uploads_path, filepath)
         response.headers["Cache-Control"] = "public, max-age=31536000"

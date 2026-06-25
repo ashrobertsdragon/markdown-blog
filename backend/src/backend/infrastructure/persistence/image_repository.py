@@ -73,8 +73,11 @@ class FileSystemImageRepository:
             ValueError: If the resolved path escapes the uploads directory.
             FileNotFoundError: If the file does not exist.
         """
+        uploads_root = self.uploads_path.resolve()
         target = (self.uploads_path / slug / filename).resolve()
-        if not str(target).startswith(str(self.uploads_path.resolve())):
+        try:
+            target.relative_to(uploads_root)
+        except ValueError:
             raise ValueError(
                 f"Path outside uploads directory: {slug}/{filename}"
             )
