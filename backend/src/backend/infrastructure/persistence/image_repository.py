@@ -70,9 +70,14 @@ class FileSystemImageRepository:
             filename: Filename of the image to remove.
 
         Raises:
+            ValueError: If the resolved path escapes the uploads directory.
             FileNotFoundError: If the file does not exist.
         """
-        target = self.uploads_path / slug / filename
+        target = (self.uploads_path / slug / filename).resolve()
+        if not str(target).startswith(str(self.uploads_path.resolve())):
+            raise ValueError(
+                f"Path outside uploads directory: {slug}/{filename}"
+            )
         if not target.exists():
             raise FileNotFoundError(
                 f"Image not found: uploads/{slug}/{filename}"

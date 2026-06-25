@@ -436,3 +436,35 @@ def test_delete_image_returns_404_for_missing_file(
         )
 
     assert response.status_code == 404
+
+
+def test_delete_image_returns_400_for_invalid_filename(
+    client: FlaskClient,
+    author_user: User,
+    test_post: MagicMock,
+) -> None:
+    """DELETE with a filename that fails ImageFilename validation returns 400."""
+    mock_clerk, mock_user_repo = _auth_patches(author_user)
+    mock_post_repo = MagicMock()
+    mock_post_repo.find_by_slug.return_value = test_post
+
+    with (
+        patch(
+            "backend.api.middleware.auth_middleware._get_clerk_adapter",
+            return_value=mock_clerk,
+        ),
+        patch(
+            "backend.api.middleware.auth_middleware._get_user_repository",
+            return_value=mock_user_repo,
+        ),
+        patch(
+            "backend.api.routes.images._get_post_repository",
+            return_value=mock_post_repo,
+        ),
+    ):
+        response = client.delete(
+            "/api/posts/my-post/images/script.exe",
+            headers={"Authorization": "Bearer valid_token"},
+        )
+
+    assert response.status_code == 400

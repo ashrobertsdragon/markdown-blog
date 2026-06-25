@@ -94,6 +94,11 @@ class ImageFilename:
 
         clean_stem = re.sub(r"[^a-zA-Z0-9_\-]", "", stem)
 
+        if not clean_stem:
+            raise ValueError(
+                "Filename stem contains no valid characters after sanitization"
+            )
+
         result = clean_stem + ext
         if len(result) > 100:
             raise ValueError(

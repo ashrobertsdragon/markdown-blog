@@ -121,7 +121,7 @@ def test_image_filename_raises_for_no_extension() -> None:
 def test_image_filename_cannot_be_modified_after_creation() -> None:
     fn = ImageFilename("photo.jpg")
     with pytest.raises(AttributeError):
-        fn.value = "other.jpg"  # type: ignore[misc]
+        fn.value = "other.jpg"  # type: ignore
 
 
 def test_image_filename_instances_are_hashable() -> None:
@@ -146,3 +146,8 @@ def test_image_filename_str_returns_value() -> None:
 def test_image_filename_removes_special_chars_from_stem() -> None:
     fn = ImageFilename("my@photo!.jpg")
     assert fn.value == "myphoto.jpg"
+
+
+def test_image_filename_raises_when_stem_is_entirely_stripped() -> None:
+    with pytest.raises(ValueError, match="no valid characters"):
+        ImageFilename("###.jpg")

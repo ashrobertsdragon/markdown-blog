@@ -165,6 +165,7 @@ def delete_image(slug: str, filename: str) -> Response | tuple[Response, int]:
         204 No Content on success.
 
     Raises:
+        400: Filename fails validation.
         401: Missing or invalid authentication.
         403: Authenticated user does not own the post.
         404: Post not found or image file does not exist.
@@ -177,7 +178,12 @@ def delete_image(slug: str, filename: str) -> Response | tuple[Response, int]:
         return jsonify({"error": "Forbidden"}), 403
 
     try:
-        _get_image_repository().delete(slug, filename)
+        validated_filename = ImageFilename(filename)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        _get_image_repository().delete(slug, validated_filename.value)
     except FileNotFoundError:
         return jsonify({"error": "Image not found"}), 404
 

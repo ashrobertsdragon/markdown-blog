@@ -88,3 +88,11 @@ def test_list_by_post_excludes_subdirectories(tmp_path: Path) -> None:
     nested.mkdir()
     urls = repo.list_by_post("my-post")
     assert urls == ["/uploads/my-post/photo.jpg"]
+
+
+def test_delete_raises_for_path_outside_uploads(tmp_path: Path) -> None:
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    repo = FileSystemImageRepository(uploads)
+    with pytest.raises(ValueError, match="outside uploads"):
+        repo.delete("..", "photo.jpg")
