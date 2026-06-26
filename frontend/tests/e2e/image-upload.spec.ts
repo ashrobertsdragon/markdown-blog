@@ -62,11 +62,12 @@ test.describe('Image Upload E2E', () => {
     const textarea = page.locator('.w-md-editor-text-input')
     await expect(textarea).toContainText('![', { timeout: 5000 })
 
-    await page.getByRole('button', { name: 'Save' }).click()
-    await page.waitForRequest(
+    const saveRequest = page.waitForRequest(
       r => r.url().includes(`/api/posts/${TEST_SLUG}`) && r.method() === 'PUT',
       { timeout: 10000 }
     )
+    await page.getByRole('button', { name: 'Save' }).click()
+    await saveRequest
 
     await page.click('button:has-text("Publish")')
     const dialog = page.locator('[role="alertdialog"]')

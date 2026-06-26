@@ -236,6 +236,8 @@ def create_app() -> Flask:
             resolved.relative_to(uploads_root)
         except ValueError:
             abort(403)
+        if not resolved.is_file():
+            abort(404)
         response: Response = send_from_directory(_uploads_path, filepath)
         response.headers["Cache-Control"] = "public, max-age=31536000"
         return response

@@ -28,6 +28,7 @@ MAGIC_SIGNATURES: dict[str, list[bytes]] = {
 }
 
 _filesystem_settings: FileSystemSettings | None = None
+_image_repository: FileSystemImageRepository | None = None
 
 
 def _get_filesystem_settings() -> FileSystemSettings:
@@ -39,8 +40,13 @@ def _get_filesystem_settings() -> FileSystemSettings:
 
 
 def _get_image_repository() -> FileSystemImageRepository:
-    """Return a FileSystemImageRepository for the configured uploads path."""
-    return FileSystemImageRepository(_get_filesystem_settings().UPLOADS_PATH)
+    """Return a cached FileSystemImageRepository for the uploads path."""
+    global _image_repository
+    if _image_repository is None:
+        _image_repository = FileSystemImageRepository(
+            _get_filesystem_settings().UPLOADS_PATH
+        )
+    return _image_repository
 
 
 def _get_post_repository() -> PostRepository:
@@ -110,7 +116,7 @@ def upload_image(slug: str) -> tuple[Response, int]:
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
-    data = file.read()
+    data = file.read(fs.MAX_UPLOAD_SIZE + 1)
     if len(data) > fs.MAX_UPLOAD_SIZE:
         return jsonify({"error": "File too large"}), 413
 

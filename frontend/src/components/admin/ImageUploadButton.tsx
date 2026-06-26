@@ -25,7 +25,7 @@ export function ImageUploadButton({ slug, onInsert }: ImageUploadButtonProps) {
   async function handleFile(file: File) {
     try {
       const url = await uploadImage(file)
-      onInsert(`![${file.name}](${url})`)
+      onInsert(`![${file.name.replace(/[[\]]/g, '')}](${url})`)
       toast.success('Image uploaded')
     } catch {
       toast.error('Image upload failed')

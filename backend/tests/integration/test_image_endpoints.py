@@ -72,6 +72,7 @@ def app(uploads_dir: Path, monkeypatch: pytest.MonkeyPatch) -> Flask:
     import backend.api.routes.images as images_module
 
     monkeypatch.setattr(images_module, "_filesystem_settings", None)
+    monkeypatch.setattr(images_module, "_image_repository", None)
     flask_app = Flask(__name__)
     flask_app.register_blueprint(images_bp, url_prefix="/api/posts")
     flask_app.config["TESTING"] = True

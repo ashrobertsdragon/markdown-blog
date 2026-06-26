@@ -128,8 +128,8 @@ test.describe('Image Upload Acceptance Tests', () => {
     expect(res.headers()['content-type']).toContain('image/png')
   })
 
-  test('AC 2.2: GET /uploads/../etc/passwd → 403', async ({ request }) => {
-    const res = await request.get(`${BACKEND}/uploads/../etc/passwd`)
+  test('AC 2.2: GET /uploads/%2E%2E/etc/passwd → 403', async ({ request }) => {
+    const res = await request.get(`${BACKEND}/uploads/%2E%2E/etc/passwd`)
     expect(res.status()).toBe(403)
   })
 
