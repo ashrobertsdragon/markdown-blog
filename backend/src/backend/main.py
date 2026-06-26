@@ -22,13 +22,18 @@ from backend.api.routes import (
     auth_bp,
     comments_bp,
     health_bp,
+    images_bp,
     notifications_bp,  # noqa: F401 - used in create_app
     posts_bp,
     revisions_bp,
     test_bp,
     users_bp,
 )
-from backend.config import FlaskEnv, FlaskSettings
+from backend.config import (
+    FileSystemSettings,
+    FlaskEnv,
+    FlaskSettings,
+)
 from backend.exceptions import (
     AuthenticationError,
     AuthorizationError,
@@ -84,6 +89,7 @@ def create_app() -> Flask:
     app.register_blueprint(users_bp, url_prefix="/api/users")
     app.register_blueprint(posts_bp, url_prefix="/api/posts")
     app.register_blueprint(comments_bp, url_prefix="/api/posts")
+    app.register_blueprint(images_bp, url_prefix="/api/posts")
     app.register_blueprint(revisions_bp, url_prefix="/api/posts")
     app.register_blueprint(admin_bp)
     app.register_blueprint(admin_comments_bp, url_prefix="/api/admin")
@@ -206,6 +212,35 @@ def create_app() -> Flask:
             endpoint=request.endpoint or request.path,
         )
         return jsonify({"error": "Not found"}), 404
+
+    _fs_settings = FileSystemSettings()
+    _uploads_path = _fs_settings.UPLOADS_PATH
+
+    @app.route("/uploads/<path:filepath>")
+    def serve_upload(filepath: str) -> Response:
+        """Serve an uploaded image with path traversal protection.
+
+        Args:
+            filepath: Relative path within UPLOADS_PATH
+                (e.g. ``slug/photo.jpg``).
+
+        Returns:
+            File response with long-lived Cache-Control header.
+
+        Raises:
+            403: If the resolved path escapes UPLOADS_PATH.
+        """
+        uploads_root = _uploads_path.resolve()
+        resolved = (_uploads_path / filepath).resolve()
+        try:
+            resolved.relative_to(uploads_root)
+        except ValueError:
+            abort(403)
+        if not resolved.is_file():
+            abort(404)
+        response: Response = send_from_directory(_uploads_path, filepath)
+        response.headers["Cache-Control"] = "public, max-age=31536000"
+        return response
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")

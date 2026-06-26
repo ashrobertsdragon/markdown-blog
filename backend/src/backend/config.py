@@ -72,11 +72,15 @@ class ClerkSettings(BaseSettings):
 
 
 class FileSystemSettings(BaseSettings):
-    """Filesystem settings for draft storage.
+    """Filesystem settings for draft and image storage.
 
     PARAMETERS:
         DRAFTS_PATH (Path): Path to drafts directory
             (defaults to project_root/drafts).
+        UPLOADS_PATH (Path): Path to uploaded images directory
+            (defaults to project_root/uploads).
+        MAX_UPLOAD_SIZE (int): Maximum allowed upload size in bytes
+            (defaults to 5 242 880 — 5 MB).
     """
 
     model_config = SettingsConfigDict(case_sensitive=True)
@@ -84,6 +88,14 @@ class FileSystemSettings(BaseSettings):
     DRAFTS_PATH: Path = Field(
         default_factory=lambda: Path(__file__).parents[4] / "drafts",
         validation_alias="DRAFTS_PATH",
+    )
+    UPLOADS_PATH: Path = Field(
+        default_factory=lambda: Path(__file__).parents[4] / "uploads",
+        validation_alias="UPLOADS_PATH",
+    )
+    MAX_UPLOAD_SIZE: int = Field(
+        default=5_242_880,
+        validation_alias="MAX_UPLOAD_SIZE",
     )
 
 

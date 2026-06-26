@@ -50,6 +50,14 @@ vi.mock('@/hooks/usePosts', () => ({
   usePublishPost: () => mockUsePublishPost(),
 }))
 
+vi.mock('@/hooks/useImageUpload', () => ({
+  useImageUpload: () => ({
+    uploadImage: vi.fn(),
+    isUploading: false,
+    error: null,
+  }),
+}))
+
 const mockNavigate = vi.fn()
 
 vi.mock('react-router-dom', async () => {

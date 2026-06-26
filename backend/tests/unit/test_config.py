@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from backend.config import (
     DBSettings,
     DevDBSettings,
+    FileSystemSettings,
     FlaskEnv,
     FlaskSettings,
     ProductionDBSettings,
@@ -232,3 +233,42 @@ def test_flask_settings_env_vars(test_env, monkeypatch):
     assert settings.FLASK_ENV == FlaskEnv.TESTING
     assert settings.BUILD_DIR == Path("test_build_dir")
     assert settings.STATIC_PATH == Path("test_static_path")
+
+
+def test_filesystem_settings_uploads_path_default(clean_env):
+    """UPLOADS_PATH should default to a path ending in 'uploads'."""
+    settings = FileSystemSettings()
+    assert settings.UPLOADS_PATH.name == "uploads"
+    assert isinstance(settings.UPLOADS_PATH, Path)
+
+
+def test_filesystem_settings_uploads_path_is_absolute(clean_env):
+    """UPLOADS_PATH default should be an absolute path."""
+    settings = FileSystemSettings()
+    assert settings.UPLOADS_PATH.is_absolute()
+
+
+def test_filesystem_settings_max_upload_size_default(clean_env):
+    """MAX_UPLOAD_SIZE should default to 5 242 880 bytes (5 MB)."""
+    settings = FileSystemSettings()
+    assert settings.MAX_UPLOAD_SIZE == 5_242_880
+
+
+def test_filesystem_settings_uploads_path_env_override(monkeypatch, tmp_path):
+    """UPLOADS_PATH env var should override the default."""
+    monkeypatch.setenv("UPLOADS_PATH", str(tmp_path))
+    settings = FileSystemSettings()
+    assert settings.UPLOADS_PATH == tmp_path
+
+
+def test_filesystem_settings_max_upload_size_env_override(monkeypatch):
+    """MAX_UPLOAD_SIZE env var should override the default."""
+    monkeypatch.setenv("MAX_UPLOAD_SIZE", "1048576")
+    settings = FileSystemSettings()
+    assert settings.MAX_UPLOAD_SIZE == 1_048_576
+
+
+def test_filesystem_settings_uploads_path_sibling_of_monorepo(clean_env):
+    """UPLOADS_PATH default should be a sibling of the monorepo directory."""
+    settings = FileSystemSettings()
+    assert settings.UPLOADS_PATH.parent == settings.DRAFTS_PATH.parent
