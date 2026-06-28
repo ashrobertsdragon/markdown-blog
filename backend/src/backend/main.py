@@ -242,6 +242,16 @@ def create_app() -> Flask:
         response.headers["Cache-Control"] = "public, max-age=31536000"
         return response
 
+    @app.route("/tos")
+    def serve_tos() -> Response:
+        return send_from_directory(str(build_dir), "tos", mimetype="text/plain")
+
+    @app.route("/privacy")
+    def serve_privacy() -> Response:
+        return send_from_directory(
+            str(build_dir), "privacy", mimetype="text/plain"
+        )
+
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve_spa(path: str) -> Response | tuple[Response, int]:
