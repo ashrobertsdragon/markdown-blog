@@ -210,8 +210,11 @@ class ClerkAuthAdapter:
             )
             domain_part = pub_key.removeprefix(prefix)
             try:
-                decoded = base64.b64decode(domain_part + "==").decode("utf-8")
-                domain = decoded.rstrip("$")
+                padding = "=" * (-len(domain_part) % 4)
+                decoded = base64.b64decode(domain_part + padding).decode(
+                    "utf-8"
+                )
+                domain = decoded[:-1] if decoded.endswith("$") else decoded
             except (binascii.Error, UnicodeDecodeError) as e:
                 raise ValueError(
                     f"Failed to decode Clerk domain from publishable key: {e}"
