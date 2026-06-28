@@ -2,6 +2,25 @@ import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
 /**
+ * Mock @clerk/clerk-react globally so unit tests never need a real
+ * ClerkProvider in the component tree. AuthProvider → ClerkAuthProvider calls
+ * useUser() and useAuth(); without this mock every test that renders via
+ * test-utils (which wraps AppRoutes in AuthProvider) throws.
+ *
+ * Individual test files that need a specific signed-in state can override
+ * these stubs with vi.mocked(useUser).mockReturnValue(...) etc.
+ */
+vi.mock('@clerk/clerk-react', () => ({
+  useUser: vi.fn(() => ({ user: null, isLoaded: true, isSignedIn: false })),
+  useAuth: vi.fn(() => ({ getToken: vi.fn(async () => null) })),
+  ClerkProvider: ({ children }: { children: unknown }) => children,
+  UserButton: () => null,
+  SignIn: () => null,
+  SignUp: () => null,
+  useClerk: vi.fn(() => ({ signOut: vi.fn() })),
+}))
+
+/**
  * Test environment setup for Vitest
  *
  * Configures the jsdom test environment with necessary DOM elements
