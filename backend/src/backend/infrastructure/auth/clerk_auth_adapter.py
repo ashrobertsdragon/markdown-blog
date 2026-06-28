@@ -204,20 +204,17 @@ class ClerkAuthAdapter:
 
         pub_key = self.config.clerk_publishable_key
 
-        if pub_key.startswith("pk_test_"):
-            domain_part = pub_key.replace("pk_test_", "").split("$")[0]
+        if pub_key.startswith(("pk_test_", "pk_live_")):
+            prefix = (
+                "pk_test_" if pub_key.startswith("pk_test_") else "pk_live_"
+            )
+            domain_part = pub_key.removeprefix(prefix)
             try:
-                decoded = base64.b64decode(domain_part + "==").decode("utf-8")
-                domain = decoded
-            except (binascii.Error, UnicodeDecodeError) as e:
-                raise ValueError(
-                    f"Failed to decode Clerk domain from publishable key: {e}"
+                padding = "=" * (-len(domain_part) % 4)
+                decoded = base64.b64decode(domain_part + padding).decode(
+                    "utf-8"
                 )
-        elif pub_key.startswith("pk_live_"):
-            domain_part = pub_key.replace("pk_live_", "").split("$")[0]
-            try:
-                decoded = base64.b64decode(domain_part + "==").decode("utf-8")
-                domain = decoded
+                domain = decoded[:-1] if decoded.endswith("$") else decoded
             except (binascii.Error, UnicodeDecodeError) as e:
                 raise ValueError(
                     f"Failed to decode Clerk domain from publishable key: {e}"
