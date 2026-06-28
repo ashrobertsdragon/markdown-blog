@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Mocked `@clerk/clerk-react` globally in `tests/setup.ts` so unit tests rendering via `test-utils` no longer throw when `useUser()`/`useAuth()` are called outside a real `ClerkProvider`; fixes 9 `Unsubscribe` test regressions
+
 - Migrated all E2E and acceptance tests from hand-rolled JWT mocks to `@clerk/testing/playwright`; removed conditional `ClerkProvider` bypass that caused blank pages when `UserButton` was introduced
 
 - Removed `clerk-mock.ts`, `test-jwt.ts`, `jwks-server.ts` fixture files and replaced with `global-setup.ts` that provisions real Clerk test users via REST API
