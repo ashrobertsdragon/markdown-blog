@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import { mockClerkUnauthenticated } from '../fixtures/clerk-mock'
 import {
   getAuthToken,
   verifyBearerTokenFormat,
@@ -9,7 +8,6 @@ import {
 
 test.describe('Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
-    await mockClerkUnauthenticated(page)
     await page.goto('/')
     await waitForAuthToLoad(page)
   })
@@ -279,7 +277,6 @@ test.describe('Authentication Flow', () => {
 
 test.describe('Role-Based Access Control', () => {
   test.beforeEach(async ({ page }) => {
-    await mockClerkUnauthenticated(page)
     await page.goto('/')
     await waitForAuthToLoad(page)
   })
@@ -321,7 +318,7 @@ test.describe('Role-Based Access Control', () => {
 
 test.describe('Browser Compatibility', () => {
   test.beforeEach(async ({ page }) => {
-    await mockClerkUnauthenticated(page)
+    await page.goto('/')
     await waitForAuthToLoad(page)
   })
 
@@ -361,7 +358,7 @@ test.describe('Browser Compatibility', () => {
 
 test.describe('Performance and Reliability', () => {
   test.beforeEach(async ({ page }) => {
-    await mockClerkUnauthenticated(page)
+    await page.goto('/')
     await waitForAuthToLoad(page)
   })
 

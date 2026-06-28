@@ -1,6 +1,7 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
-import { mockClerkAuth, mockClerkUnauthenticated } from '../fixtures/clerk-mock'
+import { testUserIds } from '../fixtures/test-user-ids'
 import { waitForApiCall } from './fixtures/helpers'
 
 const POST_URL = '/posts/pub-1'
@@ -20,17 +21,19 @@ async function seedCommentViaUi(page: import('@playwright/test').Page, text: str
 
 test.describe('Comments E2E Tests', () => {
   // beforeEach reseeds the database and resets rate limiter counters.
-  // Rate limiting is user-scoped, so user_test_commenter starts fresh each test.
+  // Rate limiting is user-scoped, so the test user starts fresh each test.
   test.beforeEach(async ({ page }) => {
-    const response = await page.request.post('http://localhost:5555/api/test/seed')
+    const response = await page.request.post('http://localhost:5555/api/test/seed', {
+      data: {
+        author_clerk_id: testUserIds.authorClerkId,
+        admin_clerk_id: testUserIds.adminClerkId,
+        user_clerk_id: testUserIds.userClerkId,
+      },
+    })
     expect(response.ok()).toBeTruthy()
 
-    await mockClerkAuth(page, {
-      role: 'authenticated',
-      userId: 'user_test_commenter',
-      email: 'commenter@example.com',
-    })
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'user@example.com' })
     await waitForAuthToLoad(page)
   })
 
@@ -43,7 +46,7 @@ test.describe('Comments E2E Tests', () => {
     })
 
     test('1.2: Unauthenticated user sees sign-in prompt instead of form', async ({ page }) => {
-      await mockClerkUnauthenticated(page)
+      await clerk.signOut({ page })
       await page.goto(POST_URL)
       await waitForAuthToLoad(page)
 
@@ -294,12 +297,10 @@ test.describe('Comments E2E Tests', () => {
 
       await seedCommentViaUi(page, 'Comment that admin will delete')
 
-      await mockClerkAuth(page, {
-        role: 'admin',
-        userId: 'user_test_admin',
-        email: 'admin@example.com',
-      })
-      await page.reload()
+      await clerk.signOut({ page })
+      await page.goto('/')
+      await clerk.signIn({ page, emailAddress: 'admin@example.com' })
+      await page.goto(POST_URL)
       await waitForAuthToLoad(page)
       await expect(page.locator('section[aria-label="Comments"]')).toBeVisible()
 
@@ -330,12 +331,10 @@ test.describe('Comments E2E Tests', () => {
 
       await seedCommentViaUi(page, 'Comment to be soft deleted by admin')
 
-      await mockClerkAuth(page, {
-        role: 'admin',
-        userId: 'user_test_admin',
-        email: 'admin@example.com',
-      })
-      await page.reload()
+      await clerk.signOut({ page })
+      await page.goto('/')
+      await clerk.signIn({ page, emailAddress: 'admin@example.com' })
+      await page.goto(POST_URL)
       await waitForAuthToLoad(page)
 
       await expect(page.locator('[role="alertdialog"]')).not.toBeVisible()
@@ -354,8 +353,8 @@ test.describe('Comments E2E Tests', () => {
 
       await expect(confirmDialog).not.toBeVisible()
 
-      await mockClerkUnauthenticated(page)
-      await page.reload()
+      await clerk.signOut({ page })
+      await page.goto(POST_URL)
       await waitForAuthToLoad(page)
 
       await expect(page.locator('text=[deleted]')).not.toBeVisible()
@@ -367,8 +366,8 @@ test.describe('Comments E2E Tests', () => {
 
       await seedCommentViaUi(page, 'Comment visible to anonymous users')
 
-      await mockClerkUnauthenticated(page)
-      await page.reload()
+      await clerk.signOut({ page })
+      await page.goto(POST_URL)
       await waitForAuthToLoad(page)
       await expect(page.locator('section[aria-label="Comments"]')).toBeVisible()
 
@@ -378,15 +377,11 @@ test.describe('Comments E2E Tests', () => {
 
   test.describe('Test Group 5: Author Badge', () => {
     test('5.1: Post author comments show Author badge', async ({ page }) => {
-      await mockClerkAuth(page, {
-        role: 'author',
-        userId: 'user_test_author',
-        email: 'author@example.com',
-      })
+      await clerk.signOut({ page })
       await page.goto('/')
-      await waitForAuthToLoad(page)
-
+      await clerk.signIn({ page, emailAddress: 'author@example.com' })
       await page.goto(POST_URL)
+      await waitForAuthToLoad(page)
       await expect(page.locator('textarea[name="text"]')).toBeVisible()
 
       const textarea = page.locator('textarea[name="text"]')

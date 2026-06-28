@@ -123,7 +123,7 @@ describe('Unsubscribe page', () => {
     })
 
     await waitFor(() =>
-      expect(screen.getByRole('link', { name: /go to home|home/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /go to home/i })).toBeInTheDocument()
     )
   })
 })

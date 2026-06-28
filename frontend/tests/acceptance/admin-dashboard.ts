@@ -1,8 +1,8 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
+import { testUserIds } from '../fixtures/test-user-ids'
 
 const BACKEND = 'http://localhost:5555'
-const ADMIN_AUTH = { role: 'admin' as const, userId: 'user_test_admin', email: 'admin@example.com' }
 
 /**
  * Acceptance tests for Admin Dashboard spec - Frontend UI.
@@ -16,7 +16,13 @@ const ADMIN_AUTH = { role: 'admin' as const, userId: 'user_test_admin', email: '
 
 test.describe('Admin Dashboard - Frontend UI', () => {
   test.beforeEach(async ({ request }) => {
-    await request.post(`${BACKEND}/api/test/seed`)
+    await request.post(`${BACKEND}/api/test/seed`, {
+      data: {
+        author_clerk_id: testUserIds.authorClerkId,
+        admin_clerk_id: testUserIds.adminClerkId,
+        user_clerk_id: testUserIds.userClerkId,
+      },
+    })
   })
 
   test.afterAll(async ({ request }) => {
@@ -32,7 +38,8 @@ test.describe('Admin Dashboard - Frontend UI', () => {
      * - Admin selects new role and confirms: user's role updated
      * - Role update succeeds: modal closes
      */
-    await mockClerkAuth(page, ADMIN_AUTH)
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/admin/users')
 
     const userTable = page.locator('table')
@@ -63,7 +70,8 @@ test.describe('Admin Dashboard - Frontend UI', () => {
      * - Profile shows: email, role, activity counts, recent posts section
      * - View Posts link navigates to content page
      */
-    await mockClerkAuth(page, ADMIN_AUTH)
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/admin/users/1')
 
     const userEmail = page.locator('dd:has-text("author@example.com")')
@@ -87,7 +95,8 @@ test.describe('Admin Dashboard - Frontend UI', () => {
      * - Admin clicks "Unpublish": confirmation modal appears
      * - Unpublish confirmed: modal closes
      */
-    await mockClerkAuth(page, ADMIN_AUTH)
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/admin/content')
 
     const postTitle = page.locator('text=/Test Post/')
@@ -110,7 +119,8 @@ test.describe('Admin Dashboard - Frontend UI', () => {
      * - Metrics include: API status card, database status card
      * - Error log section shows errors or "No recent errors" message
      */
-    await mockClerkAuth(page, ADMIN_AUTH)
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/admin/system')
 
     const apiStatus = page.locator('[data-testid="api-status"]')
@@ -133,7 +143,8 @@ test.describe('Admin Dashboard - Frontend UI', () => {
      * - Admin clicks a link: navigates to the section
      * - Active section highlighted in sidebar (aria-current="page")
      */
-    await mockClerkAuth(page, ADMIN_AUTH)
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/admin')
 
     const sidebar = page.locator('[data-testid="admin-sidebar"]')
@@ -163,7 +174,8 @@ test.describe('Admin Dashboard - Frontend UI', () => {
      * - Hamburger clicked: sidebar opens (aria-expanded=true)
      * - Content clicked: sidebar closes (aria-expanded=false)
      */
-    await mockClerkAuth(page, ADMIN_AUTH)
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
 
     await page.setViewportSize({ width: 1280, height: 720 })
     await page.goto('/admin')
@@ -191,8 +203,8 @@ test.describe('Admin Dashboard - Frontend UI', () => {
      * - Non-admin visits /admin: redirected to /forbidden
      * - Forbidden page shows access denied message and home link
      */
-    await mockClerkAuth(page, { role: 'author' })
-
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
     await page.goto('/admin')
 
     const forbiddenMessage = page.locator('h2:has-text("Access Denied")')

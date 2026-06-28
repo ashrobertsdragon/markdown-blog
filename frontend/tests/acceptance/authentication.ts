@@ -1,5 +1,5 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth, mockClerkUnauthenticated } from '../fixtures/clerk-mock'
 
 /**
  * Acceptance tests for Authentication spec - Frontend UI.
@@ -34,8 +34,8 @@ test.describe('Authentication - Frontend UI', () => {
      * - Logout clears user state
      * - State changes trigger re-renders
      */
-    await mockClerkAuth(page, { role: 'author' })
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
 
     const authenticatedElement = page.locator('[data-testid="user-menu"]').first()
     if (await authenticatedElement.isVisible()) {
@@ -51,9 +51,6 @@ test.describe('Authentication - Frontend UI', () => {
      * - User without required role sees 403 Forbidden page
      * - User redirected back to originally requested page after login
      */
-
-    await mockClerkUnauthenticated(page)
-
     await page.goto('/my-posts', { waitUntil: 'networkidle' })
 
     await page.waitForURL(/\/login/, { timeout: 5000 }).catch(() => {})
@@ -68,7 +65,8 @@ test.describe('Authentication - Frontend UI', () => {
      * - Authenticated user with admin role can access /admin
      * - Protected routes check both authentication and authorization
      */
-    await mockClerkAuth(page, { role: 'admin' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/admin')
 
     const url = page.url()
@@ -82,8 +80,8 @@ test.describe('Authentication - Frontend UI', () => {
      * - Admin role shows admin-specific UI elements
      * - Authenticated users see role-appropriate navigation
      */
-    await mockClerkAuth(page, { role: 'author' })
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
 
     const myPostsLink = page.locator('text=/my posts/i').first()
     if (await myPostsLink.isVisible()) {
@@ -101,7 +99,8 @@ test.describe('Authentication - Frontend UI', () => {
      *
      * Note: Requires admin dashboard implementation
      */
-    await mockClerkAuth(page, { role: 'admin' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/admin/users')
   })
 })

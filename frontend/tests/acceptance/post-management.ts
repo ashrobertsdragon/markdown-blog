@@ -1,5 +1,5 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 const BACKEND = 'http://localhost:5555'
 
@@ -24,7 +24,7 @@ test.describe('Post Management UI', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    await mockClerkAuth(page, { role: 'author' })
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
   })
 
   test.skip('New Post form and slug normalization', async ({ page }) => {

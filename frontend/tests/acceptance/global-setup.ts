@@ -1,16 +1,62 @@
-import { request } from '@playwright/test'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { clerkSetup } from '@clerk/testing/playwright'
 
 /**
- * Global setup for acceptance tests.
- *
- * Seeds the backend with test data before any acceptance tests run.
- * This ensures tests that navigate directly to seeded routes (e.g.
- * /posts/test-post) have data available without per-test beforeAll hooks.
+ * Ensures a Clerk test user exists for the given email, returning their Clerk user ID.
+ * Creates the user if they don't already exist. Updates publicMetadata.role on each run
+ * to keep it in sync with the expected role.
  */
-async function globalSetup() {
-  const context = await request.newContext({ baseURL: 'http://localhost:5555' })
-  await context.post('/api/test/seed')
-  await context.dispose()
+async function getOrCreateClerkUser(email: string, role: string): Promise<string> {
+  const secretKey = process.env.CLERK_SECRET_KEY
+  if (!secretKey) throw new Error('CLERK_SECRET_KEY is required for E2E tests')
+
+  const headers = { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' }
+
+  const listRes = await fetch(
+    `https://api.clerk.com/v1/users?email_address=${encodeURIComponent(email)}`,
+    { headers }
+  )
+  if (!listRes.ok) throw new Error(`Clerk list users failed: ${listRes.status}`)
+  const list = (await listRes.json()) as Array<{ id: string }>
+
+  if (list.length > 0) {
+    const userId = list[0].id
+    await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ public_metadata: { role } }),
+    })
+    return userId
+  }
+
+  const createRes = await fetch('https://api.clerk.com/v1/users', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      email_address: [email],
+      public_metadata: { role },
+      skip_password_checks: true,
+      skip_password_requirement: true,
+    }),
+  })
+  if (!createRes.ok) {
+    const body = await createRes.text()
+    throw new Error(`Clerk create user failed for ${email}: ${createRes.status} ${body}`)
+  }
+  const created = (await createRes.json()) as { id: string }
+  return created.id
 }
 
-export default globalSetup
+export default async function globalSetup() {
+  await clerkSetup()
+
+  const authorClerkId = await getOrCreateClerkUser('author@example.com', 'author')
+  const adminClerkId = await getOrCreateClerkUser('admin@example.com', 'admin')
+  const userClerkId = await getOrCreateClerkUser('user@example.com', 'authenticated')
+
+  mkdirSync('playwright/.clerk', { recursive: true })
+  writeFileSync(
+    'playwright/.clerk/test-user-ids.json',
+    JSON.stringify({ authorClerkId, adminClerkId, userClerkId })
+  )
+}

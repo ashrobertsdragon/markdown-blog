@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test'
-import { mockClerkUnauthenticated } from '../fixtures/clerk-mock'
 
 /**
  * Acceptance tests for Foundation spec - Frontend UI.
@@ -9,10 +8,6 @@ import { mockClerkUnauthenticated } from '../fixtures/clerk-mock'
  */
 
 test.describe('Foundation - Frontend Infrastructure', () => {
-  test.beforeEach(async ({ page }) => {
-    await mockClerkUnauthenticated(page)
-  })
-
   test('React frontend serves with SPA routing', async ({ page }) => {
     /**
      * Acceptance Criteria:

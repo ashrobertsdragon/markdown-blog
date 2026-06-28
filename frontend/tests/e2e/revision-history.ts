@@ -1,6 +1,7 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
+import { testUserIds } from '../fixtures/test-user-ids'
 
 /**
  * E2E tests for revision tracking workflow.
@@ -12,15 +13,17 @@ import { mockClerkAuth } from '../fixtures/clerk-mock'
  */
 test.describe('Revision History E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
-    const response = await page.request.post('http://localhost:5555/api/test/seed')
+    const response = await page.request.post('http://localhost:5555/api/test/seed', {
+      data: {
+        author_clerk_id: testUserIds.authorClerkId,
+        admin_clerk_id: testUserIds.adminClerkId,
+        user_clerk_id: testUserIds.userClerkId,
+      },
+    })
     expect(response.ok()).toBeTruthy()
 
-    await mockClerkAuth(page, {
-      role: 'author',
-      userId: 'user_test_author',
-      email: 'author@example.com',
-    })
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
     await waitForAuthToLoad(page)
   })
 
@@ -117,11 +120,9 @@ test.describe('Revision History E2E Tests', () => {
     })
 
     test('2.6: Revert button hidden for non-authors', async ({ page }) => {
-      await mockClerkAuth(page, {
-        role: 'authenticated',
-        userId: 'user_other',
-        email: 'other@example.com',
-      })
+      await clerk.signOut({ page })
+      await page.goto('/')
+      await clerk.signIn({ page, emailAddress: 'user@example.com' })
       await page.goto('/posts/test-post/revisions')
       await waitForAuthToLoad(page)
 
@@ -238,11 +239,9 @@ test.describe('Revision History E2E Tests', () => {
     })
 
     test('5.2: Non-authors cannot select revisions (read-only)', async ({ page }) => {
-      await mockClerkAuth(page, {
-        role: 'authenticated',
-        userId: 'user_other',
-        email: 'other@example.com',
-      })
+      await clerk.signOut({ page })
+      await page.goto('/')
+      await clerk.signIn({ page, emailAddress: 'user@example.com' })
       await page.goto('/posts/test-post/revisions')
       await waitForAuthToLoad(page)
 

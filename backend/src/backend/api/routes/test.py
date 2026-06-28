@@ -98,20 +98,31 @@ def seed() -> tuple[Response, int]:
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 
+    body = request.get_json(silent=True) or {}
+    author_clerk_id = body.get("author_clerk_id", "user_test_author")
+    admin_clerk_id = body.get("admin_clerk_id", "user_test_admin")
+    user_clerk_id = body.get("user_clerk_id", "user_test_user")
+
     now = datetime.now(UTC)
     with Session(engine) as session:
         author = User(
             email="author@example.com",
             role="author",
-            clerk_user_id="user_test_author",
+            clerk_user_id=author_clerk_id,
         )
         admin = User(
             email="admin@example.com",
             role="admin",
-            clerk_user_id="user_test_admin",
+            clerk_user_id=admin_clerk_id,
+        )
+        regular_user = User(
+            email="user@example.com",
+            role="authenticated",
+            clerk_user_id=user_clerk_id,
         )
         session.add(author)
         session.add(admin)
+        session.add(regular_user)
         session.flush()
 
         posts_specs = [
@@ -223,7 +234,7 @@ def seed() -> tuple[Response, int]:
             DraftFile(
                 slug=slug,
                 title=title,
-                author="user_test_author",
+                author=author_clerk_id,
                 content=content,
                 published=published,
                 created_at=now,
@@ -550,3 +561,47 @@ def set_user_preferences() -> tuple[Response, int]:
             ),
             200,
         )
+
+
+@test_bp.route("/set-user-role", methods=["POST"])
+def set_user_role() -> tuple[Response, int]:
+    """Update a test user's role directly without authentication.
+
+    Used by global test setup to ensure seeded users have the correct
+    role in the database after signing in via Clerk.
+
+    Request body (JSON):
+        clerk_user_id: Clerk identifier of the user to update.
+        role: New role value ('authenticated', 'author', or 'admin').
+
+    Returns:
+        200 on success.
+        400 if required fields are missing.
+        404 if not running in TESTING mode or user not found.
+    """
+    guard = _guard()
+    if guard is not None:
+        return guard
+
+    body = request.get_json(silent=True) or {}
+    clerk_user_id = body.get("clerk_user_id")
+    role = body.get("role")
+
+    if not clerk_user_id or not role:
+        return jsonify({"error": "clerk_user_id and role are required"}), 400
+
+    if role not in ("authenticated", "author", "admin"):
+        return jsonify({"error": f"Invalid role: {role}"}), 400
+
+    engine = get_engine()
+    with Session(engine) as session:
+        user = session.exec(
+            select(User).where(User.clerk_user_id == clerk_user_id)
+        ).first()
+        if user is None:
+            return jsonify({"error": f"User '{clerk_user_id}' not found"}), 404
+        user.role = role
+        session.add(user)
+        session.commit()
+
+    return jsonify({"ok": True}), 200

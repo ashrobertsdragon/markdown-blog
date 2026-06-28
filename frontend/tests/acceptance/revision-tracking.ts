@@ -1,5 +1,5 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 /**
  * Acceptance tests for Revision Tracking spec - Frontend UI.
@@ -32,7 +32,7 @@ test.describe('Revision Tracking - Frontend UI', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    await mockClerkAuth(page, { role: 'author' })
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
   })
 
   test('Display post revision history timeline', async ({ page }) => {

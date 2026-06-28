@@ -4,24 +4,27 @@
  * Covers sidebar navigation, active link state, user role management via
  * RoleEditModal, post unpublishing, comment deletion, system health display,
  * and non-admin access prevention. All tests run against a real seeded backend
- * (POST /api/test/seed) with Clerk authentication mocked via a locally-signed JWT.
+ * (POST /api/test/seed) with real Clerk authentication.
  */
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
+import { testUserIds } from '../fixtures/test-user-ids'
 import { waitForApiCall } from './fixtures/helpers'
 
 test.describe('Admin Dashboard E2E', () => {
   test.beforeEach(async ({ page }) => {
-    const seedResponse = await page.request.post('http://localhost:5555/api/test/seed')
+    const seedResponse = await page.request.post('http://localhost:5555/api/test/seed', {
+      data: {
+        author_clerk_id: testUserIds.authorClerkId,
+        admin_clerk_id: testUserIds.adminClerkId,
+        user_clerk_id: testUserIds.userClerkId,
+      },
+    })
     expect(seedResponse.ok()).toBeTruthy()
 
-    await mockClerkAuth(page, {
-      role: 'admin',
-      userId: 'user_test_admin',
-      email: 'admin@example.com',
-    })
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await waitForAuthToLoad(page)
   })
 
@@ -156,15 +159,17 @@ test.describe('Admin Dashboard E2E', () => {
 
 test.describe('Non-admin access', () => {
   test.beforeEach(async ({ page }) => {
-    const seedResponse = await page.request.post('http://localhost:5555/api/test/seed')
+    const seedResponse = await page.request.post('http://localhost:5555/api/test/seed', {
+      data: {
+        author_clerk_id: testUserIds.authorClerkId,
+        admin_clerk_id: testUserIds.adminClerkId,
+        user_clerk_id: testUserIds.userClerkId,
+      },
+    })
     expect(seedResponse.ok()).toBeTruthy()
 
-    await mockClerkAuth(page, {
-      role: 'author',
-      userId: 'user_test_author',
-      email: 'author@example.com',
-    })
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
     await waitForAuthToLoad(page)
   })
 

@@ -23,22 +23,15 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'npx tsx tests/fixtures/jwks-server.ts',
-      url: 'http://127.0.0.1:5557/.well-known/jwks.json',
-      reuseExistingServer: true,
-      timeout: 120000,
-    },
-    {
       command: 'uv run --directory ../backend dev_flask',
       env: {
         FLASK_ENV: 'TESTING',
-        CLERK_JWKS_URL: 'http://127.0.0.1:5557/.well-known/jwks.json',
         DRAFTS_PATH: '/tmp/test-drafts',
         GITHUB_PERSONAL_ACCESS_TOKEN: 'test',
         GITHUB_OWNER: 'test-owner',
         GITHUB_REPO: 'test-repo',
-        CLERK_PUBLISHABLE_KEY: 'pk_test_123',
-        CLERK_SECRET_KEY: 'sk_test_123',
+        CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY ?? '',
+        CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ?? '',
         SECRET_KEY: 'test-secret-key-for-e2e',
         LOCAL_DB_NAME: 'test',
         LOCAL_DB_USER: 'test',
@@ -50,6 +43,9 @@ export default defineConfig({
     },
     {
       command: 'npm run dev -- --mode test',
+      env: {
+        VITE_CLERK_PUBLISHABLE_KEY: process.env.CLERK_PUBLISHABLE_KEY ?? '',
+      },
       url: 'http://localhost:5556',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,

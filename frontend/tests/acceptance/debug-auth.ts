@@ -1,8 +1,8 @@
+import { clerk } from '@clerk/testing/playwright'
 import { test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 test('debug auth and page content', async ({ page }) => {
-  await mockClerkAuth(page, { role: 'author' })
+  await clerk.signIn({ page, emailAddress: 'author@example.com' })
 
   page.on('console', msg => console.log('BROWSER LOG:', msg.text()))
   page.on('request', request => console.log('REQUEST:', request.method(), request.url()))
