@@ -216,6 +216,21 @@ def create_app() -> Flask:
     _fs_settings = FileSystemSettings()
     _uploads_path = _fs_settings.UPLOADS_PATH
 
+    @app.before_request
+    def block_encoded_path_traversal() -> tuple[Response, int] | None:
+        """Block percent-encoded path traversal before Werkzeug normalises.
+
+        Werkzeug collapses ``..`` segments during URL normalisation, so
+        ``/uploads/%2E%2E/etc/passwd`` becomes ``/etc/passwd`` before the
+        ``serve_upload`` handler runs.  ``REQUEST_URI`` holds the raw URI.
+        """
+        raw_uri: str = request.environ.get("REQUEST_URI", "")
+        if raw_uri and "%2e" in raw_uri.lower():
+            decoded = unquote(raw_uri).lower()
+            if ".." in decoded:
+                return jsonify({"error": "Forbidden"}), 403
+        return None
+
     @app.route("/uploads/<path:filepath>")
     def serve_upload(filepath: str) -> Response:
         """Serve an uploaded image with path traversal protection.

@@ -12,7 +12,7 @@ import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
 import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 const BACKEND = 'http://localhost:5555'
-const TEST_SLUG = 'test-post'
+const TEST_SLUG = 'publish-me'
 
 /** Minimal valid 1×1 pixel PNG (red pixel). */
 const TEST_PNG = Buffer.from(

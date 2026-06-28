@@ -8,9 +8,25 @@
  * Only Clerk network traffic is mocked (browser tests) or replaced with a
  * locally-signed JWT (API tests).
  */
+import * as http from 'node:http'
 import { expect, test } from '@playwright/test'
 import { mockClerkAuth } from '../fixtures/clerk-mock'
 import { makeTestJwt } from '../fixtures/test-jwt'
+
+/**
+ * Send an HTTP GET using the raw path string, bypassing URL normalisation
+ * performed by Playwright's request client (which resolves %2E%2E to ..
+ * before the request leaves the process).
+ */
+function rawGet(port: number, path: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const req = http.request({ hostname: 'localhost', port, path, method: 'GET' }, res =>
+      resolve(res.statusCode ?? 0)
+    )
+    req.on('error', reject)
+    req.end()
+  })
+}
 
 const BACKEND = 'http://localhost:5555'
 const TEST_SLUG = 'test-post'
@@ -128,9 +144,9 @@ test.describe('Image Upload Acceptance Tests', () => {
     expect(res.headers()['content-type']).toContain('image/png')
   })
 
-  test('AC 2.2: GET /uploads/%2E%2E/etc/passwd → 403', async ({ request }) => {
-    const res = await request.get(`${BACKEND}/uploads/%2E%2E/etc/passwd`)
-    expect(res.status()).toBe(403)
+  test('AC 2.2: GET /uploads/%2E%2E/etc/passwd → 403', async () => {
+    const status = await rawGet(5555, '/uploads/%2E%2E/etc/passwd')
+    expect(status).toBe(403)
   })
 
   test('AC 2.3: GET valid image → Cache-Control header present', async ({ request }) => {

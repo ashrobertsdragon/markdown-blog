@@ -135,10 +135,10 @@ def test_path_traversal_in_middle_blocked(client):
 
 
 def test_url_encoded_path_traversal_blocked(client):
-    """URL-encoded path traversal should be decoded and blocked."""
+    """URL-encoded path traversal should be blocked before Werkzeug normalises."""
     with client.get("/%2e%2e/etc/passwd") as response:
-        assert response.status_code == 400
-        assert response.json == {"error": "Invalid path"}
+        assert response.status_code == 403
+        assert response.json == {"error": "Forbidden"}
 
 
 def test_backslash_path_traversal_blocked(client):
