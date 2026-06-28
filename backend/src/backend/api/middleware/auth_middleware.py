@@ -159,7 +159,9 @@ def require_auth(f: Callable[..., Any]) -> Callable[..., Any]:
             raise AuthenticationError(f"Invalid token: {str(e)}") from e
 
         clerk_user_id = payload["sub"]
-        email = payload["email"]
+        email = payload.get("email") or clerk_adapter.fetch_user_email(
+            clerk_user_id
+        )
 
         user = user_repo.find_by_clerk_user_id(clerk_user_id)
 

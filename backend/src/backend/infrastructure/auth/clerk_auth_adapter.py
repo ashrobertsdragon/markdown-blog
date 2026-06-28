@@ -62,6 +62,7 @@ class ClerkAuthAdapter:
         self._key_cache: dict[str, str] = {}
         self._cache_time: dict[str, float] = {}
         self._cache_ttl: int = 3600
+        self._email_cache: dict[str, str] = {}
         self._logger = logging.getLogger(__name__)
 
     def verify_token(self, token: str | None) -> JWTPayload:
@@ -189,6 +190,65 @@ class ClerkAuthAdapter:
         except (KeyError, ValueError, IndexError) as e:
             self._logger.error(f"Failed to parse JWKS response: {str(e)}")
             raise AuthenticationError(f"Invalid JWKS response: {str(e)}")
+
+    def fetch_user_email(self, clerk_user_id: str) -> str:
+        """Fetch the primary email address for a Clerk user via the Backend API.
+
+        Called when the JWT payload omits the email claim, which is the default
+        for Clerk session tokens without a custom JWT Template.
+
+        Args:
+            clerk_user_id: Clerk user ID from the JWT sub claim
+
+        Returns:
+            Primary email address, or empty string if none found
+
+        Raises:
+            AuthenticationError: If the Clerk API request fails
+        """
+        if clerk_user_id in self._email_cache:
+            return self._email_cache[clerk_user_id]
+
+        try:
+            response = requests.get(
+                f"{self.config.clerk_api_base_url}/users/{clerk_user_id}",
+                headers={
+                    "Authorization": f"Bearer {self.config.clerk_secret_key}"
+                },
+                timeout=10,
+            )
+            response.raise_for_status()
+            data = response.json()
+            primary_id = data.get("primary_email_address_id")
+            email_addresses = data.get("email_addresses", [])
+            for email_obj in email_addresses:
+                if email_obj.get("id") == primary_id:
+                    email = str(email_obj["email_address"])
+                    self._email_cache[clerk_user_id] = email
+                    return email
+            valid = [
+                str(e["email_address"])
+                for e in email_addresses
+                if e.get("email_address")
+            ]
+            email = valid[0] if valid else ""
+            self._email_cache[clerk_user_id] = email
+            return email
+        except requests.HTTPError as e:
+            status = e.response.status_code if e.response is not None else "?"
+            body = e.response.text[:200] if e.response is not None else ""
+            self._logger.error(
+                f"Clerk API returned {status} fetching user {clerk_user_id}: "
+                f"{body}"
+            )
+            raise AuthenticationError(
+                f"Clerk API error {status} fetching user details"
+            )
+        except requests.RequestException as e:
+            self._logger.error(f"Failed to fetch user email from Clerk: {e}")
+            raise AuthenticationError(
+                "Unable to reach Clerk API to fetch user details"
+            )
 
     def _construct_jwks_url(self) -> str:
         """Construct JWKS endpoint URL from Clerk configuration.
