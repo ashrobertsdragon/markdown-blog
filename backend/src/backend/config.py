@@ -174,6 +174,9 @@ class Settings(BaseSettings):
     )
     clerk_secret_key: str = Field(default=..., alias="CLERK_SECRET_KEY")
     clerk_jwks_url: str | None = Field(default=None, alias="CLERK_JWKS_URL")
+    clerk_api_base_url: str = Field(
+        default="https://api.clerk.com/v1", alias="CLERK_API_BASE_URL"
+    )
     environment: str | None = None
 
 
