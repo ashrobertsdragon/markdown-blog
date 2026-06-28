@@ -20,7 +20,7 @@ export default function AdminDashboard() {
         onClose={() => setSidebarOpen(false)}
         onOpen={() => setSidebarOpen(true)}
       />
-      <main className="md:pl-64">
+      <main className="pt-16 md:pt-0 md:pl-64">
         <Outlet />
       </main>
     </div>
