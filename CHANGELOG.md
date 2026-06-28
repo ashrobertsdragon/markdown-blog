@@ -9,14 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Migrated all E2E and acceptance tests from hand-rolled JWT mocks to `@clerk/testing/playwright`; removed conditional `ClerkProvider` bypass that caused blank pages when `UserButton` was introduced
+
+- Removed `clerk-mock.ts`, `test-jwt.ts`, `jwks-server.ts` fixture files and replaced with `global-setup.ts` that provisions real Clerk test users via REST API
+
+- Added `test-user-ids.ts` fixture to share real Clerk user IDs across all test files; updated all seed calls to pass real IDs
+
+- Replaced `mockClerkAuth`/`mockClerkUnauthenticated` with `clerk.signIn`/`clerk.signOut` across all 12 test files; added `page.goto('/')` before each `clerk.signIn` call per Clerk's API requirement
+
+- Added `/api/test/set-user-role` backend endpoint for mid-test role switching
+
+- Added `node` to `tsconfig.playwright.json` types to resolve `Buffer`/`node:http`/`node:fs` type errors in test files
+
 - `serve_upload` now aborts 404 when the resolved path is not a regular file, preventing unhandled 500 errors on directory requests
+
 - `upload_image` reads at most `MAX_UPLOAD_SIZE + 1` bytes before checking size, preventing memory exhaustion when `Content-Length` is absent or spoofed
+
 - `ImageUploadButton` strips `[` and `]` from the filename before inserting alt text, preventing markdown injection via bracket-containing filenames
+
 - Path traversal acceptance test now uses `%2E%2E` instead of literal `..` so the HTTP client does not normalize the URL before sending, allowing the server-side guard to exercise
+
 - E2E Save test registers `waitForRequest` before clicking Save to avoid a race condition where the PUT completed before the listener was installed
+
 - `_image_repository` global is reset alongside `_filesystem_settings` in the `app` test fixture, preventing a stale cached repository from pointing at a prior test's temp directory
+
 - DELETE image endpoint now validates `<filename>` via `ImageFilename` before filesystem access, returning 400 for unsupported extensions or empty stems
+
 - `FileSystemImageRepository.delete()` resolves the target path and verifies it stays within `uploads_path`, preventing path traversal via crafted slug or filename
+
 - `ImageFilename` now rejects filenames whose stem sanitizes to empty (e.g. `###.jpg`), preventing hidden dotfiles from being written to the uploads directory
 
 ### Added
