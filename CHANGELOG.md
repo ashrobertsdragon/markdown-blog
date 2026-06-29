@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Removed self-referential `--font-*` and `--shadow-*` declarations from the `@theme inline` block in `index.css` (e.g. `--font-sans: var(--font-sans)`); literal values now live in `@theme inline` and the duplicate `:root`/`.dark` definitions were dropped, so Tailwind inlines the real values into utilities instead of relying on cascade-layer precedence to override a self-reference
+
+- Used the ShadCN `Badge` component for the comment author tag in `CommentItem` instead of hand-rolled `bg-blue-*` utility classes, for design-system consistency
+
 - Disabled SQLAlchemy compiled statement cache (`query_cache_size=0`) and Python sqlite3 statement cache (`cached_statements=0`) on the test engine to prevent stale prepared statements after `drop_all` + `create_all` in the seed endpoint; fixes intermittent `IndexError` and `sqlite3.InterfaceError: bad parameter or other API misuse` 500 errors visible as `NetworkError` console errors in Firefox CI
 
 - Fixed `clerk.signIn` timeouts by adding `page.goto('/')` before each call; resolved strict-mode violations from the new Header "Sign in" link in `auth-flow`, `notifications`, and `admin-dashboard` tests; fixed `post-management` and `revision-tracking` seeds to pass real Clerk IDs (prevents `UNIQUE constraint` errors from auth middleware user auto-creation); switched spam-prevention test to `admin@example.com` to avoid rate-limit contamination from the preceding rate-limit test

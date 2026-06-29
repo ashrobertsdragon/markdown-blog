@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
 import { useDeleteComment } from '@/hooks/useComments'
 import type { CommentResponse } from '@/services/commentsApi'
@@ -75,11 +76,7 @@ export function CommentItem({ comment, postSlug }: CommentItemProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="font-semibold">Comment author</span>
-              {isPostAuthor && (
-                <span className="badge text-xs bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 px-2 py-1 rounded">
-                  Author
-                </span>
-              )}
+              {isPostAuthor && <Badge variant="secondary">Author</Badge>}
             </div>
             <div className="comment-timestamp text-xs text-muted-foreground mt-1">
               {formatTimestamp(comment.created_at)}
