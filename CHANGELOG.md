@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `serve_tos` and `serve_privacy` now check `is_file()` before calling `send_from_directory`, returning a direct JSON 404 instead of triggering the error-logging 404 handler when files are absent
+- TOS and Privacy Policy routes set `mimetype="text/plain; charset=utf-8"` and `Cache-Control: public, max-age=86400`
 - `serve_upload` now aborts 404 when the resolved path is not a regular file, preventing unhandled 500 errors on directory requests
 - `upload_image` reads at most `MAX_UPLOAD_SIZE + 1` bytes before checking size, preventing memory exhaustion when `Content-Length` is absent or spoofed
 - `ImageUploadButton` strips `[` and `]` from the filename before inserting alt text, preventing markdown injection via bracket-containing filenames
