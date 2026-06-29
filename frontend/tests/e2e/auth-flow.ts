@@ -325,7 +325,7 @@ test.describe('Browser Compatibility', () => {
   test('login page renders in all browsers', async ({ page, browserName }) => {
     await page.goto('/login')
 
-    const signInText = page.locator('text=Sign In')
+    const signInText = page.getByRole('heading', { name: /sign in/i })
     await expect(signInText).toBeVisible()
 
     expect(browserName).toMatch(/chromium|firefox|webkit/)

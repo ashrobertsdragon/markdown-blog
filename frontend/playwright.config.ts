@@ -1,4 +1,10 @@
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
+import dotenv from 'dotenv'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+dotenv.config({ path: resolve(__dirname, '../../.env'), override: false })
 
 export default defineConfig({
   globalSetup: './tests/acceptance/global-setup.ts',

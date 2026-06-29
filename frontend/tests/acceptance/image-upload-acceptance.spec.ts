@@ -217,7 +217,7 @@ test.describe('Image Upload Acceptance Tests', () => {
   })
 
   test('AC 3.2: GET list for draft with no uploads → {"images":[]}', async ({ request }) => {
-    const slug = 'empty-draft'
+    const slug = 'publish-me'
     const res = await request.get(`${BACKEND}/api/posts/${slug}/images`, {
       headers: { Authorization: `Bearer ${authorToken}` },
     })

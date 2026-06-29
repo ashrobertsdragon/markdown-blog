@@ -1,5 +1,6 @@
 import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
+import { testUserIds } from '../fixtures/test-user-ids'
 
 const BACKEND = 'http://localhost:5555'
 
@@ -15,7 +16,13 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('Post Management UI', () => {
   test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${BACKEND}/api/test/seed`)
+    const res = await request.post(`${BACKEND}/api/test/seed`, {
+      data: {
+        author_clerk_id: testUserIds.authorClerkId,
+        admin_clerk_id: testUserIds.adminClerkId,
+        user_clerk_id: testUserIds.userClerkId,
+      },
+    })
     expect(res.ok()).toBeTruthy()
   })
 
@@ -24,6 +31,7 @@ test.describe('Post Management UI', () => {
   })
 
   test.beforeEach(async ({ page }) => {
+    await page.goto('/')
     await clerk.signIn({ page, emailAddress: 'author@example.com' })
   })
 

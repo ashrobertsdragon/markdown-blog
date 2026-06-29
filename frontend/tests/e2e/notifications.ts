@@ -336,10 +336,10 @@ test.describe('Notifications E2E', () => {
       await page.goto('/settings/notifications')
       await waitForAuthToLoad(page)
 
-      const signInPrompt = page.locator('text=/sign in/i')
       const redirectedToLogin = page.url().includes('/login')
+      const signInPrompt = page.getByRole('heading', { name: /sign in/i })
 
-      const hasAccessControl = (await signInPrompt.isVisible()) || redirectedToLogin
+      const hasAccessControl = redirectedToLogin || (await signInPrompt.isVisible())
       expect(hasAccessControl).toBe(true)
     })
   })

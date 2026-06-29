@@ -1,5 +1,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { clerkSetup } from '@clerk/testing/playwright'
+import dotenv from 'dotenv'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+dotenv.config({ path: resolve(__dirname, '../../../../.env'), override: false })
 
 /**
  * Ensures a Clerk test user exists for the given email, returning their Clerk user ID.

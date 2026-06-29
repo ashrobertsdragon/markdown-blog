@@ -212,9 +212,11 @@ test.describe('Comments - Frontend UI', () => {
      *
      * The spam check scores 50+ points for 3+ URLs, which triggers pending
      * moderation on the real backend (SpamCheckService: url_density check).
+     * Uses admin@example.com because user@example.com is rate-limited by
+     * the preceding "Rate limit feedback" test.
      */
     await page.goto('/')
-    await clerk.signIn({ page, emailAddress: 'user@example.com' })
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/posts/test-post')
 
     const commentForm = page.locator('textarea[placeholder*="comment" i]')

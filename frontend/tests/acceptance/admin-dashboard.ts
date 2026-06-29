@@ -210,7 +210,7 @@ test.describe('Admin Dashboard - Frontend UI', () => {
     const forbiddenMessage = page.locator('h2:has-text("Access Denied")')
     await expect(forbiddenMessage).toBeVisible()
 
-    const homeLink = page.locator('a:has-text("Home")')
+    const homeLink = page.getByRole('link', { name: 'Go Home' })
     await expect(homeLink).toBeVisible()
   })
 })

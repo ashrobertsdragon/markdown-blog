@@ -2,6 +2,7 @@ import { clerk } from '@clerk/testing/playwright'
 import { test } from '@playwright/test'
 
 test('debug auth and page content', async ({ page }) => {
+  await page.goto('/')
   await clerk.signIn({ page, emailAddress: 'author@example.com' })
 
   page.on('console', msg => console.log('BROWSER LOG:', msg.text()))
