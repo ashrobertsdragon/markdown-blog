@@ -239,8 +239,12 @@ class TestDBSettings(DBSettings):
         from sqlalchemy.pool import StaticPool
 
         return {
-            "connect_args": {"check_same_thread": False},
+            "connect_args": {
+                "check_same_thread": False,
+                "cached_statements": 0,
+            },
             "poolclass": StaticPool,
+            "query_cache_size": 0,
         }
 
 
