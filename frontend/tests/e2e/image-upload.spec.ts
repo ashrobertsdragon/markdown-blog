@@ -7,9 +7,10 @@
  * The image upload API is intercepted to return a synthetic /uploads/ URL so
  * the test does not require UPLOADS_PATH to be configured in the test env.
  */
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
+import { testUserIds } from '../fixtures/test-user-ids'
 
 const BACKEND = 'http://localhost:5555'
 const TEST_SLUG = 'publish-me'
@@ -22,15 +23,17 @@ const TEST_PNG = Buffer.from(
 
 test.describe('Image Upload E2E', () => {
   test.beforeEach(async ({ page }) => {
-    const seed = await page.request.post(`${BACKEND}/api/test/seed`)
+    const seed = await page.request.post(`${BACKEND}/api/test/seed`, {
+      data: {
+        author_clerk_id: testUserIds.authorClerkId,
+        admin_clerk_id: testUserIds.adminClerkId,
+        user_clerk_id: testUserIds.userClerkId,
+      },
+    })
     expect(seed.ok()).toBeTruthy()
 
-    await mockClerkAuth(page, {
-      role: 'author',
-      userId: 'user_test_author',
-      email: 'author@example.com',
-    })
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
     await waitForAuthToLoad(page)
   })
 

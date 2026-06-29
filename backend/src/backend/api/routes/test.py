@@ -98,20 +98,31 @@ def seed() -> tuple[Response, int]:
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 
+    body = request.get_json(silent=True) or {}
+    author_clerk_id = body.get("author_clerk_id", "user_test_author")
+    admin_clerk_id = body.get("admin_clerk_id", "user_test_admin")
+    user_clerk_id = body.get("user_clerk_id", "user_test_user")
+
     now = datetime.now(UTC)
     with Session(engine) as session:
         author = User(
             email="author@example.com",
             role="author",
-            clerk_user_id="user_test_author",
+            clerk_user_id=author_clerk_id,
         )
         admin = User(
             email="admin@example.com",
             role="admin",
-            clerk_user_id="user_test_admin",
+            clerk_user_id=admin_clerk_id,
+        )
+        regular_user = User(
+            email="user@example.com",
+            role="authenticated",
+            clerk_user_id=user_clerk_id,
         )
         session.add(author)
         session.add(admin)
+        session.add(regular_user)
         session.flush()
 
         posts_specs = [
@@ -223,7 +234,7 @@ def seed() -> tuple[Response, int]:
             DraftFile(
                 slug=slug,
                 title=title,
-                author="user_test_author",
+                author=author_clerk_id,
                 content=content,
                 published=published,
                 created_at=now,

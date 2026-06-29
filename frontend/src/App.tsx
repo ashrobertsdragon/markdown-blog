@@ -3,6 +3,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'react-hot-toast'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import Layout from '@/components/common/Layout'
 import { AuthProvider } from '@/context/AuthContext'
 import AdminDashboard from '@/pages/AdminDashboard'
 import Author from '@/pages/Author'
@@ -51,48 +52,7 @@ const queryClient = new QueryClient({
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes - no authentication required */}
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/forbidden" element={<Forbidden />} />
-      <Route path="/unsubscribe" element={<Unsubscribe />} />
-      <Route path="/posts/:slug" element={<PublicPost />} />
-      <Route
-        path="/posts/:slug/revisions"
-        element={
-          <ProtectedRoute requireRole="authenticated">
-            <RevisionHistory />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/posts/:slug/revisions/:sha"
-        element={
-          <ProtectedRoute requireRole="authenticated">
-            <RevisionDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/posts/:slug/revisions/:sha/diff/:otherSha"
-        element={
-          <ProtectedRoute requireRole="authenticated">
-            <RevisionDiffPage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Authenticated routes */}
-      <Route
-        path="/settings/notifications"
-        element={
-          <ProtectedRoute requireRole="authenticated">
-            <NotificationPreferences />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Admin routes - require admin role */}
+      {/* Admin routes - own chrome (AdminDashboard + AdminSidebar), no Layout wrapper */}
       <Route
         path="/admin"
         element={
@@ -108,42 +68,86 @@ export function AppRoutes() {
         <Route path="system" element={<SystemPage />} />
       </Route>
 
-      {/* Author routes - require author role */}
-      <Route
-        path="/author"
-        element={
-          <ProtectedRoute requireRole="author">
-            <Author />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/my-posts"
-        element={
-          <ProtectedRoute requireRole="author">
-            <MyPosts />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/new-post"
-        element={
-          <ProtectedRoute requireRole="author">
-            <PostEditor />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/edit/:slug"
-        element={
-          <ProtectedRoute requireRole="author">
-            <PostEditor />
-          </ProtectedRoute>
-        }
-      />
+      {/* All other routes share the persistent Header via Layout */}
+      <Route element={<Layout />}>
+        {/* Public routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/forbidden" element={<Forbidden />} />
+        <Route path="/unsubscribe" element={<Unsubscribe />} />
+        <Route path="/posts/:slug" element={<PublicPost />} />
+        <Route
+          path="/posts/:slug/revisions"
+          element={
+            <ProtectedRoute requireRole="authenticated">
+              <RevisionHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/posts/:slug/revisions/:sha"
+          element={
+            <ProtectedRoute requireRole="authenticated">
+              <RevisionDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/posts/:slug/revisions/:sha/diff/:otherSha"
+          element={
+            <ProtectedRoute requireRole="authenticated">
+              <RevisionDiffPage />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Catch-all route - 404 Not Found */}
-      <Route path="*" element={<NotFound />} />
+        {/* Authenticated routes */}
+        <Route
+          path="/settings/notifications"
+          element={
+            <ProtectedRoute requireRole="authenticated">
+              <NotificationPreferences />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Author routes */}
+        <Route
+          path="/author"
+          element={
+            <ProtectedRoute requireRole="author">
+              <Author />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-posts"
+          element={
+            <ProtectedRoute requireRole="author">
+              <MyPosts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/new-post"
+          element={
+            <ProtectedRoute requireRole="author">
+              <PostEditor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit/:slug"
+          element={
+            <ProtectedRoute requireRole="author">
+              <PostEditor />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch-all */}
+        <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   )
 }

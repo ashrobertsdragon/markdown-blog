@@ -1,5 +1,6 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 
 const BACKEND = 'http://localhost:5555'
 
@@ -14,8 +15,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('Comments - Frontend UI', () => {
   test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${BACKEND}/api/test/seed`)
-    expect(res.ok()).toBeTruthy()
+    await seedWithTestUsers(request)
   })
 
   test.afterAll(async ({ request }) => {
@@ -32,8 +32,8 @@ test.describe('Comments - Frontend UI', () => {
      * - Comment appears at bottom of list immediately (optimistic update)
      * - Rate limit exceeded shows error message
      */
-    await mockClerkAuth(page, { role: 'authenticated' })
-
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'user@example.com' })
     await page.goto('/posts/test-post')
 
     const commentForm = page.locator('textarea[placeholder*="comment" i]')
@@ -63,7 +63,8 @@ test.describe('Comments - Frontend UI', () => {
      * - Reply appears immediately in flat list after parent comment
      * - Deleting reply text collapses/cancels reply form
      */
-    await mockClerkAuth(page, { role: 'authenticated' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'user@example.com' })
 
     const slug = 'test-post'
     await page.goto(`/posts/${slug}`)
@@ -95,7 +96,8 @@ test.describe('Comments - Frontend UI', () => {
      * - Confirmation modal appears before deletion
      * - Deleted comment immediately disappears from list
      */
-    await mockClerkAuth(page, { role: 'admin' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
 
     const slug = 'test-post'
     await page.goto(`/posts/${slug}`)
@@ -121,12 +123,8 @@ test.describe('Comments - Frontend UI', () => {
      * - Rate limit enforced: 5 comments per 1 minute per user
      * - Error message displays remaining wait time
      */
-    await mockClerkAuth(page, {
-      role: 'authenticated',
-      userId: 'user_test_rate_limiter',
-      email: 'ratelimit@example.com',
-    })
-
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'user@example.com' })
     await page.goto('/posts/test-post')
 
     const commentForm = page.locator('textarea[placeholder*="comment" i]')
@@ -158,7 +156,8 @@ test.describe('Comments - Frontend UI', () => {
      * - Post author's comments visually distinguished (badge: "Author")
      * - >50 comments: pagination OR "Load more" button
      */
-    await mockClerkAuth(page, { role: 'authenticated' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'user@example.com' })
 
     const slug = 'test-post'
     await page.goto(`/posts/${slug}`)
@@ -183,7 +182,8 @@ test.describe('Comments - Frontend UI', () => {
      * - Clicking "Reply to @username" scrolls to parent comment
      * - Deleted comment shows "[deleted comment]" with replies visible
      */
-    await mockClerkAuth(page, { role: 'authenticated' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'user@example.com' })
 
     const slug = 'test-post'
     await page.goto(`/posts/${slug}`)
@@ -205,9 +205,11 @@ test.describe('Comments - Frontend UI', () => {
      *
      * The spam check scores 50+ points for 3+ URLs, which triggers pending
      * moderation on the real backend (SpamCheckService: url_density check).
+     * Uses admin@example.com because user@example.com is rate-limited by
+     * the preceding "Rate limit feedback" test.
      */
-    await mockClerkAuth(page, { role: 'authenticated' })
-
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'admin@example.com' })
     await page.goto('/posts/test-post')
 
     const commentForm = page.locator('textarea[placeholder*="comment" i]')

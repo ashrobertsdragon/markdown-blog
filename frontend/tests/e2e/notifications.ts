@@ -1,5 +1,7 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
+import { testUserIds } from '../fixtures/test-user-ids'
 import { waitForAuthToLoad } from './fixtures/helpers'
 
 const BACKEND = 'http://localhost:5555'
@@ -57,15 +59,10 @@ test.describe('Notifications E2E', () => {
   test.describe.configure({ mode: 'serial' })
 
   test.beforeEach(async ({ page }) => {
-    const seedResponse = await page.request.post(`${BACKEND}/api/test/seed`)
-    expect(seedResponse.ok()).toBeTruthy()
+    await seedWithTestUsers(page.request)
 
-    await mockClerkAuth(page, {
-      role: 'authenticated',
-      userId: 'user_test_commenter',
-      email: 'commenter@example.com',
-    })
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'user@example.com' })
     await waitForAuthToLoad(page)
   })
 
@@ -173,7 +170,7 @@ test.describe('Notifications E2E', () => {
       await expect(page.locator('text=/unsubscribed/i')).toBeVisible({ timeout: 10000 })
 
       const prefsResponse = await page.request.get(
-        `${BACKEND}/api/test/user-preferences?clerk_user_id=user_test_author`
+        `${BACKEND}/api/test/user-preferences?clerk_user_id=${testUserIds.authorClerkId}`
       )
       expect(prefsResponse.ok()).toBeTruthy()
 
@@ -223,15 +220,11 @@ test.describe('Notifications E2E', () => {
     test('3.1: Notification preferences page renders toggles for authenticated user', async ({
       page,
     }) => {
-      await mockClerkAuth(page, {
-        role: 'authenticated',
-        userId: 'user_test_author',
-        email: 'author@example.com',
-      })
+      await clerk.signOut({ page })
       await page.goto('/')
-      await waitForAuthToLoad(page)
-
+      await clerk.signIn({ page, emailAddress: 'author@example.com' })
       await page.goto('/settings/notifications')
+      await waitForAuthToLoad(page)
 
       const replyToggle = page.locator('input[type="checkbox"]').first()
       await expect(replyToggle).toBeVisible({ timeout: 10000 })
@@ -243,15 +236,11 @@ test.describe('Notifications E2E', () => {
     test('3.2: Toggling a preference saves immediately and shows success feedback', async ({
       page,
     }) => {
-      await mockClerkAuth(page, {
-        role: 'authenticated',
-        userId: 'user_test_author',
-        email: 'author@example.com',
-      })
+      await clerk.signOut({ page })
       await page.goto('/')
-      await waitForAuthToLoad(page)
-
+      await clerk.signIn({ page, emailAddress: 'author@example.com' })
       await page.goto('/settings/notifications')
+      await waitForAuthToLoad(page)
 
       await expect(page.locator('input[type="checkbox"]').first()).toBeVisible({ timeout: 10000 })
 
@@ -274,7 +263,7 @@ test.describe('Notifications E2E', () => {
     }) => {
       const disableResponse = await page.request.put(`${BACKEND}/api/test/user-preferences`, {
         data: {
-          clerk_user_id: 'user_test_author',
+          clerk_user_id: testUserIds.authorClerkId,
           notify_on_comment_replies: false,
           notify_on_mentions: false,
           notify_on_new_posts: false,
@@ -303,7 +292,7 @@ test.describe('Notifications E2E', () => {
     }) => {
       const disableResponse = await page.request.put(`${BACKEND}/api/test/user-preferences`, {
         data: {
-          clerk_user_id: 'user_test_author',
+          clerk_user_id: testUserIds.authorClerkId,
           notify_on_comment_replies: false,
           notify_on_mentions: false,
           notify_on_new_posts: false,
@@ -313,7 +302,7 @@ test.describe('Notifications E2E', () => {
 
       const enableResponse = await page.request.put(`${BACKEND}/api/test/user-preferences`, {
         data: {
-          clerk_user_id: 'user_test_author',
+          clerk_user_id: testUserIds.authorClerkId,
           notify_on_comment_replies: true,
           notify_on_mentions: false,
           notify_on_new_posts: false,
@@ -337,15 +326,14 @@ test.describe('Notifications E2E', () => {
     })
 
     test('3.5: Unauthenticated users cannot access notification preferences', async ({ page }) => {
-      const { mockClerkUnauthenticated } = await import('../fixtures/clerk-mock')
-      await mockClerkUnauthenticated(page)
+      await clerk.signOut({ page })
       await page.goto('/settings/notifications')
       await waitForAuthToLoad(page)
 
-      const signInPrompt = page.locator('text=/sign in/i')
       const redirectedToLogin = page.url().includes('/login')
+      const signInPrompt = page.getByRole('heading', { name: /sign in/i })
 
-      const hasAccessControl = (await signInPrompt.isVisible()) || redirectedToLogin
+      const hasAccessControl = redirectedToLogin || (await signInPrompt.isVisible())
       expect(hasAccessControl).toBe(true)
     })
   })

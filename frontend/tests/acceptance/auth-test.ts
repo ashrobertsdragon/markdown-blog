@@ -1,14 +1,13 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
 
 /**
- * Basic authentication test to verify Clerk mocking works
+ * Basic authentication test to verify Clerk auth works in E2E tests.
  */
 test.describe('Authentication', () => {
   test('should load home page with mocked auth', async ({ page }) => {
-    await mockClerkAuth(page, { role: 'author' })
-
     await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
 
     await page.waitForLoadState('networkidle')
 
@@ -27,7 +26,8 @@ test.describe('Authentication', () => {
   })
 
   test('should navigate to new-post page when authenticated', async ({ page }) => {
-    await mockClerkAuth(page, { role: 'author' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
 
     await page.goto('/new-post')
 

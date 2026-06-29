@@ -5,12 +5,8 @@ import App from '@/App'
 import '@/index.css'
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-const isTestMockPresent =
-  import.meta.env.MODE === 'test' &&
-  typeof window !== 'undefined' &&
-  '__CLERK_TEST_MOCK__' in (window as { __CLERK_TEST_MOCK__?: unknown })
 
-if (!publishableKey && !isTestMockPresent) {
+if (!publishableKey) {
   throw new Error(
     'Missing Clerk configuration: VITE_CLERK_PUBLISHABLE_KEY environment variable is not set.\n' +
       'Please add it to your .env file or environment configuration.\n' +
@@ -26,12 +22,8 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    {isTestMockPresent ? (
+    <ClerkProvider publishableKey={publishableKey}>
       <App />
-    ) : (
-      <ClerkProvider publishableKey={publishableKey ?? ''}>
-        <App />
-      </ClerkProvider>
-    )}
+    </ClerkProvider>
   </React.StrictMode>
 )

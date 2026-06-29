@@ -4,6 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/App'
 import type { AuthContextType } from '@/context/AuthContext'
 
+vi.mock('@/components/common/Layout', async () => {
+  const { Outlet } = await import('react-router-dom')
+  return {
+    default: () => <Outlet />,
+  }
+})
+
 vi.mock('@/pages/AdminDashboard', async () => {
   const { Outlet } = await import('react-router-dom')
   return {

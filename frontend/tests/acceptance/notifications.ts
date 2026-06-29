@@ -1,6 +1,7 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../e2e/fixtures/helpers'
-import { mockClerkAuth, mockClerkUnauthenticated } from '../fixtures/clerk-mock'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 
 const BACKEND = 'http://localhost:5555'
 
@@ -15,8 +16,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('Notifications - Frontend UI', () => {
   test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${BACKEND}/api/test/seed`)
-    expect(res.ok()).toBeTruthy()
+    await seedWithTestUsers(request)
   })
 
   test.afterAll(async ({ request }) => {
@@ -31,7 +31,8 @@ test.describe('Notifications - Frontend UI', () => {
      * - User disables a preference: change persists after page reload
      * - Other preferences remain unaffected
      */
-    await mockClerkAuth(page, { role: 'author' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
     await page.goto('/settings/notifications')
     await waitForAuthToLoad(page)
 
@@ -64,7 +65,6 @@ test.describe('Notifications - Frontend UI', () => {
      * - Backend verifies token and disables all notification preferences
      * - Success message: "You've been unsubscribed"
      */
-    await mockClerkUnauthenticated(page)
     const tokenRes = await request.get(`${BACKEND}/api/test/unsubscribe-token?user_id=1`)
     expect(tokenRes.ok()).toBeTruthy()
     const { user_id, token } = await tokenRes.json()
@@ -79,7 +79,6 @@ test.describe('Notifications - Frontend UI', () => {
      * - Token failing client-side format check: immediate error, no API call
      * - Error message explains the token is invalid
      */
-    await mockClerkUnauthenticated(page)
     await page.goto('/unsubscribe?user_id=1&token=invalid_token')
     await expect(page.locator('[role="alert"]')).toContainText(/invalid.*token/i)
   })

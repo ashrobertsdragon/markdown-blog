@@ -9,16 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Disabled SQLAlchemy compiled statement cache (`query_cache_size=0`) and Python sqlite3 statement cache (`cached_statements=0`) on the test engine to prevent stale prepared statements after `drop_all` + `create_all` in the seed endpoint; fixes intermittent `IndexError` and `sqlite3.InterfaceError: bad parameter or other API misuse` 500 errors visible as `NetworkError` console errors in Firefox CI
+
+- Fixed `clerk.signIn` timeouts by adding `page.goto('/')` before each call; resolved strict-mode violations from the new Header "Sign in" link in `auth-flow`, `notifications`, and `admin-dashboard` tests; fixed `post-management` and `revision-tracking` seeds to pass real Clerk IDs (prevents `UNIQUE constraint` errors from auth middleware user auto-creation); switched spam-prevention test to `admin@example.com` to avoid rate-limit contamination from the preceding rate-limit test
+
+- Mocked `@clerk/clerk-react` globally in `tests/setup.ts` so unit tests rendering via `test-utils` no longer throw when `useUser()`/`useAuth()` are called outside a real `ClerkProvider`; fixes 9 `Unsubscribe` test regressions
+
+- Migrated all E2E and acceptance tests from hand-rolled JWT mocks to `@clerk/testing/playwright`; removed conditional `ClerkProvider` bypass that caused blank pages when `UserButton` was introduced
+
+- Removed `clerk-mock.ts`, `test-jwt.ts`, `jwks-server.ts` fixture files and replaced with `global-setup.ts` that provisions real Clerk test users via REST API
+
+- Added `test-user-ids.ts` fixture to share real Clerk user IDs across all test files; updated all seed calls to pass real IDs
+
+- Replaced `mockClerkAuth`/`mockClerkUnauthenticated` with `clerk.signIn`/`clerk.signOut` across all 12 test files; added `page.goto('/')` before each `clerk.signIn` call per Clerk's API requirement
+
+- Added `/api/test/set-user-role` backend endpoint for mid-test role switching
+
+- Added `node` to `tsconfig.playwright.json` types to resolve `Buffer`/`node:http`/`node:fs` type errors in test files
+
 - `serve_tos` and `serve_privacy` now check `is_file()` before calling `send_from_directory`, returning a direct JSON 404 instead of triggering the error-logging 404 handler when files are absent
+
 - TOS and Privacy Policy routes set `mimetype="text/plain; charset=utf-8"` and `Cache-Control: public, max-age=86400`
+
 - `serve_upload` now aborts 404 when the resolved path is not a regular file, preventing unhandled 500 errors on directory requests
+
 - `upload_image` reads at most `MAX_UPLOAD_SIZE + 1` bytes before checking size, preventing memory exhaustion when `Content-Length` is absent or spoofed
+
 - `ImageUploadButton` strips `[` and `]` from the filename before inserting alt text, preventing markdown injection via bracket-containing filenames
+
 - Path traversal acceptance test now uses `%2E%2E` instead of literal `..` so the HTTP client does not normalize the URL before sending, allowing the server-side guard to exercise
+
 - E2E Save test registers `waitForRequest` before clicking Save to avoid a race condition where the PUT completed before the listener was installed
+
 - `_image_repository` global is reset alongside `_filesystem_settings` in the `app` test fixture, preventing a stale cached repository from pointing at a prior test's temp directory
+
 - DELETE image endpoint now validates `<filename>` via `ImageFilename` before filesystem access, returning 400 for unsupported extensions or empty stems
+
 - `FileSystemImageRepository.delete()` resolves the target path and verifies it stays within `uploads_path`, preventing path traversal via crafted slug or filename
+
 - `ImageFilename` now rejects filenames whose stem sanitizes to empty (e.g. `###.jpg`), preventing hidden dotfiles from being written to the uploads directory
 
 ### Added

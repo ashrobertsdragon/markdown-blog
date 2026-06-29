@@ -1,17 +1,19 @@
 /**
  * Acceptance tests for the image upload feature (spec: images).
  *
- * ACs 1.1–4.3 exercise the REST API directly (no browser). ACs 5.1–5.4
- * exercise the PostEditor UI in a real browser with mocked Clerk auth.
+ * ACs 1.1–4.3 exercise the REST API directly (no browser UI). Real Clerk
+ * bearer tokens are obtained once in beforeAll by signing in via a headless
+ * browser page and extracting the session token from window.Clerk.
+ *
+ * ACs 5.1–5.4 exercise the PostEditor UI with real Clerk authentication.
  *
  * All tests run against the real Flask backend (FLASK_ENV=TESTING).
- * Only Clerk network traffic is mocked (browser tests) or replaced with a
- * locally-signed JWT (API tests).
  */
 import * as http from 'node:http'
-import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
-import { makeTestJwt } from '../fixtures/test-jwt'
+import { clerk } from '@clerk/testing/playwright'
+import { type APIRequestContext, expect, test } from '@playwright/test'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
+import { waitForAuthToLoad } from './fixtures/helpers'
 
 /**
  * Send an HTTP GET using the raw path string, bypassing URL normalisation
@@ -40,8 +42,35 @@ const PNG_1X1 = Buffer.from(
 /** 6 MB zero-byte buffer to trigger size limit. */
 const OVERSIZED = Buffer.alloc(6 * 1024 * 1024)
 
+/** Signs in via a headless browser page and extracts the Clerk session token. */
+async function getClerkToken(
+  browser: import('@playwright/test').Browser,
+  emailAddress: string
+): Promise<string> {
+  const context = await browser.newContext()
+  const page = await context.newPage()
+  try {
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress })
+    await waitForAuthToLoad(page)
+    const token = await page.evaluate(async () => {
+      const c = (
+        window as unknown as {
+          Clerk?: { session?: { getToken(): Promise<string | null | undefined> } }
+        }
+      ).Clerk
+      if (!c?.session?.getToken) return null
+      return c.session.getToken()
+    })
+    if (!token) throw new Error(`Failed to get Clerk session token for ${emailAddress}`)
+    return token
+  } finally {
+    await context.close()
+  }
+}
+
 async function postImageRequest(
-  request: Parameters<typeof test>[1] extends (args: { request: infer R }) => unknown ? R : never,
+  request: APIRequestContext,
   slug: string,
   file: Buffer,
   filename: string,
@@ -61,10 +90,17 @@ async function postImageRequest(
 
 test.describe.configure({ mode: 'serial' })
 
+let authorToken: string
+let otherToken: string
+
 test.describe('Image Upload Acceptance Tests', () => {
-  test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${BACKEND}/api/test/seed`)
-    expect(res.ok()).toBeTruthy()
+  test.beforeAll(async ({ browser, request }) => {
+    await seedWithTestUsers(request)
+
+    ;[authorToken, otherToken] = await Promise.all([
+      getClerkToken(browser, 'author@example.com'),
+      getClerkToken(browser, 'user@example.com'),
+    ])
   })
 
   test.afterAll(async ({ request }) => {
@@ -74,8 +110,7 @@ test.describe('Image Upload Acceptance Tests', () => {
   // ── Requirement 1: Upload ──────────────────────────────────────────────────
 
   test('AC 1.1: POST valid PNG → 201 + url body', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
-    const res = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'photo.png', token)
+    const res = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'photo.png', authorToken)
     expect(res.status()).toBe(201)
     const body = await res.json()
     expect(body).toHaveProperty('url')
@@ -83,9 +118,8 @@ test.describe('Image Upload Acceptance Tests', () => {
   })
 
   test('AC 1.2: POST file > 5 MB → 413', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
     const res = await request.post(`${BACKEND}/api/posts/${TEST_SLUG}/images`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${authorToken}` },
       multipart: {
         file: {
           name: 'big.png',
@@ -98,9 +132,8 @@ test.describe('Image Upload Acceptance Tests', () => {
   })
 
   test('AC 1.3: POST non-image extension → 400', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
     const res = await request.post(`${BACKEND}/api/posts/${TEST_SLUG}/images`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${authorToken}` },
       multipart: {
         file: {
           name: 'script.txt',
@@ -126,16 +159,20 @@ test.describe('Image Upload Acceptance Tests', () => {
   })
 
   test('AC 1.5: POST as wrong author → 403', async ({ request }) => {
-    const token = await makeTestJwt('user_test_other', 'other@example.com')
-    const res = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'photo.png', token)
+    const res = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'photo.png', otherToken)
     expect(res.status()).toBe(403)
   })
 
   // ── Requirement 2: Serve ──────────────────────────────────────────────────
 
   test('AC 2.1: GET /uploads/{slug}/{file} → correct Content-Type', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
-    const upload = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'serve-test.png', token)
+    const upload = await postImageRequest(
+      request,
+      TEST_SLUG,
+      PNG_1X1,
+      'serve-test.png',
+      authorToken
+    )
     expect(upload.status()).toBe(201)
     const { url } = await upload.json()
 
@@ -150,8 +187,13 @@ test.describe('Image Upload Acceptance Tests', () => {
   })
 
   test('AC 2.3: GET valid image → Cache-Control header present', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
-    const upload = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'cache-test.png', token)
+    const upload = await postImageRequest(
+      request,
+      TEST_SLUG,
+      PNG_1X1,
+      'cache-test.png',
+      authorToken
+    )
     expect(upload.status()).toBe(201)
     const { url } = await upload.json()
 
@@ -162,11 +204,10 @@ test.describe('Image Upload Acceptance Tests', () => {
   // ── Requirement 3: List ───────────────────────────────────────────────────
 
   test('AC 3.1: GET list for draft with uploads → images array', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
-    await postImageRequest(request, TEST_SLUG, PNG_1X1, 'list-test.png', token)
+    await postImageRequest(request, TEST_SLUG, PNG_1X1, 'list-test.png', authorToken)
 
     const res = await request.get(`${BACKEND}/api/posts/${TEST_SLUG}/images`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${authorToken}` },
     })
     expect(res.status()).toBe(200)
     const body = await res.json()
@@ -176,10 +217,9 @@ test.describe('Image Upload Acceptance Tests', () => {
   })
 
   test('AC 3.2: GET list for draft with no uploads → {"images":[]}', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
-    const slug = 'empty-draft'
+    const slug = 'publish-me'
     const res = await request.get(`${BACKEND}/api/posts/${slug}/images`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${authorToken}` },
     })
     expect(res.status()).toBe(200)
     const body = await res.json()
@@ -189,34 +229,30 @@ test.describe('Image Upload Acceptance Tests', () => {
   // ── Requirement 4: Delete ─────────────────────────────────────────────────
 
   test('AC 4.1: DELETE existing image → 204', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
-    const upload = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'delete-me.png', token)
+    const upload = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'delete-me.png', authorToken)
     expect(upload.status()).toBe(201)
     const { url } = await upload.json()
     const filename = url.split('/').pop()
 
     const res = await request.delete(`${BACKEND}/api/posts/${TEST_SLUG}/images/${filename}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${authorToken}` },
     })
     expect(res.status()).toBe(204)
   })
 
   test('AC 4.2: DELETE non-existent image → 404', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
     const res = await request.delete(`${BACKEND}/api/posts/${TEST_SLUG}/images/ghost.png`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${authorToken}` },
     })
     expect(res.status()).toBe(404)
   })
 
   test('AC 4.3: DELETE wrong author → 403', async ({ request }) => {
-    const token = await makeTestJwt('user_test_author', 'author@example.com')
-    const upload = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'no-delete.png', token)
+    const upload = await postImageRequest(request, TEST_SLUG, PNG_1X1, 'no-delete.png', authorToken)
     expect(upload.status()).toBe(201)
     const { url } = await upload.json()
     const filename = url.split('/').pop()
 
-    const otherToken = await makeTestJwt('user_test_other', 'other@example.com')
     const res = await request.delete(`${BACKEND}/api/posts/${TEST_SLUG}/images/${filename}`, {
       headers: { Authorization: `Bearer ${otherToken}` },
     })
@@ -238,7 +274,9 @@ test.describe('Image Upload Acceptance Tests', () => {
       }
     })
 
-    await mockClerkAuth(page, { role: 'author' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
+    await waitForAuthToLoad(page)
     await page.goto(`/edit/${TEST_SLUG}`)
     await expect(page.locator('.w-md-editor')).toBeVisible({ timeout: 15000 })
 
@@ -266,7 +304,9 @@ test.describe('Image Upload Acceptance Tests', () => {
       }
     })
 
-    await mockClerkAuth(page, { role: 'author' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
+    await waitForAuthToLoad(page)
     await page.goto(`/edit/${TEST_SLUG}`)
     await expect(page.locator('.w-md-editor')).toBeVisible({ timeout: 15000 })
 
@@ -288,7 +328,9 @@ test.describe('Image Upload Acceptance Tests', () => {
       }
     })
 
-    await mockClerkAuth(page, { role: 'author' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
+    await waitForAuthToLoad(page)
     await page.goto(`/edit/${TEST_SLUG}`)
     await expect(page.locator('.w-md-editor')).toBeVisible({ timeout: 15000 })
 
@@ -313,7 +355,9 @@ test.describe('Image Upload Acceptance Tests', () => {
       }
     })
 
-    await mockClerkAuth(page, { role: 'author' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
+    await waitForAuthToLoad(page)
     await page.goto(`/edit/${TEST_SLUG}`)
     await expect(page.locator('.w-md-editor')).toBeVisible({ timeout: 15000 })
 

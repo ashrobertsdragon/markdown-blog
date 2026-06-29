@@ -1,5 +1,6 @@
+import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { mockClerkAuth } from '../fixtures/clerk-mock'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 
 const BACKEND = 'http://localhost:5555'
 
@@ -15,8 +16,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('Post Management UI', () => {
   test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${BACKEND}/api/test/seed`)
-    expect(res.ok()).toBeTruthy()
+    await seedWithTestUsers(request)
   })
 
   test.afterAll(async ({ request }) => {
@@ -24,7 +24,8 @@ test.describe('Post Management UI', () => {
   })
 
   test.beforeEach(async ({ page }) => {
-    await mockClerkAuth(page, { role: 'author' })
+    await page.goto('/')
+    await clerk.signIn({ page, emailAddress: 'author@example.com' })
   })
 
   test.skip('New Post form and slug normalization', async ({ page }) => {

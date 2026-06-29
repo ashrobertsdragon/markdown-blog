@@ -35,6 +35,13 @@ vi.mock('@/pages/Admin', () => ({
   default: () => <div data-testid="admin-component">Admin Page</div>,
 }))
 
+vi.mock('@/components/common/Layout', async () => {
+  const { Outlet } = await import('react-router-dom')
+  return {
+    default: () => <Outlet />,
+  }
+})
+
 vi.mock('@/pages/AdminDashboard', async () => {
   const { Outlet } = await import('react-router-dom')
   return {
