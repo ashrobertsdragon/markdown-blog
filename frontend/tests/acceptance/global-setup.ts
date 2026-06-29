@@ -20,15 +20,22 @@ async function getOrCreateClerkUser(email: string, role: string): Promise<string
     { headers }
   )
   if (!listRes.ok) throw new Error(`Clerk list users failed: ${listRes.status}`)
-  const list = (await listRes.json()) as Array<{ id: string }>
+  const list = (await listRes.json()) as Array<{ id: string; public_metadata?: { role?: string } }>
 
   if (list.length > 0) {
-    const userId = list[0].id
-    await fetch(`https://api.clerk.com/v1/users/${userId}`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ public_metadata: { role } }),
-    })
+    const user = list[0]
+    const userId = user.id
+    if (user.public_metadata?.role !== role) {
+      const updateRes = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ public_metadata: { role } }),
+      })
+      if (!updateRes.ok) {
+        const body = await updateRes.text()
+        throw new Error(`Clerk update user role failed for ${email}: ${updateRes.status} ${body}`)
+      }
+    }
     return userId
   }
 

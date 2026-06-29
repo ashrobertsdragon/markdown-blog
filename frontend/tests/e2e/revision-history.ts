@@ -1,7 +1,7 @@
 import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
-import { testUserIds } from '../fixtures/test-user-ids'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 
 /**
  * E2E tests for revision tracking workflow.
@@ -13,14 +13,7 @@ import { testUserIds } from '../fixtures/test-user-ids'
  */
 test.describe('Revision History E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
-    const response = await page.request.post('http://localhost:5555/api/test/seed', {
-      data: {
-        author_clerk_id: testUserIds.authorClerkId,
-        admin_clerk_id: testUserIds.adminClerkId,
-        user_clerk_id: testUserIds.userClerkId,
-      },
-    })
-    expect(response.ok()).toBeTruthy()
+    await seedWithTestUsers(page.request)
 
     await page.goto('/')
     await clerk.signIn({ page, emailAddress: 'author@example.com' })

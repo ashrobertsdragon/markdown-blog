@@ -9,19 +9,12 @@
 import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
-import { testUserIds } from '../fixtures/test-user-ids'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 import { waitForApiCall } from './fixtures/helpers'
 
 test.describe('Admin Dashboard E2E', () => {
   test.beforeEach(async ({ page }) => {
-    const seedResponse = await page.request.post('http://localhost:5555/api/test/seed', {
-      data: {
-        author_clerk_id: testUserIds.authorClerkId,
-        admin_clerk_id: testUserIds.adminClerkId,
-        user_clerk_id: testUserIds.userClerkId,
-      },
-    })
-    expect(seedResponse.ok()).toBeTruthy()
+    await seedWithTestUsers(page.request)
 
     await page.goto('/')
     await clerk.signIn({ page, emailAddress: 'admin@example.com' })
@@ -159,14 +152,7 @@ test.describe('Admin Dashboard E2E', () => {
 
 test.describe('Non-admin access', () => {
   test.beforeEach(async ({ page }) => {
-    const seedResponse = await page.request.post('http://localhost:5555/api/test/seed', {
-      data: {
-        author_clerk_id: testUserIds.authorClerkId,
-        admin_clerk_id: testUserIds.adminClerkId,
-        user_clerk_id: testUserIds.userClerkId,
-      },
-    })
-    expect(seedResponse.ok()).toBeTruthy()
+    await seedWithTestUsers(page.request)
 
     await page.goto('/')
     await clerk.signIn({ page, emailAddress: 'author@example.com' })

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Ffixed `clerk.signIn` timeouts by adding `page.goto('/')` before each call; resolved strict-mode violations from the new Header "Sign in" link in `auth-flow`, `notifications`, and `admin-dashboard` tests; fixed `post-management` and `revision-tracking` seeds to pass real Clerk IDs (prevents `UNIQUE constraint` errors from auth middleware user auto-creation); switched spam-prevention test to `admin@example.com` to avoid rate-limit contamination from the preceding rate-limit test
+- Fixed `clerk.signIn` timeouts by adding `page.goto('/')` before each call; resolved strict-mode violations from the new Header "Sign in" link in `auth-flow`, `notifications`, and `admin-dashboard` tests; fixed `post-management` and `revision-tracking` seeds to pass real Clerk IDs (prevents `UNIQUE constraint` errors from auth middleware user auto-creation); switched spam-prevention test to `admin@example.com` to avoid rate-limit contamination from the preceding rate-limit test
 
 - Mocked `@clerk/clerk-react` globally in `tests/setup.ts` so unit tests rendering via `test-utils` no longer throw when `useUser()`/`useAuth()` are called outside a real `ClerkProvider`; fixes 9 `Unsubscribe` test regressions
 

@@ -1,6 +1,6 @@
 import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
-import { testUserIds } from '../fixtures/test-user-ids'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 
 const BACKEND = 'http://localhost:5555'
 
@@ -15,14 +15,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('Comments - Frontend UI', () => {
   test.beforeAll(async ({ request }) => {
-    const res = await request.post(`${BACKEND}/api/test/seed`, {
-      data: {
-        author_clerk_id: testUserIds.authorClerkId,
-        admin_clerk_id: testUserIds.adminClerkId,
-        user_clerk_id: testUserIds.userClerkId,
-      },
-    })
-    expect(res.ok()).toBeTruthy()
+    await seedWithTestUsers(request)
   })
 
   test.afterAll(async ({ request }) => {

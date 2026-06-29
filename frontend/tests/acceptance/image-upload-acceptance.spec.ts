@@ -12,7 +12,7 @@
 import * as http from 'node:http'
 import { clerk } from '@clerk/testing/playwright'
 import { type APIRequestContext, expect, test } from '@playwright/test'
-import { testUserIds } from '../fixtures/test-user-ids'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 import { waitForAuthToLoad } from './fixtures/helpers'
 
 /**
@@ -52,11 +52,16 @@ async function getClerkToken(
   try {
     await page.goto('/')
     await clerk.signIn({ page, emailAddress })
-    const token = await page.evaluate(() =>
-      (
-        window as unknown as { Clerk?: { session?: { getToken(): Promise<string> } } }
-      ).Clerk?.session?.getToken()
-    )
+    await waitForAuthToLoad(page)
+    const token = await page.evaluate(async () => {
+      const c = (
+        window as unknown as {
+          Clerk?: { session?: { getToken(): Promise<string | null | undefined> } }
+        }
+      ).Clerk
+      if (!c?.session?.getToken) return null
+      return c.session.getToken()
+    })
     if (!token) throw new Error(`Failed to get Clerk session token for ${emailAddress}`)
     return token
   } finally {
@@ -90,17 +95,12 @@ let otherToken: string
 
 test.describe('Image Upload Acceptance Tests', () => {
   test.beforeAll(async ({ browser, request }) => {
-    const res = await request.post(`${BACKEND}/api/test/seed`, {
-      data: {
-        author_clerk_id: testUserIds.authorClerkId,
-        admin_clerk_id: testUserIds.adminClerkId,
-        user_clerk_id: testUserIds.userClerkId,
-      },
-    })
-    expect(res.ok()).toBeTruthy()
+    await seedWithTestUsers(request)
 
-    authorToken = await getClerkToken(browser, 'author@example.com')
-    otherToken = await getClerkToken(browser, 'user@example.com')
+    ;[authorToken, otherToken] = await Promise.all([
+      getClerkToken(browser, 'author@example.com'),
+      getClerkToken(browser, 'user@example.com'),
+    ])
   })
 
   test.afterAll(async ({ request }) => {

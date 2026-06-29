@@ -1,5 +1,6 @@
 import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 import { testUserIds } from '../fixtures/test-user-ids'
 import { waitForAuthToLoad } from './fixtures/helpers'
 
@@ -58,14 +59,7 @@ test.describe('Notifications E2E', () => {
   test.describe.configure({ mode: 'serial' })
 
   test.beforeEach(async ({ page }) => {
-    const seedResponse = await page.request.post(`${BACKEND}/api/test/seed`, {
-      data: {
-        author_clerk_id: testUserIds.authorClerkId,
-        admin_clerk_id: testUserIds.adminClerkId,
-        user_clerk_id: testUserIds.userClerkId,
-      },
-    })
-    expect(seedResponse.ok()).toBeTruthy()
+    await seedWithTestUsers(page.request)
 
     await page.goto('/')
     await clerk.signIn({ page, emailAddress: 'user@example.com' })

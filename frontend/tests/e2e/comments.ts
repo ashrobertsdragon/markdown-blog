@@ -1,7 +1,7 @@
 import { clerk } from '@clerk/testing/playwright'
 import { expect, test } from '@playwright/test'
 import { waitForAuthToLoad } from '../acceptance/fixtures/helpers'
-import { testUserIds } from '../fixtures/test-user-ids'
+import { seedWithTestUsers } from '../fixtures/seed-helpers'
 import { waitForApiCall } from './fixtures/helpers'
 
 const POST_URL = '/posts/pub-1'
@@ -23,14 +23,7 @@ test.describe('Comments E2E Tests', () => {
   // beforeEach reseeds the database and resets rate limiter counters.
   // Rate limiting is user-scoped, so the test user starts fresh each test.
   test.beforeEach(async ({ page }) => {
-    const response = await page.request.post('http://localhost:5555/api/test/seed', {
-      data: {
-        author_clerk_id: testUserIds.authorClerkId,
-        admin_clerk_id: testUserIds.adminClerkId,
-        user_clerk_id: testUserIds.userClerkId,
-      },
-    })
-    expect(response.ok()).toBeTruthy()
+    await seedWithTestUsers(page.request)
 
     await page.goto('/')
     await clerk.signIn({ page, emailAddress: 'user@example.com' })
