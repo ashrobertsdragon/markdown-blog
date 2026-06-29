@@ -33,13 +33,22 @@ function formatUptime(seconds: number): string {
 function statusColour(status: HealthStatus): { badge: string; dot: string } {
   switch (status) {
     case 'healthy':
-      return { badge: 'text-green-700 bg-green-100', dot: 'bg-green-500' }
+      return {
+        badge: 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-950',
+        dot: 'bg-green-500',
+      }
     case 'degraded':
-      return { badge: 'text-yellow-700 bg-yellow-100', dot: 'bg-yellow-500' }
+      return {
+        badge: 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-950',
+        dot: 'bg-yellow-500',
+      }
     case 'unhealthy':
-      return { badge: 'text-red-700 bg-red-100', dot: 'bg-red-500' }
+      return {
+        badge: 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-950',
+        dot: 'bg-red-500',
+      }
     default:
-      return { badge: 'text-gray-700 bg-gray-100', dot: 'bg-gray-400' }
+      return { badge: 'text-foreground bg-muted', dot: 'bg-muted-foreground' }
   }
 }
 
@@ -72,7 +81,7 @@ function StatusCard({ title, status, testId }: StatusCardProps): React.ReactElem
   const colours = statusColour(status)
   return (
     <div data-testid={testId} className="rounded-lg border p-4 flex flex-col gap-2">
-      <span className="text-sm font-medium text-gray-600">{title}</span>
+      <span className="text-sm font-medium text-muted-foreground">{title}</span>
       <div className="flex items-center gap-2">
         <span className={`inline-block w-2.5 h-2.5 rounded-full ${colours.dot}`} />
         <span className={`text-sm font-semibold px-2 py-0.5 rounded ${colours.badge}`}>
@@ -114,7 +123,7 @@ export function HealthMetrics(): React.ReactElement {
         <StatusCard title="Filesystem" status={data.filesystem} />
         <StatusCard title="GitHub" status={data.github_api} />
       </div>
-      <div className="rounded-lg border p-4 flex items-center gap-2 text-sm text-gray-700">
+      <div className="rounded-lg border p-4 flex items-center gap-2 text-sm text-foreground">
         <span className="font-medium">Uptime:</span>
         <span>{formatUptime(data.uptime_seconds)}</span>
       </div>

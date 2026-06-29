@@ -30,10 +30,10 @@ export function EmptyState({ title, message, action, icon, className }: EmptySta
     <div
       className={cn('flex flex-col items-center justify-center gap-4 py-12 text-center', className)}
     >
-      {icon && <div className="text-gray-400">{icon}</div>}
+      {icon && <div className="text-muted-foreground">{icon}</div>}
       <div>
-        <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
-        {message && <p className="mt-2 text-sm text-gray-600">{message}</p>}
+        <h3 className="text-xl font-semibold text-foreground">{title}</h3>
+        {message && <p className="mt-2 text-sm text-muted-foreground">{message}</p>}
       </div>
       {action && (
         <Button onClick={action.onClick} variant="default">

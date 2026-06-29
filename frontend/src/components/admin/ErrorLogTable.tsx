@@ -1,6 +1,15 @@
 import { format } from 'date-fns'
 import type React from 'react'
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useErrorLogs } from '@/hooks/admin/useSystemHealth'
 import type { ErrorLogLevel } from '@/services/admin/adminApi'
 
@@ -23,15 +32,13 @@ interface ErrorLogTableProps {
 function levelColour(level: ErrorLogLevel): string {
   switch (level) {
     case 'error':
-      return 'text-red-700 bg-red-100'
+      return 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-950'
     case 'warning':
-      return 'text-yellow-700 bg-yellow-100'
+      return 'text-yellow-700 bg-yellow-100 dark:text-yellow-300 dark:bg-yellow-950'
     case 'info':
-      return 'text-blue-700 bg-blue-100'
-    case 'debug':
-      return 'text-gray-700 bg-gray-100'
+      return 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-950'
     default:
-      return 'text-gray-700 bg-gray-100'
+      return 'text-muted-foreground bg-muted'
   }
 }
 
@@ -111,71 +118,64 @@ export function ErrorLogTable({ limit }: ErrorLogTableProps): React.ReactElement
 
   return (
     <div data-testid="error-log">
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Timestamp
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Level
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Message
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Context
-            </th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead scope="col">Timestamp</TableHead>
+            <TableHead scope="col">Level</TableHead>
+            <TableHead scope="col">Message</TableHead>
+            <TableHead scope="col">Context</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {errors.map(entry => {
             const isExpanded = expandedIds.has(entry.id)
             const hasContext = Object.keys(entry.context).length > 0
             const shortMessage = entry.message.slice(0, 60)
             // align-top prevents cell misalignment when the context panel is expanded
             return (
-              <tr key={entry.id} className="border-b hover:bg-gray-50 align-top">
-                <td className="px-4 py-2 whitespace-nowrap text-gray-600">
+              <TableRow key={entry.id} className="align-top">
+                <TableCell className="whitespace-nowrap text-muted-foreground">
                   {formatTimestamp(entry.timestamp)}
-                </td>
-                <td className="px-4 py-2">
+                </TableCell>
+                <TableCell>
                   <span
                     className={`inline-block text-xs font-semibold px-2 py-0.5 rounded ${levelColour(entry.level)}`}
                   >
                     {entry.level}
                   </span>
-                </td>
-                <td className="px-4 py-2">{entry.message}</td>
-                <td className="px-4 py-2">
+                </TableCell>
+                <TableCell>{entry.message}</TableCell>
+                <TableCell>
                   {hasContext && (
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
+                      size="sm"
                       aria-label={
                         isExpanded
                           ? `Collapse context for: ${shortMessage}`
                           : `Expand context for: ${shortMessage}`
                       }
                       onClick={() => setExpandedIds(prev => toggleId(prev, entry.id))}
-                      className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-700"
                     >
                       {isExpanded ? 'Collapse' : 'Expand'}
-                    </button>
+                    </Button>
                   )}
                   {isExpanded && hasContext && (
                     <figure className="mt-2">
                       <figcaption className="sr-only">Error context details</figcaption>
-                      <pre className="text-xs bg-gray-50 rounded p-2 overflow-auto max-w-xs whitespace-pre-wrap">
+                      <pre className="text-xs bg-muted rounded p-2 overflow-auto max-w-xs whitespace-pre-wrap">
                         {safeStringify(entry.context)}
                       </pre>
                     </figure>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

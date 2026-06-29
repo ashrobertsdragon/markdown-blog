@@ -201,14 +201,14 @@ describe('RoleEditModal', () => {
       expect(onClose).toHaveBeenCalledOnce()
     })
 
-    it('calls onClose when the backdrop is clicked', async () => {
+    it('calls onClose when the dialog close button is clicked', async () => {
       const user = createMockUser()
       const onClose = vi.fn()
 
       renderWithQueryClient(<RoleEditModal user={user} onClose={onClose} />)
 
-      const backdrop = screen.getByTestId('role-edit-modal-backdrop')
-      await userEvent.click(backdrop)
+      const closeButton = screen.getByRole('button', { name: /close/i })
+      await userEvent.click(closeButton)
 
       expect(onClose).toHaveBeenCalledOnce()
     })

@@ -31,14 +31,14 @@ export function RevisionDetail({
         className="space-y-6 animate-pulse"
       >
         <div className="space-y-3">
-          <div className="h-8 bg-gray-200 rounded w-3/4" />
-          <div className="h-4 bg-gray-200 rounded w-full" />
-          <div className="h-4 bg-gray-200 rounded w-5/6" />
+          <div className="h-8 bg-muted rounded w-3/4" />
+          <div className="h-4 bg-muted rounded w-full" />
+          <div className="h-4 bg-muted rounded w-5/6" />
         </div>
         <div className="space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-full" />
-          <div className="h-4 bg-gray-200 rounded w-full" />
-          <div className="h-4 bg-gray-200 rounded w-4/5" />
+          <div className="h-4 bg-muted rounded w-full" />
+          <div className="h-4 bg-muted rounded w-full" />
+          <div className="h-4 bg-muted rounded w-4/5" />
         </div>
       </div>
     )
@@ -49,10 +49,10 @@ export function RevisionDetail({
       <div
         data-testid="revision-detail-error"
         aria-live="assertive"
-        className="p-6 bg-red-50 border border-red-200 rounded-lg"
+        className="p-6 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg"
       >
-        <p className="text-red-800 font-medium text-lg">Failed to load revision</p>
-        <p className="text-red-600 mt-2">{error?.message || 'Unknown error occurred'}</p>
+        <p className="text-destructive font-medium text-lg">Failed to load revision</p>
+        <p className="text-destructive mt-2">{error?.message || 'Unknown error occurred'}</p>
       </div>
     )
   }
@@ -67,16 +67,16 @@ export function RevisionDetail({
       data-testid="revision-detail"
       className="revision-detail space-y-6"
     >
-      <header className="border-b border-gray-200 pb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">{data.commit_message}</h2>
+      <header className="border-b border-border pb-6">
+        <h2 className="text-2xl font-bold text-foreground mb-4">{data.commit_message}</h2>
 
         <div className="metadata space-y-2">
           <div className="flex items-center gap-4 flex-wrap text-sm">
-            <span className="text-gray-700">
+            <span className="text-foreground">
               <span className="font-medium">Author ID:</span> {data.author_id}
             </span>
-            <span className="text-gray-400">•</span>
-            <span className="text-gray-700">
+            <span className="text-muted-foreground">•</span>
+            <span className="text-foreground">
               <span className="font-medium">Date:</span> {new Date(data.timestamp).toLocaleString()}
             </span>
           </div>
@@ -85,7 +85,7 @@ export function RevisionDetail({
             <code
               data-testid="revision-detail-sha"
               title={data.commit_sha}
-              className="text-sm font-mono px-2 py-1 bg-gray-100 rounded text-gray-800"
+              className="text-sm font-mono px-2 py-1 bg-muted rounded text-foreground"
             >
               {data.short_sha}
             </code>
@@ -93,7 +93,7 @@ export function RevisionDetail({
             {data.is_current && (
               <span
                 data-testid="revision-detail-current-badge"
-                className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300"
               >
                 ⭐ Current
               </span>
@@ -118,7 +118,7 @@ export function RevisionDetail({
       />
 
       {isAuthor && (
-        <div className="pt-6 border-t border-gray-200">
+        <div className="pt-6 border-t border-border">
           <RevertButton
             slug={slug}
             targetSha={data.commit_sha}

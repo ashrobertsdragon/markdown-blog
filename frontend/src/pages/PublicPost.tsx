@@ -57,10 +57,10 @@ export default function PublicPost() {
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <article>
         <header className="mb-8">
-          <h1 className="mb-4 text-4xl font-bold text-gray-900" data-testid="post-title">
+          <h1 className="mb-4 text-4xl font-bold text-foreground" data-testid="post-title">
             {post.title}
           </h1>
-          <div className="text-sm text-gray-600" data-testid="post-metadata">
+          <div className="text-sm text-muted-foreground" data-testid="post-metadata">
             <span data-testid="post-author">By {post.author}</span>
             <span className="mx-2">•</span>
             <time dateTime={post.published_at} data-testid="published-date">

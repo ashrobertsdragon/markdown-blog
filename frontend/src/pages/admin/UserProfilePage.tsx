@@ -44,8 +44,8 @@ export default function UserProfilePage() {
   if (!isValidId) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">User Profile</h1>
-        <p className="text-gray-500">Invalid user ID</p>
+        <h1 className="text-2xl font-semibold text-foreground mb-6">User Profile</h1>
+        <p className="text-muted-foreground">Invalid user ID</p>
       </div>
     )
   }
@@ -53,8 +53,8 @@ export default function UserProfilePage() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">User Profile</h1>
-        <output className="text-gray-500">Loading activity…</output>
+        <h1 className="text-2xl font-semibold text-foreground mb-6">User Profile</h1>
+        <output className="text-muted-foreground">Loading activity…</output>
       </div>
     )
   }
@@ -62,8 +62,8 @@ export default function UserProfilePage() {
   if ((!stateUser && isUserError) || isActivityError) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">User Profile</h1>
-        <p className="text-red-600">Failed to load user data</p>
+        <h1 className="text-2xl font-semibold text-foreground mb-6">User Profile</h1>
+        <p className="text-destructive">Failed to load user data</p>
       </div>
     )
   }
@@ -71,65 +71,65 @@ export default function UserProfilePage() {
   if (!user) {
     return (
       <div className="p-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">User Profile</h1>
-        <p className="text-gray-500">User not found</p>
+        <h1 className="text-2xl font-semibold text-foreground mb-6">User Profile</h1>
+        <p className="text-muted-foreground">User not found</p>
       </div>
     )
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">User Profile</h1>
+      <h1 className="text-2xl font-semibold text-foreground mb-6">User Profile</h1>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">User Details</h2>
+      <div className="bg-card rounded-lg border border-border p-6 mb-6">
+        <h2 className="text-lg font-medium text-foreground mb-4">User Details</h2>
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Email</dt>
-            <dd className="text-sm text-gray-900">{user.email}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Email</dt>
+            <dd className="text-sm text-foreground">{user.email}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Role</dt>
-            <dd className="text-sm text-gray-900">{user.role}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Role</dt>
+            <dd className="text-sm text-foreground">{user.role}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Joined</dt>
-            <dd className="text-sm text-gray-900">{formatDate(user.created_at)}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Joined</dt>
+            <dd className="text-sm text-foreground">{formatDate(user.created_at)}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Last Login</dt>
-            <dd className="text-sm text-gray-900">{formatDate(activity?.last_login ?? null)}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Last Login</dt>
+            <dd className="text-sm text-foreground">{formatDate(activity?.last_login ?? null)}</dd>
           </div>
         </dl>
       </div>
 
       <div data-testid="user-activity" className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm font-medium text-gray-500">Posts</p>
-          <p className="text-2xl font-semibold text-gray-900">{activity?.post_count}</p>
+        <div className="bg-card rounded-lg border border-border p-4">
+          <p className="text-sm font-medium text-muted-foreground">Posts</p>
+          <p className="text-2xl font-semibold text-foreground">{activity?.post_count}</p>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <p className="text-sm font-medium text-gray-500">Comments</p>
-          <p className="text-2xl font-semibold text-gray-900">{activity?.comment_count}</p>
+        <div className="bg-card rounded-lg border border-border p-4">
+          <p className="text-sm font-medium text-muted-foreground">Comments</p>
+          <p className="text-2xl font-semibold text-foreground">{activity?.comment_count}</p>
         </div>
       </div>
 
-      <div data-testid="user-posts" className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+      <div data-testid="user-posts" className="bg-card rounded-lg border border-border p-6 mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-medium text-gray-900">Recent Posts</h2>
+          <h2 className="text-lg font-medium text-foreground">Recent Posts</h2>
           <Link
             to="/admin/content"
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="text-sm text-primary hover:text-primary/80 font-medium"
           >
             View Posts
           </Link>
         </div>
         {activity?.recent_posts.length === 0 ? (
-          <p className="text-sm text-gray-500">No recent posts</p>
+          <p className="text-sm text-muted-foreground">No recent posts</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-border">
             {activity?.recent_posts.map(post => (
-              <li key={post.id} className="py-2 text-sm text-gray-900">
+              <li key={post.id} className="py-2 text-sm text-foreground">
                 {post.title}
               </li>
             ))}
@@ -137,22 +137,22 @@ export default function UserProfilePage() {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-card rounded-lg border border-border p-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-medium text-gray-900">Recent Comments</h2>
+          <h2 className="text-lg font-medium text-foreground">Recent Comments</h2>
           <Link
             to="/admin/content"
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="text-sm text-primary hover:text-primary/80 font-medium"
           >
             View Comments
           </Link>
         </div>
         {activity?.recent_comments.length === 0 ? (
-          <p className="text-sm text-gray-500">No recent comments</p>
+          <p className="text-sm text-muted-foreground">No recent comments</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-border">
             {activity?.recent_comments.map(comment => (
-              <li key={comment.id} className="py-2 text-sm text-gray-900">
+              <li key={comment.id} className="py-2 text-sm text-foreground">
                 {comment.text}
               </li>
             ))}

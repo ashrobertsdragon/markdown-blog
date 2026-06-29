@@ -31,34 +31,37 @@ export function DiffViewer({ diffLines, isLoading, error }: DiffViewerProps) {
   if (isLoading) {
     return (
       <output className="flex items-center justify-center p-8">
-        <div className="text-gray-600">Loading diff...</div>
+        <div className="text-muted-foreground">Loading diff...</div>
       </output>
     )
   }
 
   if (error) {
     return (
-      <div role="alert" className="rounded border border-red-200 bg-red-50 p-4 text-red-700">
+      <div
+        role="alert"
+        className="rounded border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300"
+      >
         {error}
       </div>
     )
   }
 
   if (diffLines.length === 0) {
-    return <div className="p-8 text-center text-gray-500">No changes detected</div>
+    return <div className="p-8 text-center text-muted-foreground">No changes detected</div>
   }
 
   return (
     <section data-testid="diff-viewer" aria-label="Diff viewer" className="font-mono text-sm">
-      <div className="space-y-0 border border-gray-200 bg-white">
+      <div className="space-y-0 border border-border bg-card">
         {diffLines.map((line, index) => {
           const displayNumber = line.line_number_new ?? line.line_number_old ?? index + 1
           const bgColor =
             line.type === 'addition'
-              ? 'bg-green-100'
+              ? 'bg-green-100 dark:bg-green-950/40'
               : line.type === 'deletion'
-                ? 'bg-red-100'
-                : 'bg-gray-50'
+                ? 'bg-red-100 dark:bg-red-950/40'
+                : 'bg-gray-50 dark:bg-muted/40'
           const prefix = line.type === 'addition' ? '+' : line.type === 'deletion' ? '-' : ' '
 
           return (
@@ -67,7 +70,7 @@ export function DiffViewer({ diffLines, isLoading, error }: DiffViewerProps) {
               data-testid={`diff-line-${line.type}-${displayNumber}`}
               className={`${bgColor} flex whitespace-pre`}
             >
-              <span className="w-12 select-none bg-gray-100 px-2 py-1 text-right text-gray-500">
+              <span className="w-12 select-none bg-muted px-2 py-1 text-right text-muted-foreground">
                 {displayNumber}
               </span>
               <span className="px-2 py-1">
@@ -82,7 +85,7 @@ export function DiffViewer({ diffLines, isLoading, error }: DiffViewerProps) {
         type="button"
         onClick={handleCopy}
         aria-label="Copy diff to clipboard"
-        className="mt-4 rounded bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200"
+        className="mt-4 rounded bg-muted px-4 py-2 text-sm hover:bg-accent"
       >
         {copyFeedback || 'Copy'}
       </button>

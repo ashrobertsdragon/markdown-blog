@@ -187,7 +187,7 @@ describe('UserTable', () => {
       renderWithQueryClient(<UserTable onEditRole={mockCallback} page={1} limit={50} />)
 
       const adminBadge = screen.getByText(/admin/i)
-      expect(adminBadge).toHaveClass(/red|danger|bg-red/i)
+      expect(adminBadge).toHaveClass(/destructive|red|danger/i)
     })
 
     it('should_apply_gray_styling_to_authenticated_role_badge', () => {
@@ -203,7 +203,7 @@ describe('UserTable', () => {
       renderWithQueryClient(<UserTable onEditRole={mockCallback} page={1} limit={50} />)
 
       const authBadge = screen.getByText(/authenticated/i)
-      expect(authBadge).toHaveClass(/gray|slate|bg-gray|bg-slate/i)
+      expect(authBadge).toHaveClass(/secondary|gray|slate/i)
     })
   })
 

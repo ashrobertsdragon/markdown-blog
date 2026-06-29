@@ -6,8 +6,8 @@ import { ImageUploadButton } from '@/components/admin/ImageUploadButton'
 import { useImageUpload } from '@/hooks/useImageUpload'
 
 vi.mock('@/hooks/useImageUpload')
-vi.mock('react-hot-toast', () => ({
-  default: {
+vi.mock('sonner', () => ({
+  toast: {
     success: vi.fn(),
     error: vi.fn(),
   },
@@ -82,7 +82,7 @@ describe('ImageUploadButton', () => {
   })
 
   it('shows error toast and does not call onInsert when upload fails', async () => {
-    const { default: toast } = await import('react-hot-toast')
+    const { toast } = await import('sonner')
     const onInsert = vi.fn()
     mockUploadImage.mockRejectedValue(new Error('Network error'))
 

@@ -64,27 +64,27 @@ export function ReplyForm({ parentComment, postSlug, onCancel }: ReplyFormProps)
         className="w-full p-2 border rounded text-sm"
         rows={3}
       />
-      <span className="text-xs text-gray-500">
+      <span className="text-xs text-muted-foreground">
         {charCount} / {MAX_LENGTH - parentMention.length}
       </span>
       <div className="flex gap-2 mt-2">
         <button
           type="submit"
           disabled={isDisabled}
-          className="px-3 py-1 bg-blue-600 text-white rounded text-sm disabled:opacity-50"
+          className="px-3 py-1 bg-primary text-primary-foreground rounded text-sm disabled:opacity-50"
         >
           Post Reply
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-3 py-1 bg-gray-300 text-gray-800 rounded text-sm hover:bg-gray-400"
+          className="px-3 py-1 bg-secondary text-secondary-foreground rounded text-sm hover:bg-secondary/80"
         >
           Cancel
         </button>
       </div>
       {mutation.isError && (
-        <p role="alert" className="text-red-600 text-sm mt-2">
+        <p role="alert" className="text-destructive text-sm mt-2">
           {errorMessage}
         </p>
       )}

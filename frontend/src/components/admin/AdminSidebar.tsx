@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react'
 import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
+import ThemeToggle from '@/components/common/ThemeToggle'
 import { cn } from '@/lib/utils'
 
 interface AdminSidebarProps {
@@ -45,7 +46,7 @@ export default function AdminSidebar({ isOpen, onClose, onOpen }: AdminSidebarPr
         aria-expanded={isOpen}
         aria-controls="admin-sidebar"
         onClick={onOpen}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-white border border-gray-200 shadow-sm"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-background border border-border shadow-sm"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -55,8 +56,10 @@ export default function AdminSidebar({ isOpen, onClose, onOpen }: AdminSidebarPr
         aria-hidden={!isOpen}
         data-testid="sidebar-backdrop"
         onClick={onClose}
-        style={!isOpen ? { opacity: 0, pointerEvents: 'none' } : undefined}
-        className="fixed inset-0 bg-black/50 z-30 md:hidden"
+        className={cn(
+          'fixed inset-0 bg-black/50 z-30 md:hidden',
+          !isOpen && 'opacity-0 pointer-events-none'
+        )}
       />
 
       <nav
@@ -64,7 +67,7 @@ export default function AdminSidebar({ isOpen, onClose, onOpen }: AdminSidebarPr
         data-testid="admin-sidebar"
         aria-label="Admin"
         className={cn(
-          'fixed top-0 left-0 h-screen w-64 flex flex-col bg-white border-r border-gray-200 z-40',
+          'fixed top-0 left-0 h-screen w-64 flex flex-col bg-card border-r border-border z-40',
           'transition-transform duration-300',
           'md:translate-x-0',
           !isOpen && '-translate-x-full'
@@ -78,8 +81,10 @@ export default function AdminSidebar({ isOpen, onClose, onOpen }: AdminSidebarPr
                 onClick={onClose}
                 className={({ isActive }) =>
                   cn(
-                    'block px-4 py-2 rounded-md text-sm font-medium',
-                    isActive ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                    'block px-4 py-2 rounded-md text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                   )
                 }
               >
@@ -88,6 +93,11 @@ export default function AdminSidebar({ isOpen, onClose, onOpen }: AdminSidebarPr
             </li>
           ))}
         </ul>
+
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-border p-4 text-sm text-muted-foreground">
+          <span>Theme</span>
+          <ThemeToggle />
+        </div>
       </nav>
     </>
   )

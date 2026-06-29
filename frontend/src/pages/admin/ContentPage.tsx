@@ -11,8 +11,8 @@ const TAB_IDS: Record<Tab, string> = {
 
 function tabClass(tab: Tab, activeTab: Tab): string {
   return tab === activeTab
-    ? 'px-4 py-2 border-b-2 border-blue-600 font-medium text-blue-600'
-    : 'px-4 py-2 text-gray-500 hover:text-gray-700'
+    ? 'px-4 py-2 border-b-2 border-primary font-medium text-primary'
+    : 'px-4 py-2 text-muted-foreground hover:text-foreground'
 }
 
 /**
@@ -25,7 +25,7 @@ export default function ContentPage() {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Content</h1>
-      <div role="tablist" className="flex border-b border-gray-200 mb-6">
+      <div role="tablist" className="flex border-b border-border mb-6">
         <button
           id={TAB_IDS.posts}
           type="button"

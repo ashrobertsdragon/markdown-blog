@@ -27,13 +27,13 @@ class SignInErrorBoundary extends Component<{ children: ReactNode }, { hasError:
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center p-4 text-center">
-          <p className="mb-2 text-sm text-red-600">
+          <p className="mb-2 text-sm text-destructive">
             Something went wrong while loading the sign-in form.
           </p>
           <button
             type="button"
             onClick={this.handleRetry}
-            className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Retry
           </button>
@@ -51,9 +51,9 @@ export default function Login() {
   const redirectUrl = state?.from?.pathname || '/'
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40">
       <div className="w-full max-w-md px-4">
-        <h1 className="mb-6 text-center text-4xl font-bold text-gray-800">
+        <h1 className="mb-6 text-center text-4xl font-bold text-foreground">
           Sign In to Your Account
         </h1>
         <div className="flex justify-center">

@@ -108,7 +108,7 @@ export default function PostEditor() {
 
   if (isEditMode && (error || !draft)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertTitle>Error Loading Draft</AlertTitle>
           <AlertDescription>
@@ -129,13 +129,13 @@ export default function PostEditor() {
         }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-muted/40">
       <div className="mx-auto w-full max-w-7xl p-6">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">{displayDraft.title}</h1>
-            <p className="mt-1 text-sm text-gray-600">
+            <h1 className="text-3xl font-bold text-foreground">{displayDraft.title}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Last updated: {new Date(displayDraft.updated_at).toLocaleString()}
             </p>
           </div>
@@ -195,8 +195,12 @@ export default function PostEditor() {
 
         {/* Success Message */}
         {saveSuccess && (
-          <Alert ref={successAlertRef} tabIndex={-1} className="mb-6 bg-green-50 border-green-200">
-            <AlertDescription className="text-green-800">
+          <Alert
+            ref={successAlertRef}
+            tabIndex={-1}
+            className="mb-6 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900"
+          >
+            <AlertDescription className="text-green-800 dark:text-green-300">
               Draft saved successfully!
             </AlertDescription>
           </Alert>

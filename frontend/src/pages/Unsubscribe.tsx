@@ -84,9 +84,9 @@ export default function Unsubscribe() {
   }, [validationError, userIdParam, tokenParam])
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-      <div className="mx-auto w-full max-w-md rounded-lg bg-white p-8 shadow">
-        <h1 className="mb-6 text-2xl font-semibold text-gray-900">Unsubscribe</h1>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40">
+      <div className="mx-auto w-full max-w-md rounded-lg bg-card p-8 shadow">
+        <h1 className="mb-6 text-2xl font-semibold text-foreground">Unsubscribe</h1>
 
         {validationError && (
           <Alert variant="destructive">

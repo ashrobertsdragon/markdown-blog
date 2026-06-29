@@ -744,33 +744,32 @@ describe('App', () => {
   })
 })
 
-describe('react-hot-toast Toaster configuration', () => {
+describe('Sonner Toaster configuration', () => {
   describe('package availability', () => {
     /**
-     * Verifies that the react-hot-toast package is installed and importable.
+     * Verifies that the sonner package is installed and importable.
      * The package must be present before Toaster can be rendered in App.
      */
-    it('should have react-hot-toast package installed', async () => {
-      const toastModule = await import('react-hot-toast')
+    it('should have sonner package installed', async () => {
+      const toastModule = await import('sonner')
       expect(toastModule).toBeTruthy()
     })
 
     /**
-     * Verifies that Toaster is a named export from react-hot-toast.
+     * Verifies that Toaster is a named export from sonner.
      * App.tsx must import Toaster specifically to render the toast container.
      */
-    it('should export Toaster component from react-hot-toast', async () => {
-      const { Toaster } = await import('react-hot-toast')
+    it('should export Toaster component from sonner', async () => {
+      const { Toaster } = await import('sonner')
       expect(Toaster).toBeDefined()
-      expect(typeof Toaster).toBe('function')
     })
 
     /**
      * Verifies that toast is a named export providing the imperative API.
      * Components throughout the app call toast.success(), toast.error(), etc.
      */
-    it('should export toast API from react-hot-toast', async () => {
-      const { default: toast } = await import('react-hot-toast')
+    it('should export toast API from sonner', async () => {
+      const { toast } = await import('sonner')
       expect(toast).toBeDefined()
       expect(typeof toast).toBe('function')
     })
@@ -782,7 +781,7 @@ describe('react-hot-toast Toaster configuration', () => {
      * Used by mutation success handlers to notify users of completed operations.
      */
     it('should have callable toast.success method', async () => {
-      const { default: toast } = await import('react-hot-toast')
+      const { toast } = await import('sonner')
       expect(typeof toast.success).toBe('function')
       expect(() => toast.success('Operation succeeded')).not.toThrow()
     })
@@ -792,7 +791,7 @@ describe('react-hot-toast Toaster configuration', () => {
      * Used by mutation error handlers to notify users of failed operations.
      */
     it('should have callable toast.error method', async () => {
-      const { default: toast } = await import('react-hot-toast')
+      const { toast } = await import('sonner')
       expect(typeof toast.error).toBe('function')
       expect(() => toast.error('Operation failed')).not.toThrow()
     })
@@ -802,7 +801,7 @@ describe('react-hot-toast Toaster configuration', () => {
      * Used to show pending/success/error states for async operations like API calls.
      */
     it('should have callable toast.promise method', async () => {
-      const { default: toast } = await import('react-hot-toast')
+      const { toast } = await import('sonner')
       expect(typeof toast.promise).toBe('function')
       expect(() =>
         toast.promise(Promise.resolve('done'), {
@@ -830,7 +829,7 @@ describe('react-hot-toast Toaster configuration', () => {
 
     /**
      * Verifies that the Toaster container element is present in the DOM after render.
-     * react-hot-toast renders a portal with a specific aria role for accessibility.
+     * sonner renders a portal with a specific aria role for accessibility.
      * This test FAILS until Toaster is placed in App's component tree.
      */
     it('should render Toaster container element in the DOM', () => {
@@ -905,12 +904,9 @@ describe('react-hot-toast Toaster configuration', () => {
      * TypeScript consumers must be able to type Toaster props without errors.
      * This test validates the type contract exists in the installed package.
      */
-    it('should have importable Toaster component with correct TypeScript signature', async () => {
-      const { Toaster } = await import('react-hot-toast')
-      expect(typeof Toaster).toBe('function')
-
-      const toasterLength = (Toaster as (...args: unknown[]) => unknown).length
-      expect(typeof toasterLength).toBe('number')
+    it('should have importable Toaster component', async () => {
+      const { Toaster } = await import('sonner')
+      expect(Toaster).toBeDefined()
     })
 
     /**
@@ -918,7 +914,7 @@ describe('react-hot-toast Toaster configuration', () => {
      * Callers rely on toast, toast.success, toast.error, toast.promise, toast.dismiss.
      */
     it('should expose complete toast API surface', async () => {
-      const { default: toast } = await import('react-hot-toast')
+      const { toast } = await import('sonner')
       expect(typeof toast).toBe('function')
       expect(typeof toast.success).toBe('function')
       expect(typeof toast.error).toBe('function')

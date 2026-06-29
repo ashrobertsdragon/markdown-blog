@@ -1,6 +1,15 @@
 import type React from 'react'
 import { useState } from 'react'
 import ConfirmModal from '@/components/admin/ConfirmModal'
+import { Button } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useComments, useDeleteComment } from '@/hooks/admin/useComments'
 
 /**
@@ -61,49 +70,40 @@ export function CommentsTable({ page = 1, limit = 50 }: CommentsTableProps): Rea
 
   return (
     <div>
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Content
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Author
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Post
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Date
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead scope="col">Content</TableHead>
+            <TableHead scope="col">Author</TableHead>
+            <TableHead scope="col">Post</TableHead>
+            <TableHead scope="col">Date</TableHead>
+            <TableHead scope="col">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {comments.map(comment => (
-            <tr key={comment.id} className="border-b hover:bg-gray-50">
-              <td className="px-4 py-2 max-w-xs">
+            <TableRow key={comment.id}>
+              <TableCell className="max-w-xs">
                 {comment.text.length > 100 ? `${comment.text.slice(0, 100)}...` : comment.text}
-              </td>
-              <td className="px-4 py-2">{comment.author}</td>
-              <td className="px-4 py-2">{comment.post_title}</td>
-              <td className="px-4 py-2">{formatDate(comment.created_at)}</td>
-              <td className="px-4 py-2">
-                <button
+              </TableCell>
+              <TableCell>{comment.author}</TableCell>
+              <TableCell>{comment.post_title}</TableCell>
+              <TableCell>{formatDate(comment.created_at)}</TableCell>
+              <TableCell>
+                <Button
                   type="button"
+                  variant="destructive"
+                  size="sm"
                   onClick={() => setConfirmCommentId(comment.id)}
-                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                 >
                   Delete
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-      <div className="mt-4 text-sm text-gray-600">
+        </TableBody>
+      </Table>
+      <div className="mt-4 text-sm text-muted-foreground">
         Page {page} of {data?.total_pages || 0} — {data?.total_count || 0} total comments
       </div>
       {confirmCommentId !== null && (
