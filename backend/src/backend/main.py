@@ -243,14 +243,38 @@ def create_app() -> Flask:
         return response
 
     @app.route("/tos")
-    def serve_tos() -> Response:
-        return send_from_directory(str(build_dir), "tos", mimetype="text/plain")
+    def serve_tos() -> Response | tuple[Response, int]:
+        """Serve the Terms of Service plain text file.
+
+        Returns:
+            Plain text TOS file with a one-day cache header, or a 404 JSON
+            response if the file is absent from the build directory.
+        """
+        file_path = build_dir / "tos"
+        if not file_path.is_file():
+            return jsonify({"error": "Terms of Service not found"}), 404
+        response = send_from_directory(
+            str(build_dir), "tos", mimetype="text/plain; charset=utf-8"
+        )
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        return response
 
     @app.route("/privacy")
-    def serve_privacy() -> Response:
-        return send_from_directory(
-            str(build_dir), "privacy", mimetype="text/plain"
+    def serve_privacy() -> Response | tuple[Response, int]:
+        """Serve the Privacy Policy plain text file.
+
+        Returns:
+            Plain text Privacy Policy file with a one-day cache header, or a
+            404 JSON response if the file is absent from the build directory.
+        """
+        file_path = build_dir / "privacy"
+        if not file_path.is_file():
+            return jsonify({"error": "Privacy Policy not found"}), 404
+        response = send_from_directory(
+            str(build_dir), "privacy", mimetype="text/plain; charset=utf-8"
         )
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        return response
 
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
