@@ -1,7 +1,7 @@
 [project]
 name = "backend"
-version = "0.1.0"
-description = "Blog platform with Flask + React"
+version = "0.2.0"
+description = "Ashlynn Antrobus personal blog"
 requires-python = "==3.13.5"
 authors = [{ name = "Ashlynn Antrobus" }]
 dependencies = [

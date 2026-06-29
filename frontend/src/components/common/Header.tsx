@@ -24,13 +24,10 @@ export default function Header() {
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="font-semibold text-foreground">
-          Blog Platform
+          AshlynnAntrobus.dev
         </Link>
 
         <nav className="flex flex-1 items-center gap-4 text-sm">
-          <NavLink to="/" end className={navLinkClass}>
-            Home
-          </NavLink>
           {isAuthorOrAbove && (
             <>
               <NavLink to="/my-posts" className={navLinkClass}>
