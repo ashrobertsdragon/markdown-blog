@@ -3,8 +3,8 @@ name: Frontend PR
 on:
   push:
     paths:
-      - 'frontend/test/e2e/**'
-      - 'frontend/test/acceptance/**'
+      - 'frontend/tests/e2e/**'
+      - 'frontend/tests/acceptance/**'
       - '.github/workflows/frontend-pr.yml'
 
   pull_request:
@@ -25,7 +25,9 @@ jobs:
         node-version: [22.18, 24.6]
 
     env:
-      VITE_CLERK_PUBLISHABLE_KEY: pk_test_123
+      VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+      CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
       ci: true
 
     steps:
