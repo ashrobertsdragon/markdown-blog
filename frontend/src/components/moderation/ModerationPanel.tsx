@@ -25,9 +25,11 @@ function getCommentStatus(comment: CommentResponse): 'pending' | 'deleted' | 'pu
  */
 function StatusBadge({ status }: { status: ReturnType<typeof getCommentStatus> }) {
   const styles = {
-    pending: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-    deleted: 'bg-gray-100 text-gray-600 border border-gray-300',
-    published: 'bg-green-100 text-green-800 border border-green-300',
+    pending:
+      'bg-yellow-100 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-300 border border-yellow-300',
+    deleted: 'bg-muted text-muted-foreground border border-border',
+    published:
+      'bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300 border border-green-300',
   }
 
   const labels = {
@@ -96,7 +98,7 @@ export function ModerationPanel({ postSlug }: ModerationPanelProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           {filtered.length} of {allComments.length} comments
         </p>
         <Button variant="outline" size="sm" onClick={() => downloadCommentsCSV(allComments)}>
@@ -130,7 +132,7 @@ export function ModerationPanel({ postSlug }: ModerationPanelProps) {
 
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b text-left text-xs text-gray-500">
+          <tr className="border-b text-left text-xs text-muted-foreground">
             <th className="pb-2 pr-4">Comment ID</th>
             <th className="pb-2 pr-4">Text</th>
             <th className="pb-2 pr-4">Date</th>

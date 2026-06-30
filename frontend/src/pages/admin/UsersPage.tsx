@@ -15,7 +15,7 @@ export default function UsersPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">Users</h1>
+      <h1 className="text-2xl font-semibold text-foreground mb-6">Users</h1>
 
       <UserTable page={page} limit={LIMIT} onEditRole={user => setSelectedUser(user)} />
 
@@ -24,17 +24,17 @@ export default function UsersPage() {
           type="button"
           disabled={page === 1}
           onClick={() => setPage(p => Math.max(1, p - 1))}
-          className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          className="px-3 py-1 rounded border border-border text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted/40"
         >
           Previous
         </button>
 
-        <span className="text-sm text-gray-700">{page}</span>
+        <span className="text-sm text-foreground">{page}</span>
 
         <button
           type="button"
           onClick={() => setPage(p => p + 1)}
-          className="px-3 py-1 rounded border border-gray-300 text-sm hover:bg-gray-50"
+          className="px-3 py-1 rounded border border-border text-sm hover:bg-muted/40"
         >
           Next
         </button>

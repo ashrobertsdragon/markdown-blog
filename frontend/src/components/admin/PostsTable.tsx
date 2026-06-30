@@ -1,7 +1,17 @@
 import type React from 'react'
 import { useState } from 'react'
 import ConfirmModal from '@/components/admin/ConfirmModal'
+import { Button, buttonVariants } from '@/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { usePosts, useUnpublishPost } from '@/hooks/admin/usePosts'
+import { cn } from '@/lib/utils'
 
 /**
  * Props for PostsTable.
@@ -70,51 +80,44 @@ export function PostsTable({ page = 1, limit = 50 }: PostsTableProps): React.Rea
 
   return (
     <div>
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Title
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Author
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Published
-            </th>
-            <th scope="col" className="border-b px-4 py-2 text-left font-semibold">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead scope="col">Title</TableHead>
+            <TableHead scope="col">Author</TableHead>
+            <TableHead scope="col">Published</TableHead>
+            <TableHead scope="col">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {posts.map(post => (
-            <tr key={post.id} className="border-b hover:bg-gray-50">
-              <td className="px-4 py-2">{post.title}</td>
-              <td className="px-4 py-2">{post.author}</td>
-              <td className="px-4 py-2">{formatDate(post.published_at)}</td>
-              <td className="px-4 py-2 flex gap-2">
+            <TableRow key={post.id}>
+              <TableCell>{post.title}</TableCell>
+              <TableCell>{post.author}</TableCell>
+              <TableCell>{formatDate(post.published_at)}</TableCell>
+              <TableCell className="flex gap-2">
                 <a
                   href={safeBlogHref(post.slug)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200"
+                  className={cn(buttonVariants({ variant: 'secondary', size: 'sm' }))}
                 >
                   View
                 </a>
-                <button
+                <Button
                   type="button"
+                  variant="destructive"
+                  size="sm"
                   onClick={() => setConfirmPostId(post.id)}
-                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
                 >
                   Unpublish
-                </button>
-              </td>
-            </tr>
+                </Button>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
-      <div className="mt-4 text-sm text-gray-600">
+        </TableBody>
+      </Table>
+      <div className="mt-4 text-sm text-muted-foreground">
         Page {page} of {data?.total_pages || 0} — {data?.total_count || 0} total posts
       </div>
       {confirmPostId !== null && (

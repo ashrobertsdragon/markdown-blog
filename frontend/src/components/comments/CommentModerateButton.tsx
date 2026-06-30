@@ -45,7 +45,7 @@ export function CommentModerateButton({ commentId, onModerated }: CommentModerat
         size="sm"
         disabled={isPending}
         onClick={handleApprove}
-        className="border-green-500 text-green-700 hover:bg-green-50"
+        className="border-green-500 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
       >
         Approve
       </Button>

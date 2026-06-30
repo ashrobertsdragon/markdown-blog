@@ -24,7 +24,7 @@ export default function RevisionDetailPage() {
       error?.message?.includes('403')
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
@@ -38,20 +38,20 @@ export default function RevisionDetailPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-muted/40">
       <div className="mx-auto w-full max-w-4xl p-6">
         <div className="mb-6">
           <Button
             variant="ghost"
             onClick={() => navigate(`/posts/${slug}/revisions`)}
-            className="mb-4 -ml-2 text-gray-600 hover:text-gray-900"
+            className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to History
           </Button>
-          <h1 className="text-3xl font-bold text-gray-800">Revision Detail</h1>
-          <p className="mt-2 text-gray-600">
-            Post: <span className="font-semibold text-gray-900">{draft.title}</span>
+          <h1 className="text-3xl font-bold text-foreground">Revision Detail</h1>
+          <p className="mt-2 text-muted-foreground">
+            Post: <span className="font-semibold text-foreground">{draft.title}</span>
           </p>
         </div>
 

@@ -149,7 +149,7 @@ export function PostForm({ onSubmit, initialValues, onChange, className }: PostF
   return (
     <form onSubmit={handleSubmit} data-testid="post-form" className={cn('space-y-6', className)}>
       <div className="space-y-2">
-        <label htmlFor="post-form-slug" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="post-form-slug" className="block text-sm font-medium text-foreground">
           Slug
         </label>
         <input
@@ -161,19 +161,24 @@ export function PostForm({ onSubmit, initialValues, onChange, className }: PostF
           aria-invalid={showSlugError ? 'true' : 'false'}
           aria-describedby={showSlugError ? 'slug-error' : undefined}
           className={cn(
-            'w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500',
-            showSlugError && 'border-red-500 focus:border-red-500 focus:ring-red-500'
+            'w-full rounded-md border border-border px-3 py-2 shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring',
+            showSlugError && 'border-destructive focus:border-destructive focus:ring-destructive'
           )}
         />
         {showSlugError && (
-          <p id="slug-error" data-testid="slug-error" className="text-sm text-red-600" role="alert">
+          <p
+            id="slug-error"
+            data-testid="slug-error"
+            className="text-sm text-destructive"
+            role="alert"
+          >
             {errors.slug}
           </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="post-form-title" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="post-form-title" className="block text-sm font-medium text-foreground">
           Title
         </label>
         <input
@@ -185,15 +190,15 @@ export function PostForm({ onSubmit, initialValues, onChange, className }: PostF
           aria-invalid={showTitleError ? 'true' : 'false'}
           aria-describedby={showTitleError ? 'title-error' : undefined}
           className={cn(
-            'w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500',
-            showTitleError && 'border-red-500 focus:border-red-500 focus:ring-red-500'
+            'w-full rounded-md border border-border px-3 py-2 shadow-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring',
+            showTitleError && 'border-destructive focus:border-destructive focus:ring-destructive'
           )}
         />
         {showTitleError && (
           <p
             id="title-error"
             data-testid="title-error"
-            className="text-sm text-red-600"
+            className="text-sm text-destructive"
             role="alert"
           >
             {errors.title}
@@ -206,8 +211,8 @@ export function PostForm({ onSubmit, initialValues, onChange, className }: PostF
         data-testid="post-form-submit"
         disabled={!isValid}
         className={cn(
-          'rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-          isValid ? 'hover:bg-blue-700' : 'cursor-not-allowed opacity-50'
+          'rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          isValid ? 'hover:bg-primary/90' : 'cursor-not-allowed opacity-50'
         )}
       >
         Create Post

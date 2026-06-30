@@ -23,7 +23,7 @@ export default function RevisionHistory() {
       error?.message?.includes('403')
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
@@ -41,13 +41,13 @@ export default function RevisionHistory() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-muted/40">
       <div className="mx-auto w-full max-w-3xl p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Revision History</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-foreground">Revision History</h1>
+          <p className="mt-2 text-muted-foreground">
             Viewing revisions for:{' '}
-            <span className="font-semibold text-gray-900">{draft.title}</span>
+            <span className="font-semibold text-foreground">{draft.title}</span>
           </p>
         </div>
 

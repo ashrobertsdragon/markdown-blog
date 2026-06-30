@@ -1,5 +1,6 @@
 import { UserButton } from '@clerk/clerk-react'
 import { Link, NavLink } from 'react-router-dom'
+import ThemeToggle from '@/components/common/ThemeToggle'
 import { useAuth } from '@/hooks/useAuth'
 
 /**
@@ -22,30 +23,32 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="font-semibold text-foreground">
           AshlynnAntrobus.dev
         </Link>
 
-        <nav className="flex flex-1 items-center gap-4 text-sm">
-          {isAuthorOrAbove && (
-            <>
-              <NavLink to="/my-posts" className={navLinkClass}>
-                My Posts
+        <div className="flex items-center gap-4">
+          <nav className="flex items-center gap-4 text-sm">
+            {isAuthorOrAbove && (
+              <>
+                <NavLink to="/my-posts" className={navLinkClass}>
+                  My Posts
+                </NavLink>
+                <NavLink to="/new-post" className={navLinkClass}>
+                  New Post
+                </NavLink>
+              </>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin" className={navLinkClass}>
+                Admin
               </NavLink>
-              <NavLink to="/new-post" className={navLinkClass}>
-                New Post
-              </NavLink>
-            </>
-          )}
-          {isAdmin && (
-            <NavLink to="/admin" className={navLinkClass}>
-              Admin
-            </NavLink>
-          )}
-        </nav>
+            )}
+          </nav>
 
-        <div>
+          <ThemeToggle />
+
           {isSignedIn ? (
             <UserButton afterSignOutUrl="/" />
           ) : (

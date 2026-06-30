@@ -101,13 +101,13 @@ test.describe('Admin Dashboard E2E', () => {
       await expect(page.getByRole('table')).toBeVisible()
 
       await page.getByRole('button', { name: 'Unpublish' }).first().click()
-      await expect(page.getByRole('dialog')).toBeVisible()
-      await expect(page.getByRole('dialog')).toContainText('Unpublish')
+      await expect(page.getByRole('alertdialog')).toBeVisible()
+      await expect(page.getByRole('alertdialog')).toContainText('Unpublish')
 
       const unpublishPromise = waitForApiCall(page, '/admin/posts', 5000)
-      await page.getByRole('dialog').getByRole('button', { name: 'Unpublish' }).click()
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Unpublish' }).click()
       await unpublishPromise
-      await expect(page.getByRole('dialog')).not.toBeVisible()
+      await expect(page.getByRole('alertdialog')).not.toBeVisible()
     })
   })
 
@@ -120,12 +120,12 @@ test.describe('Admin Dashboard E2E', () => {
       await expect(page.getByRole('table')).toBeVisible()
 
       await page.getByRole('button', { name: 'Delete' }).first().click()
-      await expect(page.getByRole('dialog')).toBeVisible()
+      await expect(page.getByRole('alertdialog')).toBeVisible()
 
       const deletePromise = waitForApiCall(page, '/admin/comments', 5000)
-      await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click()
       await deletePromise
-      await expect(page.getByRole('dialog')).not.toBeVisible()
+      await expect(page.getByRole('alertdialog')).not.toBeVisible()
     })
   })
 

@@ -46,12 +46,12 @@ describe('Header', () => {
 
       renderHeader()
 
-      const siteLink = screen.getByRole('link', { name: /blog platform/i })
+      const siteLink = screen.getByRole('link', { name: /ashlynnantrobus\.dev/i })
       expect(siteLink).toBeInTheDocument()
       expect(siteLink).toHaveAttribute('href', '/')
     })
 
-    it('should always show the Home nav link', async () => {
+    it('should link the site name to home in all auth states', async () => {
       const { useAuth } = await import('@/context/AuthContext')
       vi.mocked(useAuth).mockReturnValue({
         isSignedIn: false,
@@ -63,7 +63,10 @@ describe('Header', () => {
 
       renderHeader()
 
-      expect(screen.getByRole('link', { name: /^home$/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /ashlynnantrobus\.dev/i })).toHaveAttribute(
+        'href',
+        '/'
+      )
     })
   })
 

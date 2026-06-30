@@ -82,7 +82,7 @@ export default function MyPosts() {
       : 'Failed to load posts. Please refresh the page.'
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertTitle>Error Loading Posts</AlertTitle>
           <AlertDescription>{userFriendlyError}</AlertDescription>
@@ -93,9 +93,9 @@ export default function MyPosts() {
 
   if (!data || data.posts.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="flex min-h-screen flex-col bg-muted/40">
         <div className="mx-auto w-full max-w-7xl p-6">
-          <h1 className="mb-6 text-3xl font-bold text-gray-800">My Posts</h1>
+          <h1 className="mb-6 text-3xl font-bold text-foreground">My Posts</h1>
 
           {/* Filter Tabs */}
           {/* biome-ignore lint/a11y/useSemanticElements: Using div with role=group for flexbox layout, fieldset would break styling */}
@@ -115,7 +115,7 @@ export default function MyPosts() {
             ))}
           </div>
 
-          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-white">
+          <div className="rounded-lg border-2 border-dashed border-border bg-card">
             <EmptyState
               title="No posts found"
               message="Create your first post to get started!"
@@ -128,10 +128,10 @@ export default function MyPosts() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-muted/40">
       <div className="mx-auto w-full max-w-7xl p-6">
         {/* Header */}
-        <h1 className="mb-6 text-3xl font-bold text-gray-800">My Posts</h1>
+        <h1 className="mb-6 text-3xl font-bold text-foreground">My Posts</h1>
 
         {/* Filter Tabs */}
         {/* biome-ignore lint/a11y/useSemanticElements: Using div with role=group for flexbox layout, fieldset would break styling */}
@@ -160,47 +160,51 @@ export default function MyPosts() {
         )}
 
         {/* Posts Table */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="overflow-hidden rounded-lg border border-border bg-card shadow">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted/40">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Title
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Last Updated
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Slug
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-border bg-card">
               {data.posts.map(post => (
-                <tr key={post.slug} className="hover:bg-gray-50">
+                <tr key={post.slug} className="hover:bg-muted/40">
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{post.title}</div>
+                    <div className="text-sm font-medium text-foreground">{post.title}</div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span
                       className={cn(
                         'inline-flex rounded-full px-2 py-1 text-xs font-semibold leading-5',
-                        post.published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        post.published
+                          ? 'bg-green-100 dark:bg-green-950 text-green-800 dark:text-green-300'
+                          : 'bg-muted text-foreground'
                       )}
                     >
                       {post.published ? 'Published' : 'Draft'}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                     {formatDate(post.updated_at)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{post.slug}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
+                    {post.slug}
+                  </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
                     <div className="flex gap-2">
                       <Button
@@ -240,7 +244,7 @@ export default function MyPosts() {
         {/* Pagination Controls */}
         {data.total_pages > 1 && (
           <nav className="mt-6 flex items-center justify-between" aria-label="Pagination">
-            <div className="text-sm text-gray-700" aria-live="polite" aria-atomic="true">
+            <div className="text-sm text-foreground" aria-live="polite" aria-atomic="true">
               Page {data.page} of {data.total_pages}
             </div>
             <div className="flex gap-2">

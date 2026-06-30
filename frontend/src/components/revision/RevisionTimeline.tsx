@@ -51,8 +51,8 @@ function RevisionItem({ revision, isCurrent, isInteractive, onSelect }: Revision
       className={`
         revision-item
         p-4 border rounded-lg transition-all
-        ${isCurrent ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}
-        ${isInteractive ? 'cursor-pointer hover:border-gray-400 hover:shadow-md' : ''}
+        ${isCurrent ? 'border-primary bg-accent' : 'border-border bg-card'}
+        ${isInteractive ? 'cursor-pointer hover:border-muted-foreground/50 hover:shadow-md' : ''}
       `}
     >
       <div className="flex items-start justify-between gap-4">
@@ -61,14 +61,14 @@ function RevisionItem({ revision, isCurrent, isInteractive, onSelect }: Revision
             <code
               data-testid={`revision-sha-${revision.short_sha}`}
               title={revision.commit_sha}
-              className="text-sm font-mono font-medium text-gray-900"
+              className="text-sm font-mono font-medium text-foreground"
             >
               {revision.short_sha}
             </code>
             {isCurrent && (
               <span
                 data-testid={`revision-current-badge-${revision.short_sha}`}
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300"
               >
                 ⭐ Current
               </span>
@@ -76,14 +76,14 @@ function RevisionItem({ revision, isCurrent, isInteractive, onSelect }: Revision
             {revision.is_revert && (
               <span
                 data-testid={`revision-revert-badge-${revision.short_sha}`}
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800"
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-950 text-yellow-800 dark:text-yellow-300"
               >
                 Revert
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-gray-600 truncate">{revision.commit_message}</p>
-          <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">
+          <p className="mt-1 text-sm text-muted-foreground truncate">{revision.commit_message}</p>
+          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
             <span>User {revision.author_id}</span>
             <span>•</span>
             <span>{revision.relative_time}</span>
@@ -105,7 +105,7 @@ function InitialLoadingSkeleton() {
       className="space-y-4 animate-pulse"
     >
       {[1, 2, 3].map(i => (
-        <div key={i} className="h-20 bg-gray-200 rounded-lg" />
+        <div key={i} className="h-20 bg-muted rounded-lg" />
       ))}
     </div>
   )
@@ -120,10 +120,10 @@ function ErrorState({ error, onRetry }: { error: Error | null; onRetry: () => vo
       role="alert"
       data-testid="revision-timeline-error"
       aria-live="assertive"
-      className="p-4 bg-red-50 border border-red-200 rounded-lg"
+      className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg"
     >
-      <p className="text-red-800 font-medium">Failed to load revisions</p>
-      <p className="text-red-600 text-sm mt-1">
+      <p className="text-destructive font-medium">Failed to load revisions</p>
+      <p className="text-destructive text-sm mt-1">
         {(error as { response?: { data?: { error?: string } } } | null)?.response?.data?.error ??
           error?.message}
       </p>
@@ -131,7 +131,7 @@ function ErrorState({ error, onRetry }: { error: Error | null; onRetry: () => vo
         type="button"
         data-testid="revision-timeline-retry"
         onClick={onRetry}
-        className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+        className="mt-3 px-4 py-2 bg-destructive text-white rounded hover:bg-destructive/90 transition-colors"
       >
         Retry
       </button>
@@ -146,7 +146,7 @@ function EmptyState() {
   return (
     <div
       data-testid="revision-timeline-empty"
-      className="p-8 text-center text-gray-500 border border-gray-200 rounded-lg"
+      className="p-8 text-center text-muted-foreground border border-border rounded-lg"
     >
       <p>No revisions yet</p>
     </div>
@@ -193,7 +193,7 @@ function RevisionTimelineContent({
         <div className="pt-2">
           {isLoading && skip > 0 ? (
             <div data-testid="revision-timeline-load-more-loading" className="text-center py-2">
-              <span className="text-sm text-gray-500">Loading...</span>
+              <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
           ) : (
             data.has_more && (
@@ -202,7 +202,7 @@ function RevisionTimelineContent({
                 data-testid="revision-timeline-load-more"
                 onClick={onLoadMore}
                 disabled={isLoading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground bg-card hover:bg-muted/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Load More
               </button>
@@ -238,7 +238,7 @@ export function RevisionTimeline({
   if (isLoading && skip > 0 && !data) {
     return (
       <div data-testid="revision-timeline-load-more-loading" className="text-center py-2">
-        <span className="text-sm text-gray-500">Loading...</span>
+        <span className="text-sm text-muted-foreground">Loading...</span>
       </div>
     )
   }

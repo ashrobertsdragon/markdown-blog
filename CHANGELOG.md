@@ -7,7 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- System-aware light/dark theme toggle via `next-themes` (`ThemeProvider` in `main.tsx`, `ThemeToggle` rendered in the header and admin sidebar); choice persists and follows OS preference by default
+- ShadCN primitives: `dialog`, `dropdown-menu`, `input`, `label`, `textarea`, `table`, `badge`, `select`, `separator`, `skeleton`, and `sonner`
+- `--destructive-foreground` theme token (light + dark) so destructive Button/Badge text has correct contrast
+
+### Changed
+
+- Fixed header alignment: brand sits flush-left and nav/theme/user controls flush-right via `justify-between` (previously clustered center-left/center-right)
+- Conformed `Home` page to the neutral token theme, removing the bespoke `slate`/purple/blue/pink gradient theme that diverged from the rest of the site
+- Migrated `ConfirmModal` and `RoleEditModal` from hand-rolled focus-trap dialogs to ShadCN AlertDialog/Dialog
+- Migrated admin `UserTable`, `PostsTable`, `CommentsTable`, and `ErrorLogTable` to the ShadCN Table primitive with Badge/Button
+- Replaced all hardcoded gray/slate utility colors across ~30 components with theme tokens (`bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, etc.) so every page renders correctly in light and dark mode; semantic status colors (success/warning/error/info) gained dark-mode variants
+- Switched toast notifications from `react-hot-toast` (inline-styled) to the theme-aware `sonner` Toaster
+
+### Removed
+
+- Unused `chart-*` and `sidebar-*` CSS variable sets from `index.css`
+- `react-hot-toast` dependency
+
 ### Fixed
+
+- Removed self-referential `--font-*` and `--shadow-*` declarations from the `@theme inline` block in `index.css` (e.g. `--font-sans: var(--font-sans)`); literal values now live in `@theme inline` and the duplicate `:root`/`.dark` definitions were dropped, so Tailwind inlines the real values into utilities instead of relying on cascade-layer precedence to override a self-reference
+
+- Used the ShadCN `Badge` component for the comment author tag in `CommentItem` instead of hand-rolled `bg-blue-*` utility classes, for design-system consistency
 
 - Disabled SQLAlchemy compiled statement cache (`query_cache_size=0`) and Python sqlite3 statement cache (`cached_statements=0`) on the test engine to prevent stale prepared statements after `drop_all` + `create_all` in the seed endpoint; fixes intermittent `IndexError` and `sqlite3.InterfaceError: bad parameter or other API misuse` 500 errors visible as `NetworkError` console errors in Firefox CI
 

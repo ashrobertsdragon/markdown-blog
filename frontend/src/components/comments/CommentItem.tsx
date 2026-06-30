@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/useAuth'
 import { useDeleteComment } from '@/hooks/useComments'
 import type { CommentResponse } from '@/services/commentsApi'
@@ -75,18 +76,14 @@ export function CommentItem({ comment, postSlug }: CommentItemProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="font-semibold">Comment author</span>
-              {isPostAuthor && (
-                <span className="badge text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  Author
-                </span>
-              )}
+              {isPostAuthor && <Badge variant="secondary">Author</Badge>}
             </div>
-            <div className="comment-timestamp text-xs text-gray-500 mt-1">
+            <div className="comment-timestamp text-xs text-muted-foreground mt-1">
               {formatTimestamp(comment.created_at)}
             </div>
 
             {comment.parent_id && (
-              <div className="text-sm text-gray-600 italic mt-2">
+              <div className="text-sm text-muted-foreground italic mt-2">
                 <button type="button" className="hover:underline" onClick={scrollToParent}>
                   {`Reply to @${String(authorHandle).replace(/^@/, '')}`}
                 </button>
@@ -95,9 +92,9 @@ export function CommentItem({ comment, postSlug }: CommentItemProps) {
 
             <div className="mt-2">
               {comment.is_deleted ? (
-                <p className="text-gray-500 italic">[deleted]</p>
+                <p className="text-muted-foreground italic">[deleted]</p>
               ) : (
-                <p className="text-gray-800">{comment.text}</p>
+                <p className="text-foreground">{comment.text}</p>
               )}
             </div>
 
@@ -106,7 +103,7 @@ export function CommentItem({ comment, postSlug }: CommentItemProps) {
                 <button
                   type="button"
                   onClick={() => setShowReplyForm(!showReplyForm)}
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-sm text-primary hover:underline"
                 >
                   Reply
                 </button>
@@ -117,7 +114,7 @@ export function CommentItem({ comment, postSlug }: CommentItemProps) {
                   aria-label="Delete comment"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={deleteCommentMutation.isPending}
-                  className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                  className="text-sm text-destructive hover:underline disabled:opacity-50"
                 >
                   Delete
                 </button>

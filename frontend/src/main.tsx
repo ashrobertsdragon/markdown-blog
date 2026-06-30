@@ -1,4 +1,5 @@
 import { ClerkProvider } from '@clerk/clerk-react'
+import { ThemeProvider } from 'next-themes'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from '@/App'
@@ -22,8 +23,10 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={publishableKey}>
-      <App />
-    </ClerkProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <ClerkProvider publishableKey={publishableKey}>
+        <App />
+      </ClerkProvider>
+    </ThemeProvider>
   </React.StrictMode>
 )
