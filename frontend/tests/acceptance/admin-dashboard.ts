@@ -99,7 +99,7 @@ test.describe('Admin Dashboard - Frontend UI', () => {
     const unpublishButton = page.locator('button:has-text("Unpublish")').first()
     await unpublishButton.click()
 
-    const confirmModal = page.locator('[role="dialog"]')
+    const confirmModal = page.locator('[role="alertdialog"]')
     await expect(confirmModal).toBeVisible()
 
     await confirmModal.locator('button:has-text("Unpublish")').click()
